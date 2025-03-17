@@ -27,10 +27,13 @@ yarn-error.log*
 .vscode/
 .idea/
 
-# Logs
-logs
+# Logs files
 *.log
 
 # Cache
 .npm
 .eslintcache
+
+# Don't ignore these important project directories
+!my-companion-frontend/src/app/logs/
+!my-companion-frontend/src/components/logs/

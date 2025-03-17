@@ -1,0 +1,29 @@
+[
+  {
+    "id": "1742181748967",
+    "userId": "test-user",
+    "userMessage": "Hello, how are you?",
+    "aiResponse": "Hello! I'm here and ready to help you. How can I support you today?",
+    "llmUsed": "OpenAI",
+    "rating": true,
+    "timestamp": "2025-03-17T03:22:28.967Z"
+  },
+  {
+    "id": "1742181794205",
+    "userId": "test-user",
+    "userMessage": "Tell me about artificial intelligence",
+    "aiResponse": "Artificial intelligence (AI) refers to the simulation of human intelligence processes by computer systems. It involves the development of algorithms and technologies that enable machines to perform tasks that typically require human intelligence, such as visual perception, speech recognition, decision-making, and language translation.\n\nWhat specific aspect of AI are you interested in exploring further? How do you think AI is currently impacting society, and what ethical considerations arise from its development and deployment? Let's delve deeper into this complex and evolving field.",
+    "llmUsed": "OpenAI",
+    "rating": null,
+    "timestamp": "2025-03-17T03:23:14.205Z"
+  },
+  {
+    "id": "1742183427918",
+    "userId": "user",
+    "userMessage": "hi",
+    "aiResponse": "Hello! 😊 How are you today? How can I assist you?",
+    "llmUsed": "OpenAI",
+    "rating": null,
+    "timestamp": "2025-03-17T03:50:27.918Z"
+  }
+]
