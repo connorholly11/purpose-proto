@@ -7,12 +7,14 @@ import RealtimeVoice from './RealtimeVoice';
 import Message from './Message';
 import { Message as MessageType } from '@/types';
 import { createConversation, createMessage } from '@/lib/services/prisma';
+import { useUser } from '../contexts/UserContext';
 
 interface ChatInterfaceProps {
   initialConversationId?: string;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) => {
+  const { currentUser } = useUser();
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -20,8 +22,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
   const [showRealtimeVoice, setShowRealtimeVoice] = useState(false);
   const [aiAudio, setAiAudio] = useState<string | null>(null);
+  const [responseMode, setResponseMode] = useState<'text' | 'voice'>('voice');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  
+  // Loading from localStorage on mount
+  useEffect(() => {
+    const savedMode = localStorage.getItem('responseMode');
+    if (savedMode === 'text' || savedMode === 'voice') {
+      setResponseMode(savedMode);
+    }
+  }, []);
+
+  // Save mode to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('responseMode', responseMode);
+  }, [responseMode]);
   
   // Initialize conversation if needed
   useEffect(() => {
@@ -49,14 +65,31 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
     }
   }, [aiAudio]);
   
+  // Reset and initialize conversation when user changes
+  useEffect(() => {
+    // Clear current state
+    setMessages([]);
+    setConversationId(undefined);
+    
+    // Initialize a new conversation for this user
+    initializeConversation();
+  }, [currentUser]);
+  
   // Initialize a new conversation
   const initializeConversation = async () => {
     try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add user ID if available
+      if (currentUser) {
+        headers['x-user-id'] = currentUser.id;
+      }
+      
       const response = await fetch('/api/conversation', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
       });
       
       if (!response.ok) {
@@ -151,8 +184,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
     }
   };
   
-  // Generate speech for AI response
+  // Generate speech for AI response only if in voice mode
   const generateSpeech = async (text: string) => {
+    if (responseMode === 'text') {
+      return; // Skip speech generation in text-only mode
+    }
+
     try {
       const ttsResponse = await fetch('/api/tts', {
         method: 'POST',
@@ -242,33 +279,53 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
     }
   };
   
+  // Toggle between text and voice modes
+  const toggleResponseMode = () => {
+    setResponseMode(prev => prev === 'text' ? 'voice' : 'text');
+  };
+  
   return (
     <div className="flex flex-col h-full max-w-4xl mx-auto">
       <div className="flex justify-between items-center p-4 border-b">
         <h1 className="text-xl font-semibold">AI Voice Companion</h1>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => {
-              setShowAudioRecorder(!showAudioRecorder);
-              setShowRealtimeVoice(false);
-            }}
-            className={`p-2 rounded-md ${
-              showAudioRecorder ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
-            }`}
-          >
-            Short Audio
-          </button>
-          <button
-            onClick={() => {
-              setShowRealtimeVoice(!showRealtimeVoice);
-              setShowAudioRecorder(false);
-            }}
-            className={`p-2 rounded-md ${
-              showRealtimeVoice ? 'bg-green-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
-            }`}
-          >
-            Realtime Voice
-          </button>
+        <div className="flex items-center space-x-4">
+          {/* Response Mode Toggle */}
+          <div className="flex items-center">
+            <span className="text-sm mr-2">Response Mode:</span>
+            <button
+              onClick={toggleResponseMode}
+              className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 hover:bg-gray-200"
+            >
+              {responseMode === 'voice' ? 'Voice' : 'Text'} 
+              <span className="ml-1 text-xs opacity-60">▼</span>
+            </button>
+          </div>
+
+          {/* Existing Buttons */}
+          <div className="flex space-x-2">
+            <button
+              onClick={() => {
+                setShowAudioRecorder(!showAudioRecorder);
+                setShowRealtimeVoice(false);
+              }}
+              className={`p-2 rounded-md ${
+                showAudioRecorder ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+            >
+              Short Audio
+            </button>
+            <button
+              onClick={() => {
+                setShowRealtimeVoice(!showRealtimeVoice);
+                setShowAudioRecorder(false);
+              }}
+              className={`p-2 rounded-md ${
+                showRealtimeVoice ? 'bg-green-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+            >
+              Realtime Voice
+            </button>
+          </div>
         </div>
       </div>
       

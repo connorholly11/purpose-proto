@@ -10,6 +10,7 @@ The AI Voice Companion is a Next.js application that provides an AI assistant ca
 - Text-based interactions
 - Retrieval-Augmented Generation (RAG) for context-aware responses
 - Conversation history management
+- User-specific conversations and settings
 
 ## Project Structure
 
@@ -25,8 +26,11 @@ purpose-proto/
 ├── scripts/                  # Utility scripts (e.g., document ingestion)
 ├── src/
 │   ├── app/                  # Next.js app directory
+│   │   ├── admin/            # Admin panel and analytics
 │   │   ├── api/              # API routes
 │   │   ├── components/       # React components
+│   │   ├── contexts/         # Context providers
+│   │   ├── logs/             # Message logs interface
 │   │   └── page.tsx          # Main page
 │   ├── lib/                  # Library code
 │   │   └── services/         # Service modules
@@ -47,6 +51,8 @@ purpose-proto/
    - Manages messages, conversation state
    - Handles user input (text and audio)
    - Communicates with backend API
+   - Supports both text and voice response modes
+   - Resets/initializes new conversations when the user changes
 
 2. **AudioRecorder.tsx**
    - Handles short audio clip recording
@@ -62,6 +68,43 @@ purpose-proto/
    - Renders individual chat messages
    - Handles like/dislike feedback functionality
    - Differentiates between user and AI messages
+   - Shows feedback status visually
+
+5. **Navigation.tsx**
+   - Provides navigation between app sections
+   - Includes user selection dropdown
+   - Responsive design for all screen sizes
+
+6. **UserSelector.tsx**
+   - Allows switching between different users
+   - Maintains selected user across all pages
+   - Persists selection in localStorage
+
+### Context Providers
+
+1. **UserContext.tsx**
+   - Manages the current user state
+   - Provides user information to all components
+   - Handles user selection persistence
+   - Makes user data available across the application
+
+### Admin and Analytics
+
+1. **Admin Dashboard**
+   - Shows conversation statistics
+   - Displays user activity metrics
+   - Highlights the current user in tables
+   - Links to RAG Analytics
+
+2. **RAG Analytics**
+   - Displays real message history from the current user
+   - Shows basic stats about queries and responses
+   - Designed to be extended with actual RAG monitoring
+
+3. **Logs Page**
+   - Filters messages by various criteria
+   - Automatically filters by current user
+   - Supports searching and date filtering
 
 ### Backend Services
 
@@ -82,13 +125,14 @@ purpose-proto/
 3. **Prisma Service (`src/lib/services/prisma.ts`)**
    - Database connection management
    - CRUD operations for conversations and messages
-   - User management (planned)
+   - User management support
 
 ### API Routes
 
 1. **Conversation API (`/api/conversation`)**
    - Creates and manages conversations
    - Retrieves conversation history
+   - Associates conversations with specific users
 
 2. **RAG API (`/api/rag`)**
    - Processes user queries
@@ -107,41 +151,72 @@ purpose-proto/
 
 6. **Message Feedback API (`/api/message/[messageId]/feedback`)**
    - Handles like/dislike feedback on messages
+   - Stores feedback in the database
+
+7. **Logs API (`/api/logs`)**
+   - Retrieves and filters message logs
+   - Supports multiple filtering criteria
+   - Returns messages with conversation metadata
+
+8. **Users API (`/api/users`)**
+   - Manages user operations
+   - Creates and retrieves users
+   - Gets individual user data
 
 ## Database Schema
 
 The application uses Prisma with a PostgreSQL database. Key models include:
 
-1. **Conversation**
+1. **User**
+   - Represents an application user
+   - Has a name and unique ID
+   - Associated with multiple conversations
+
+2. **Conversation**
    - Represents a chat session
    - Contains multiple messages
-   - Will be associated with a user
+   - Associated with a specific user
 
-2. **Message**
+3. **Message**
    - Individual messages in a conversation
-   - Contains content, role (user/assistant), and timestamps
+   - Contains content, role (user/assistant)
    - Can have associated feedback
 
-3. **MessageFeedback**
+4. **MessageFeedback**
    - Stores user feedback on AI responses
    - Contains type (like/dislike)
+   - Associated with a specific message
 
-## Authentication and User Management
+## User Management
 
-User authentication and management is planned but not yet implemented. The system will support three initial users (Connor, Raj, Mark) with plans to associate conversations and logs with specific users.
+The application supports multiple users with the following features:
+- Three initial users (Connor, Raj, Mark) seeded in the database
+- User selection via dropdown in the navigation bar
+- Automatic filtering of logs and conversations by selected user
+- Visual highlighting of current user in admin interface
+- Conversation reset when user changes
 
-## Testing Infrastructure
+## Conversation Modes
 
-The project uses Jest for testing with the following structure:
+The application supports different interaction modes:
 
-1. **Unit Tests**
-   - Tests for individual components and services
-   - Mocks external dependencies
-   - Coverage for key functionality
+1. **Text Mode**
+   - User types messages
+   - AI responds with text only (no speech synthesis)
+   - More suitable for reading longer responses
 
-2. **Test Configuration**
-   - Jest is configured for Next.js
-   - Testing utilities are setup in `jest.setup.js`
+2. **Voice Mode**
+   - User speaks or types messages
+   - AI responds with both text and speech
+   - Speech synthesis for AI responses
+
+3. **Short Audio**
+   - Records audio clips for processing
+   - Transcribes and sends as messages
+
+4. **Real-time Voice**
+   - Streaming audio both ways
+   - Low-latency conversation
 
 ## RAG Implementation
 
@@ -176,30 +251,44 @@ The real-time voice feature uses WebRTC and OpenAI's streaming API:
    - AI responses are streamed back in real-time
    - Responses are displayed and optionally spoken using TTS
 
+## Recently Added Features
+
+### Navigation and User Interface
+- Added a navigation bar with links to Chat, Logs, and Admin
+- Implemented a user selector in the navigation
+- Made the interface responsive for all screen sizes
+- Added persistent user selection across all pages
+
+### User Management
+- Created User model in database schema
+- Implemented user switching functionality
+- Associated conversations with specific users
+- Added highlighting of current user in admin interface
+
+### Message Feedback
+- Added like/dislike buttons for AI messages
+- Implemented feedback storage in database
+- Added visual indicators for feedback status
+
+### Admin Analytics
+- Created basic dashboard with conversation statistics
+- Added user activity monitoring
+- Implemented RAG analytics with recent message display
+- Highlighted current user data across all sections
+
 ## Planned Enhancements
 
-As detailed in the todo.md file, the following enhancements are planned:
+### RAG Verification & Improvements
+- Add monitoring of actual Pinecone operations
+- Create debug view showing retrieved documents
+- Implement personalization tracking
+- Visualize context usage in conversations
 
-1. **Navigation & Layout**
-   - Navigation bar with links to Chat, Logs, and Admin
-
-2. **Admin Panel**
-   - Analytics dashboard
-   - Conversation statistics
-   - User activity metrics
-   - RAG/embedding monitoring
-
-3. **Logs Page**
-   - View and filter all chat messages
-   - Search functionality
-
-4. **User Implementation**
-   - User model and authentication
-   - Three initial users (Connor, Raj, Mark)
-
-5. **Chat Interface Enhancements**
-   - Toggle between Text and Voice modes
-   - Persistent mode selection
+### Real-Time Voice Enhancements
+- Add live transcription display
+- Show partial AI responses as they're generated
+- Implement confidence scoring for speech recognition
+- Provide visual indicators for context usage
 
 ## Development Guidelines
 
@@ -262,4 +351,4 @@ DATABASE_URL=your_database_connection_string
 
 This AI Voice Companion application provides a solid foundation for an AI assistant with multiple interaction methods. The code is structured to be maintainable and extensible, with clear separation of concerns between components, services, and API routes.
 
-Future developers should focus on implementing the planned enhancements while maintaining the existing architecture and code quality standards. The test infrastructure provides a safety net for changes, and the documentation should be kept up-to-date as the application evolves. 
+Current focus areas include verifying that the RAG functionality is properly using Pinecone for context retrieval and enhancing the real-time voice interface to display transcriptions of the conversation. The user management system has been implemented to allow switching between different user contexts, with consistent filtering across all parts of the application. 
