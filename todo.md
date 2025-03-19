@@ -43,8 +43,47 @@
 - [x] Add error handling
 - [x] Optimize for performance
 
+## 9. Navigation & Layout
+- [ ] Add navigation bar with links to Chat, Logs, and Admin
+- [ ] Make navigation responsive and accessible
+- [ ] Implement consistent layout across all pages
+
+## 10. Admin Panel
+- [ ] Create basic analytics dashboard
+- [ ] Show conversation statistics
+- [ ] Display user activity metrics
+- [ ] Add RAG/embedding performance monitoring tab
+- [ ] Implement admin permissions if needed
+
+## 11. Logs Page
+- [ ] Create interface to view all chat messages
+- [ ] Implement filtering by like/dislike status
+- [ ] Add filtering by user
+- [ ] Add filtering by date range
+- [ ] Add filtering by conversation
+- [ ] Implement search functionality
+
+## 12. User Implementation
+- [ ] Create user model in schema
+- [ ] Seed three initial users (Connor, Raj, Mark)
+- [ ] Associate conversations and logs with specific users
+- [ ] Add user authentication system
+- [ ] Create user profile page
+
+## 13. Chat Interface Enhancements
+- [ ] Add toggle between "Text" and "Voice" modes
+- [ ] Implement text-only response mode (no speech)
+- [ ] Maintain voice response mode for voice interactions
+- [ ] Make mode selection persistent for the session
+
+## 14. RAG Analytics
+- [ ] Add visualization for embedding performance
+- [ ] Show which documents are being retrieved most frequently
+- [ ] Display confidence scores for RAG responses
+- [ ] Allow admin to view raw vector data
+
 ## Progress Tracking
-- **Current Focus**: Completed implementation
+- **Current Focus**: Navigation, Admin Panel, Logs, User Implementation, Chat Enhancements
 - **Completed**: All core features implemented and tested
-- **In Progress**: None
+- **In Progress**: Adding admin features and user association
 - **Blockers**: None 
