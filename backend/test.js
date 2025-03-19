@@ -93,7 +93,11 @@ async function runTests() {
   await testTTS();
   
   console.log('All tests completed!');
+  return 'Tests completed';
 }
 
 // Run the tests
-runTests(); 
+runTests().then(() => {
+  // This ensures the process exits properly after tests complete
+  process.exit(0);
+});

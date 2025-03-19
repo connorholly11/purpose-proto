@@ -4,13 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import { 
   sendChatMessage, 
   textToSpeech, 
-  speechToText,
   getConversations,
   getConversationMessages,
-  createRealtimeConnection,
-  RealtimeConnection,
   ChatRequest, 
-  ChatResponse,
   Conversation,
   Message as ApiMessage
 } from '@/services/api';
@@ -20,7 +16,6 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   llmUsed?: string;
-  hasContextualInfo?: boolean;
 }
 
 interface ChatInterfaceProps {
@@ -36,7 +31,6 @@ export default function ChatInterface({
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [systemPromptMode, setSystemPromptMode] = useState<'friendly' | 'challenging'>(initialSystemPromptMode);
-  const [isRecording, setIsRecording] = useState(false);
   const [isRealtimeActive, setIsRealtimeActive] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -49,9 +43,7 @@ export default function ChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const realtimeConnectionRef = useRef<RealtimeConnection | null>(null);
+  const realtimeConnectionRef = useRef<WebSocket | null>(null);
 
   // Load user conversations on mount
   useEffect(() => {
@@ -134,91 +126,14 @@ export default function ChatInterface({
     inputRef.current?.focus();
   }, []);
 
-  // Initialize Realtime connection for voice mode
+  // Clean up Realtime connection on unmount
   useEffect(() => {
-    if (voiceMode && !realtimeConnectionRef.current) {
-      const realtimeConnection = createRealtimeConnection({
-        systemPromptMode,
-        userId,
-        onOpen: () => {
-          console.log('Realtime connection opened');
-        },
-        onMessage: (data) => {
-          console.log('Received message from Realtime API:', data);
-          
-          // Handle different message types
-          if (data.type === 'assistant_response') {
-            // Add assistant message to chat
-            setMessages(prev => [
-              ...prev,
-              { 
-                role: 'assistant', 
-                content: data.message,
-                hasContextualInfo: data.hasContextualInfo
-              }
-            ]);
-            
-            // If there's a transcription, add the user message too
-            if (data.transcription) {
-              setMessages(prev => [
-                ...prev.filter(msg => msg.content !== 'Listening...'),
-                { 
-                  role: 'user', 
-                  content: data.transcription 
-                },
-                { 
-                  role: 'assistant', 
-                  content: data.message,
-                  hasContextualInfo: data.hasContextualInfo
-                }
-              ]);
-            }
-          } else if (data.type === 'audio_response' && data.audio) {
-            // Convert base64 to blob and create object URL
-            const binaryString = window.atob(data.audio);
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-              bytes[i] = binaryString.charCodeAt(i);
-            }
-            const blob = new Blob([bytes], { type: `audio/${data.format || 'mp3'}` });
-            const url = URL.createObjectURL(blob);
-            setAudioUrl(url);
-          }
-        },
-        onError: (error) => {
-          console.error('Realtime connection error:', error);
-          setMessages(prev => [
-            ...prev,
-            { 
-              role: 'assistant', 
-              content: 'Sorry, there was an error with the voice connection. Please try again.' 
-            }
-          ]);
-        },
-        onClose: () => {
-          console.log('Realtime connection closed');
-          setIsRealtimeActive(false);
-        }
-      });
-      
-      realtimeConnectionRef.current = realtimeConnection;
-    }
-    
-    // Cleanup function
     return () => {
       if (realtimeConnectionRef.current) {
-        realtimeConnectionRef.current.disconnect();
-        realtimeConnectionRef.current = null;
+        realtimeConnectionRef.current.close();
       }
     };
-  }, [voiceMode, systemPromptMode, userId]);
-
-  // Update system prompt mode in Realtime connection when it changes
-  useEffect(() => {
-    if (realtimeConnectionRef.current && realtimeConnectionRef.current.isConnected) {
-      realtimeConnectionRef.current.setSystemPromptMode(systemPromptMode);
-    }
-  }, [systemPromptMode]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -258,7 +173,7 @@ export default function ChatInterface({
       
       setMessages((prev) => [...prev, assistantMessage]);
       
-      // Convert response to speech
+      // Convert response to speech (if TTS is implemented)
       try {
         const ttsResponse = await textToSpeech({ text: response.response });
         if (ttsResponse.audioUrl) {
@@ -289,149 +204,37 @@ export default function ChatInterface({
   };
 
   const toggleVoiceMode = () => {
-    // If turning on voice mode, stop any active recording first
-    if (isRecording) {
-      stopRecording();
-    }
-    
+    setVoiceMode(prev => !prev);
     // If turning off voice mode while realtime is active, stop it
     if (voiceMode && isRealtimeActive) {
       stopRealtimeConnection();
     }
-    
-    setVoiceMode(prev => !prev);
   };
 
   const toggleConversations = () => {
     setShowConversations(prev => !prev);
   };
 
-  // Start recording audio for speech-to-text (text mode with microphone)
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-      
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-      
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        audioChunksRef.current = [];
-        
-        try {
-          setIsLoading(true);
-          
-          // Show a temporary message
-          setMessages(prev => [...prev, { role: 'user', content: 'Processing audio...' }]);
-          
-          // Convert speech to text
-          const transcript = await speechToText(new File([audioBlob], 'recording.webm'));
-          
-          // Replace the temporary message with the actual transcript
-          setMessages(prev => [
-            ...prev.filter(msg => msg.content !== 'Processing audio...'),
-            { role: 'user', content: transcript }
-          ]);
-          
-          // Process the transcript as a user message
-          const chatRequest: ChatRequest = {
-            message: transcript,
-            systemPromptMode,
-            userId: userId,
-            conversationId: currentConversationId || undefined
-          };
-          
-          const response = await sendChatMessage(chatRequest);
-          
-          // Set the conversation ID if this is a new conversation
-          if (!currentConversationId) {
-            setCurrentConversationId(response.conversationId);
-            // Refresh conversations list
-            fetchUserConversations();
-          }
-          
-          // Add assistant message to chat
-          const assistantMessage: Message = {
-            id: response.id,
-            role: 'assistant',
-            content: response.response,
-            llmUsed: response.llmUsed,
-          };
-          
-          setMessages((prev) => [...prev, assistantMessage]);
-          
-          // Convert response to speech
-          try {
-            const ttsResponse = await textToSpeech({ text: response.response });
-            if (ttsResponse.audioUrl) {
-              setAudioUrl(ttsResponse.audioUrl);
-            }
-          } catch (error) {
-            console.error('Error converting text to speech:', error);
-          }
-        } catch (error) {
-          console.error('Error processing speech:', error);
-          setMessages(prev => [
-            ...prev.filter(msg => msg.content !== 'Processing audio...'),
-            { role: 'assistant', content: 'Sorry, there was an error processing your speech. Please try again.' }
-          ]);
-        } finally {
-          setIsLoading(false);
-        }
-        
-        // Stop all tracks
-        stream.getTracks().forEach(track => track.stop());
-      };
-      
-      mediaRecorder.start();
-      setIsRecording(true);
-      
-      // Add a visual indicator that we're recording
-      setMessages(prev => [...prev, { role: 'user', content: 'Recording...' }]);
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: 'Sorry, there was an error accessing your microphone. Please check your permissions and try again.' }
-      ]);
-    }
-  };
-
-  // Stop recording audio
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      
-      // Update the visual indicator
-      setMessages(prev => prev.map(msg => 
-        msg.content === 'Recording...' ? { ...msg, content: 'Processing audio...' } : msg
-      ));
-    }
-  };
-
-  // Handle record button click in text mode
-  const handleRecordToggle = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
-  };
-
-  // Start Realtime API connection for voice mode
+  // Start Realtime API connection for voice interaction
   const startRealtimeConnection = () => {
-    if (isRealtimeActive || !realtimeConnectionRef.current) return;
+    if (isRealtimeActive) return;
     
     try {
-      // Connect to the Realtime API
-      realtimeConnectionRef.current.connect();
+      // In a real implementation, we would establish a WebSocket or WebRTC connection
+      // to the OpenAI Realtime API here
+      console.log('Starting Realtime API connection...');
+      
+      // Mock WebSocket connection for demonstration
+      const mockWebSocket = {
+        send: (data: string) => {
+          console.log('Sending data to Realtime API:', data);
+        },
+        close: () => {
+          console.log('Closing Realtime API connection');
+        }
+      } as unknown as WebSocket;
+      
+      realtimeConnectionRef.current = mockWebSocket;
       setIsRealtimeActive(true);
       
       // Add a system message to indicate voice mode is active
@@ -442,9 +245,6 @@ export default function ChatInterface({
           content: 'Voice mode activated. I\'m listening to you in real-time now.' 
         }
       ]);
-      
-      // Start listening for voice input
-      startVoiceInput();
     } catch (error) {
       console.error('Error starting Realtime API connection:', error);
       setMessages(prev => [
@@ -459,14 +259,14 @@ export default function ChatInterface({
 
   // Stop Realtime API connection
   const stopRealtimeConnection = () => {
-    if (!isRealtimeActive || !realtimeConnectionRef.current) return;
+    if (!isRealtimeActive) return;
     
     try {
-      // Stop listening for voice input
-      stopVoiceInput();
+      if (realtimeConnectionRef.current) {
+        realtimeConnectionRef.current.close();
+        realtimeConnectionRef.current = null;
+      }
       
-      // Disconnect from the Realtime API
-      realtimeConnectionRef.current.disconnect();
       setIsRealtimeActive(false);
       
       // Add a system message to indicate voice mode is deactivated
@@ -474,7 +274,7 @@ export default function ChatInterface({
         ...prev, 
         { 
           role: 'assistant', 
-          content: 'Voice mode deactivated.' 
+          content: 'Voice mode deactivated. You can now type your messages.' 
         }
       ]);
     } catch (error) {
@@ -482,42 +282,6 @@ export default function ChatInterface({
     }
   };
 
-  // Start listening for voice input in realtime mode
-  const startVoiceInput = async () => {
-    try {
-      // Show a visual indicator that we're listening
-      setMessages(prev => [...prev, { role: 'user', content: 'Listening...' }]);
-      
-      // Start recording with WebRTC
-      if (realtimeConnectionRef.current) {
-        await realtimeConnectionRef.current.startRecording();
-      }
-    } catch (error) {
-      console.error('Error starting voice input:', error);
-      setMessages(prev => [
-        ...prev.filter(msg => msg.content !== 'Listening...'),
-        { 
-          role: 'assistant', 
-          content: 'Sorry, there was an error accessing your microphone. Please check your permissions and try again.' 
-        }
-      ]);
-      
-      // Stop the Realtime connection
-      stopRealtimeConnection();
-    }
-  };
-
-  // Stop listening for voice input
-  const stopVoiceInput = () => {
-    if (realtimeConnectionRef.current) {
-      realtimeConnectionRef.current.stopRecording();
-      
-      // Clear the listening indicator
-      setMessages(prev => prev.filter(msg => msg.content !== 'Listening...'));
-    }
-  };
-
-  // Toggle Realtime connection for voice mode
   const toggleRealtimeConnection = () => {
     if (isRealtimeActive) {
       stopRealtimeConnection();
@@ -612,11 +376,6 @@ export default function ChatInterface({
                     Model: {message.llmUsed}
                   </p>
                 )}
-                {message.hasContextualInfo && (
-                  <p className="text-xs text-green-600 mt-1">
-                    Using contextual information from RAG
-                  </p>
-                )}
               </div>
             ))}
             {isLoading && (
@@ -685,53 +444,13 @@ export default function ChatInterface({
                   onChange={handleInputChange}
                   placeholder="Type your message..."
                   className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={isLoading || isRecording}
+                  disabled={isLoading}
                   ref={inputRef}
                 />
                 <button
-                  type="button"
-                  onClick={handleRecordToggle}
-                  className={`p-2 rounded-md ${
-                    isRecording ? 'bg-red-500' : 'bg-gray-200'
-                  } text-white`}
-                  disabled={isLoading}
-                >
-                  {isRecording ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                      />
-                    </svg>
-                  )}
-                </button>
-                <button
                   type="submit"
                   className="bg-blue-500 text-white px-4 py-2 rounded-md disabled:bg-blue-300"
-                  disabled={isLoading || isRecording || !input.trim()}
+                  disabled={isLoading || !input.trim()}
                 >
                   Send
                 </button>

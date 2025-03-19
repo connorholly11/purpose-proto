@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model to store user information
+model User {
+  id        String   @id @default(uuid())
+  name      String?
+  email     String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // Relations
+  conversations Conversation[]
+}
+
+// Conversation model to track chat sessions
+model Conversation {
+  id        String   @id @default(uuid())
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  
+  // Relations
+  userId    String?
+  user      User?     @relation(fields: [userId], references: [id])
+  messages  Message[]
+}
+
+// Message model to store individual messages in a conversation
+model Message {
+  id             String   @id @default(uuid())
+  role           String   // 'user' or 'assistant'
+  content        String   @db.Text
+  llmUsed        String?
+  audioUrl       String?  // URL to audio file if TTS was generated
+  createdAt      DateTime @default(now())
+  
+  // Relations
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+// Vector model to store embeddings for RAG
+model Vector {
+  id             String   @id @default(uuid())
+  content        String   @db.Text
+  embedding      String?  @db.Text  // Stored as stringified JSON, will be handled by Pinecone
+  metadata       Json?    // Additional metadata about the vector
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+}
+
+// Logs model for tracking and analytics
+model Log {
+  id          String   @id @default(uuid())
+  userId      String?
+  type        String   // 'chat', 'error', 'tts', 'stt', etc.
+  data        Json
+  rating      Boolean?
+  createdAt   DateTime @default(now())
+}
