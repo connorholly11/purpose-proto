@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getConversationById } from '@/lib/services/prisma';
 
 export async function GET(
-  req: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
+    const id = params.id;
     
     if (!id) {
       return NextResponse.json(
@@ -15,7 +15,6 @@ export async function GET(
       );
     }
     
-    // Get the conversation with its messages
     const conversation = await getConversationById(id);
     
     if (!conversation) {
@@ -27,9 +26,9 @@ export async function GET(
     
     return NextResponse.json(conversation);
   } catch (error) {
-    console.error('Error retrieving conversation:', error);
+    console.error('Error fetching conversation:', error);
     return NextResponse.json(
-      { error: 'Failed to retrieve conversation' },
+      { error: 'Error fetching conversation' },
       { status: 500 }
     );
   }

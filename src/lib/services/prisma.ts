@@ -4,11 +4,25 @@ import { Message } from '@/types';
 // Create a singleton instance of PrismaClient
 let prismaInstance: PrismaClient | null = null;
 
+// Use a global variable to ensure single instance across hot reloads in development
+declare global {
+  var _prismaClient: PrismaClient | undefined;
+}
+
 export function getPrismaClient(): PrismaClient {
-  if (!prismaInstance) {
-    prismaInstance = new PrismaClient();
+  if (process.env.NODE_ENV === 'production') {
+    // In production, use regular singleton pattern
+    if (!prismaInstance) {
+      prismaInstance = new PrismaClient();
+    }
+    return prismaInstance;
+  } else {
+    // In development, use global to preserve instance across hot reloads
+    if (!global._prismaClient) {
+      global._prismaClient = new PrismaClient();
+    }
+    return global._prismaClient;
   }
-  return prismaInstance;
 }
 
 // User operations

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const { messageId } = params;
+    const messageId = params.messageId;
     const { feedback } = await request.json();
     
     if (!messageId) {
@@ -47,9 +47,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
     
-    if (feedback !== 'like' && feedback !== 'dislike') {
+    if (!feedback || !['LIKE', 'DISLIKE'].includes(feedback)) {
       return NextResponse.json(
-        { error: 'Feedback must be "like" or "dislike"' },
+        { error: 'Valid feedback (LIKE or DISLIKE) is required' },
         { status: 400 }
       );
     }

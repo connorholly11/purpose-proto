@@ -49,6 +49,10 @@ export interface RAGRequest {
 export interface RAGResponse {
   answer: string;
   error?: string;
+  ragInfo?: {
+    operationTime: number;
+    matchCount: number;
+  };
 }
 
 export interface RealtimeSessionResponse {
@@ -96,4 +100,54 @@ export interface PineconeDocument {
     text: string;
     source?: string;
   };
+}
+
+// RAG Analytics Types
+export interface RAGQueryResult {
+  context: string;
+  matches: RAGMatch[];
+  operationTime: number;
+}
+
+export interface RAGMatch {
+  id: string;
+  score: number;
+  text: string;
+  source?: string;
+}
+
+export interface RAGOperationData {
+  id: string;
+  query: string;
+  conversationId?: string;
+  messageId?: string;
+  userId?: string;
+  timestamp: Date;
+  source: string;
+  operationTime: number;
+  retrievedDocs: RetrievedDocumentData[];
+}
+
+export interface RetrievedDocumentData {
+  id: string;
+  documentId: string;
+  similarityScore: number;
+  content: string;
+  source?: string;
+}
+
+export interface RAGAnalytics {
+  totalOperations: number;
+  avgResponseTime: number;
+  successRate: number;
+  operationsBySource: {
+    chat: number;
+    realtime_voice: number;
+  };
+  topDocuments: {
+    documentId: string;
+    retrievalCount: number;
+    content: string;
+  }[];
+  recentOperations: RAGOperationData[];
 } 

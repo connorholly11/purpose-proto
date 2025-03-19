@@ -19,15 +19,17 @@ model User {
   conversations Conversation[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  ragOperations RAGOperation[]
 }
 
 model Conversation {
-  id        String    @id @default(uuid())
-  userId    String?
-  user      User?     @relation(fields: [userId], references: [id])
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  messages  Message[]
+  id            String         @id @default(uuid())
+  userId        String?
+  user          User?          @relation(fields: [userId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  messages      Message[]
+  ragOperations RAGOperation[]
 }
 
 model Message {
@@ -38,6 +40,7 @@ model Message {
   createdAt      DateTime         @default(now())
   conversation   Conversation     @relation(fields: [conversationId], references: [id])
   feedback       MessageFeedback?
+  ragOperations  RAGOperation[]
 }
 
 model MessageFeedback {
@@ -47,4 +50,43 @@ model MessageFeedback {
   type      String   // "LIKE" | "DISLIKE"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// New models for RAG tracking
+model RAGOperation {
+  id             String           @id @default(uuid())
+  messageId      String?
+  message        Message?         @relation(fields: [messageId], references: [id])
+  query          String           @db.Text
+  conversationId String?
+  conversation   Conversation?    @relation(fields: [conversationId], references: [id])
+  userId         String?
+  user           User?            @relation(fields: [userId], references: [id])
+  timestamp      DateTime         @default(now())
+  source         String           // "chat" | "realtime_voice"
+  retrievedDocs  RetrievedDocument[]
+  operationTime  Int              // Time in milliseconds
+  embeddingId    String?
+  embedding      Embedding?       @relation(fields: [embeddingId], references: [id])
+}
+
+model RetrievedDocument {
+  id              String        @id @default(uuid())
+  ragOperationId  String
+  ragOperation    RAGOperation  @relation(fields: [ragOperationId], references: [id])
+  documentId      String        // ID of the document in Pinecone
+  similarityScore Float         // Score from Pinecone
+  content         String        @db.Text
+  source          String?       // Source of the document if available
+  metadata        Json?         // Any additional metadata
+  timestamp       DateTime      @default(now())
+}
+
+model Embedding {
+  id             String          @id @default(uuid())
+  text           String          @db.Text
+  vectorId       String          // ID of the vector in Pinecone
+  source         String          // "user_query" | "conversation_history" | "document"
+  timestamp      DateTime        @default(now())
+  ragOperations  RAGOperation[]
 }

@@ -25,6 +25,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   const [responseMode, setResponseMode] = useState<'text' | 'voice'>('voice');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [realtimeTranscript, setRealtimeTranscript] = useState<string | null>(null);
   
   // Loading from localStorage on mount
   useEffect(() => {
@@ -154,6 +156,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
         headers: {
           'Content-Type': 'application/json',
           'x-conversation-id': conversationId,
+          'x-source': 'chat',
         },
         body: JSON.stringify({ userQuery: userMessage }),
       });
@@ -240,14 +243,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
     setInput('');
   };
   
-  // Handle partial transcript from realtime voice
-  const handlePartialTranscript = (text: string) => {
-    // Optionally update UI with partial transcript
+  // Callback for partial transcripts from RealtimeVoice
+  const handlePartialTranscript = (transcript: string) => {
+    setRealtimeTranscript(transcript);
   };
   
-  // Handle partial response from realtime voice
-  const handlePartialResponse = (text: string) => {
-    // Optionally update UI with partial response
+  // Callback for completed transcripts from RealtimeVoice
+  const handleCompletedTranscript = (transcript: string) => {
+    // Add the user message to the UI when transcript is complete
+    if (transcript && conversationId) {
+      const newUserMessage: MessageType = {
+        id: `temp-${Date.now()}`,
+        conversationId,
+        role: 'user',
+        content: transcript,
+        createdAt: new Date(),
+      };
+      
+      setMessages(prev => [...prev, newUserMessage]);
+      setRealtimeTranscript(null);
+    }
   };
   
   // Handle like/dislike of messages
@@ -338,6 +353,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
             onDislike={() => handleDislikeMessage(message.id)}
           />
         ))}
+        
+        {/* Show realtime transcript if available */}
+        {realtimeTranscript && (
+          <div className="mb-4 text-right animate-pulse">
+            <div className="inline-block p-3 bg-blue-300 text-white rounded-lg rounded-tr-none max-w-[80%]">
+              {realtimeTranscript}
+            </div>
+          </div>
+        )}
+        
         <div ref={messagesEndRef} />
       </div>
       
@@ -353,7 +378,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
         <div className="p-4 border-t">
           <RealtimeVoice
             onPartialTranscript={handlePartialTranscript}
-            onPartialResponse={handlePartialResponse}
+            onCompletedTranscript={handleCompletedTranscript}
             conversationId={conversationId}
           />
         </div>

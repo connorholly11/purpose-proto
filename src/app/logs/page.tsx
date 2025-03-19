@@ -70,12 +70,20 @@ export default function LogsPage() {
 
     const fetchConversations = async () => {
       try {
-        const response = await fetch('/api/conversation');
-        if (!response.ok) throw new Error('Failed to fetch conversations');
+        // In case the fetch fails, don't mark the whole component as error
+        const response = await fetch('/api/conversations');
+        if (!response.ok) {
+          console.error(`Failed to fetch conversations: ${response.status} ${response.statusText}`);
+          // Still set empty conversations array rather than throwing error
+          setConversations([]);
+          return;
+        }
         const data = await response.json();
-        setConversations(data.conversations);
+        setConversations(data.conversations || []);
       } catch (err) {
         console.error('Error fetching conversations:', err);
+        // Set empty array instead of throwing error
+        setConversations([]);
       }
     };
     

@@ -11,11 +11,11 @@ import {
 } from '@/types';
 
 interface RealtimeVoiceProps {
+  conversationId?: string;
   onPartialTranscript?: (text: string) => void;
   onCompletedTranscript?: (text: string) => void;
   onPartialResponse?: (text: string) => void;
   onCompletedResponse?: (text: string) => void;
-  conversationId?: string;
 }
 
 const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
@@ -162,15 +162,50 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
       // Handle partial transcripts
       if (data && 'audio_transcript' in data) {
         const transcriptEvent = data as AudioTranscriptEvent;
-        setTranscript(transcriptEvent.audio_transcript.text);
-        onPartialTranscript?.(transcriptEvent.audio_transcript.text);
+        const transcript = transcriptEvent.audio_transcript.text;
+        setTranscript(transcript);
+        onPartialTranscript?.(transcript);
+        
+        // If we have a conversation ID and enough transcript text, send to RAG
+        // Also log completed utterances from the user
+        if (conversationId && transcript.trim().length > 20) {
+          // Check if transcript appears to be complete (not ending with ...)
+          const isCompleteUtterance = !transcript.endsWith('...') && 
+            !transcript.endsWith('.') && 
+            !transcript.endsWith('?') && 
+            data.audio_transcript.is_final;
+          
+          if (isCompleteUtterance) {
+            console.log("Completed transcript:", transcript);
+            onCompletedTranscript?.(transcript);
+          }
+          
+          // Send to RAG API for memory/embeddings regardless - don't await the result
+          fetch('/api/rag', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-conversation-id': conversationId,
+              'x-source': 'realtime_voice', // Mark as coming from real-time voice
+            },
+            body: JSON.stringify({ userQuery: transcript }),
+          }).catch(err => {
+            console.error('Error sending transcript to RAG:', err);
+          });
+        }
       }
       
       // Handle text responses
       if (data && 'response' in data && typeof data.response === 'object' && data.response && 'text' in data.response) {
         const responseEvent = data as TextResponseEvent;
-        setResponse(responseEvent.response.text.content);
-        onPartialResponse?.(responseEvent.response.text.content);
+        const responseText = responseEvent.response.text.content;
+        setResponse(responseText);
+        onPartialResponse?.(responseText);
+        
+        // Check for completed response
+        if (data.response.text.is_final) {
+          onCompletedResponse?.(responseText);
+        }
       }
       
       // Handle voice activity events
