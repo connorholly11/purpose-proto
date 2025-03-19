@@ -8,6 +8,8 @@ import Message from './Message';
 import { Message as MessageType } from '@/types';
 import { createConversation, createMessage } from '@/lib/services/prisma';
 import { useUser } from '../contexts/UserContext';
+import { getCompletion } from '@/lib/services/openai';
+import browserLogger from '@/lib/utils/browser-logger';
 
 interface ChatInterfaceProps {
   initialConversationId?: string;
@@ -80,6 +82,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   // Initialize a new conversation
   const initializeConversation = async () => {
     try {
+      browserLogger.info('ChatInterface', 'Initializing conversation', { userId: currentUser?.id });
+      
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
@@ -89,18 +93,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
         headers['x-user-id'] = currentUser.id;
       }
       
+      browserLogger.debug('ChatInterface', 'Calling /api/conversation', { headers });
       const response = await fetch('/api/conversation', {
         method: 'POST',
         headers,
       });
       
       if (!response.ok) {
+        browserLogger.error('ChatInterface', 'Failed to create conversation', { status: response.status });
         throw new Error('Failed to create conversation');
       }
       
       const data = await response.json();
+      browserLogger.info('ChatInterface', 'Conversation created', { conversationId: data.id });
       setConversationId(data.id);
     } catch (error) {
+      browserLogger.error('ChatInterface', 'Error creating conversation', { error: (error as Error).message });
       console.error('Error creating conversation:', error);
     }
   };
@@ -135,6 +143,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
     if (!input.trim() || isProcessing || !conversationId) return;
     
     const userMessage = input.trim();
+    browserLogger.info('ChatInterface', 'Processing user message', { 
+      conversationId,
+      messageLength: userMessage.length,
+      preview: userMessage.substring(0, 50) + (userMessage.length > 50 ? '...' : '')
+    });
+    
     setInput('');
     setIsProcessing(true);
     
@@ -147,25 +161,65 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
       createdAt: new Date(),
     };
     
+    browserLogger.debug('ChatInterface', 'Adding user message to UI');
     setMessages(prev => [...prev, newUserMessage]);
     
     try {
-      // Send to RAG API
-      const ragResponse = await fetch('/api/rag', {
+      // Use the new RAG service API endpoint
+      browserLogger.debug('ChatInterface', 'Calling RAG service', { conversationId });
+      const startRagTime = Date.now();
+      const ragResponse = await fetch('/api/rag-service', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-conversation-id': conversationId,
-          'x-source': 'chat',
         },
-        body: JSON.stringify({ userQuery: userMessage }),
+        body: JSON.stringify({
+          query: userMessage,
+          topK: 5,
+          source: 'chat',
+          conversationId
+        }),
       });
       
       if (!ragResponse.ok) {
+        browserLogger.error('ChatInterface', 'RAG processing failed', { status: ragResponse.status });
         throw new Error(`RAG processing failed: ${ragResponse.status}`);
       }
       
-      const { answer } = await ragResponse.json();
+      const ragResult = await ragResponse.json();
+      const ragDuration = Date.now() - startRagTime;
+      browserLogger.info('ChatInterface', 'RAG processing complete', { 
+        ragDuration,
+        matchCount: ragResult.matches?.length || 0,
+        contextLength: ragResult.context?.length || 0
+      });
+      
+      // Get AI response with context
+      browserLogger.debug('ChatInterface', 'Calling completion API', { conversationId });
+      const startCompletionTime = Date.now();
+      const completionResponse = await fetch('/api/completion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: userMessage }],
+          context: ragResult.context,
+          conversationId
+        }),
+      });
+      
+      if (!completionResponse.ok) {
+        browserLogger.error('ChatInterface', 'Completion failed', { status: completionResponse.status });
+        throw new Error(`Completion failed: ${completionResponse.status}`);
+      }
+      
+      const { answer } = await completionResponse.json();
+      const completionDuration = Date.now() - startCompletionTime;
+      browserLogger.info('ChatInterface', 'Completion received', { 
+        completionDuration,
+        answerLength: answer.length
+      });
       
       // Add AI response to UI
       const newAiMessage: MessageType = {
@@ -176,11 +230,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
         createdAt: new Date(),
       };
       
+      browserLogger.debug('ChatInterface', 'Adding AI response to UI');
       setMessages(prev => [...prev, newAiMessage]);
       
       // Generate speech for the answer
+      browserLogger.debug('ChatInterface', 'Generating speech', { responseMode });
       generateSpeech(answer);
     } catch (error) {
+      browserLogger.error('ChatInterface', 'Error processing message', { error: (error as Error).message });
       console.error('Error processing message:', error);
     } finally {
       setIsProcessing(false);
@@ -190,10 +247,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   // Generate speech for AI response only if in voice mode
   const generateSpeech = async (text: string) => {
     if (responseMode === 'text') {
+      browserLogger.debug('ChatInterface', 'Skipping speech generation (text-only mode)');
       return; // Skip speech generation in text-only mode
     }
 
     try {
+      browserLogger.debug('ChatInterface', 'Calling TTS API', { textLength: text.length });
+      const startTtsTime = Date.now();
       const ttsResponse = await fetch('/api/tts', {
         method: 'POST',
         headers: {
@@ -203,13 +263,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
       });
       
       if (!ttsResponse.ok) {
-        throw new Error(`TTS failed: ${ttsResponse.status}`);
+        browserLogger.error('ChatInterface', 'TTS API error', { status: ttsResponse.status });
+        console.error(`TTS API error: ${ttsResponse.status}`);
+        return;
       }
       
       const { audioContent } = await ttsResponse.json();
-      setAiAudio(audioContent);
+      const ttsDuration = Date.now() - startTtsTime;
+      
+      if (audioContent) {
+        browserLogger.info('ChatInterface', 'TTS generation complete', { 
+          ttsDuration,
+          audioContentLength: audioContent.length
+        });
+        setAiAudio(audioContent);
+      } else {
+        browserLogger.warn('ChatInterface', 'No audio content returned from TTS API');
+      }
     } catch (error) {
+      browserLogger.error('ChatInterface', 'Error generating speech', { error: (error as Error).message });
       console.error('Error generating speech:', error);
+      // Continue without audio if TTS fails
     }
   };
   

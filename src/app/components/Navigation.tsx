@@ -30,6 +30,10 @@ const Navigation = () => {
                   className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/admin')} hover:bg-indigo-700 transition-colors`}>
               Admin
             </Link>
+            <Link href="/test-rag" 
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/test-rag')} hover:bg-indigo-700 transition-colors`}>
+              Test RAG
+            </Link>
           </div>
           <UserSelector />
         </div>

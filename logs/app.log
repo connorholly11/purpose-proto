@@ -1,0 +1,362 @@
+[2025-03-19T18:02:41.326Z] [INFO] [API] RAG service request received {
+  "requestId": "api-rag-1742407361326"
+}
+[2025-03-19T18:02:41.329Z] [DEBUG] [API] RAG service request details {
+  "requestId": "api-rag-1742407361326",
+  "query": "hey there",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "fae89dd6-9ef4-48bb-8c5a-45bae9b4abe9"
+}
+[2025-03-19T18:02:41.329Z] [DEBUG] [API] Calling queryDocuments {
+  "requestId": "api-rag-1742407361326"
+}
+[2025-03-19T18:02:41.329Z] [INFO] [RAG] Starting RAG query {
+  "requestId": "rag-1742407361329",
+  "query": "hey there",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "fae89dd6-9ef4-48bb-8c5a-45bae9b4abe9"
+}
+[2025-03-19T18:02:41.330Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-19T18:02:41.330Z] [DEBUG] [RAG] Generating embedding for query {
+  "requestId": "rag-1742407361329"
+}
+[2025-03-19T18:02:41.330Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742407361330",
+  "textLength": 9,
+  "textPreview": "hey there"
+}
+[2025-03-19T18:02:41.330Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-19T18:02:41.331Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742407361330",
+  "model": "text-embedding-3-small"
+}
+[2025-03-19T18:02:42.181Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742407361330",
+  "duration": 850,
+  "dimensions": 1536
+}
+[2025-03-19T18:02:42.182Z] [DEBUG] [RAG] Embedding generated {
+  "requestId": "rag-1742407361329",
+  "embeddingSize": 1536
+}
+[2025-03-19T18:02:42.182Z] [DEBUG] [RAG] Querying Pinecone {
+  "requestId": "rag-1742407361329",
+  "topK": 5
+}
+[2025-03-19T18:02:42.655Z] [INFO] [RAG] Pinecone query complete {
+  "requestId": "rag-1742407361329",
+  "matchCount": 5,
+  "operationTime": 1326
+}
+[2025-03-19T18:02:42.656Z] [DEBUG] [RAG] Logging RAG operation to database {
+  "requestId": "rag-1742407361329",
+  "conversationId": "fae89dd6-9ef4-48bb-8c5a-45bae9b4abe9"
+}
+[2025-03-19T18:02:43.559Z] [INFO] [RAG] RAG operation logged to database {
+  "requestId": "rag-1742407361329",
+  "query": "hey there...",
+  "conversationId": "fae89dd6-9ef4-48bb-8c5a-45bae9b4abe9"
+}
+[2025-03-19T18:02:43.559Z] [DEBUG] [RAG] Generated context {
+  "requestId": "rag-1742407361329",
+  "contextLength": 1921,
+  "contextStart": "org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin..."
+}
+[2025-03-19T18:02:43.559Z] [INFO] [RAG] RAG query complete {
+  "requestId": "rag-1742407361329",
+  "operationTime": 1326,
+  "matchCount": 5
+}
+[2025-03-19T18:02:43.559Z] [INFO] [API] RAG service request completed {
+  "requestId": "api-rag-1742407361326",
+  "duration": 2230,
+  "matchCount": 5
+}
+[2025-03-19T18:02:43.675Z] [INFO] [API] Completion request received {
+  "requestId": "api-completion-1742407363675"
+}
+[2025-03-19T18:02:43.675Z] [DEBUG] [API] Completion request details {
+  "requestId": "api-completion-1742407363675",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 1921,
+  "conversationId": "fae89dd6-9ef4-48bb-8c5a-45bae9b4abe9"
+}
+[2025-03-19T18:02:43.675Z] [DEBUG] [API] Calling getCompletion {
+  "requestId": "api-completion-1742407363675"
+}
+[2025-03-19T18:02:43.675Z] [INFO] [OpenAI] Getting completion {
+  "requestId": "completion-1742407363675",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 1921
+}
+[2025-03-19T18:02:43.675Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-19T18:02:43.676Z] [DEBUG] [OpenAI] Adding context to system message {
+  "requestId": "completion-1742407363675",
+  "contextLength": 1921
+}
+[2025-03-19T18:02:43.676Z] [DEBUG] [OpenAI] Calling chat completions API {
+  "requestId": "completion-1742407363675",
+  "model": "gpt-4o",
+  "messageCount": 2
+}
+[2025-03-19T18:02:44.181Z] [INFO] [OpenAI] Completion generated successfully {
+  "requestId": "completion-1742407363675",
+  "duration": 505,
+  "promptTokens": 486,
+  "completionTokens": 10,
+  "totalTokens": 496,
+  "responseLength": 34
+}
+[2025-03-19T18:02:44.181Z] [DEBUG] [API] Logging messages to database {
+  "requestId": "api-completion-1742407363675",
+  "conversationId": "fae89dd6-9ef4-48bb-8c5a-45bae9b4abe9",
+  "userMessageLength": 2010,
+  "assistantMessageLength": 34
+}
+[2025-03-19T18:02:44.330Z] [INFO] [API] Messages logged to database {
+  "requestId": "api-completion-1742407363675",
+  "conversationId": "fae89dd6-9ef4-48bb-8c5a-45bae9b4abe9"
+}
+[2025-03-19T18:02:44.330Z] [INFO] [API] Completion request completed {
+  "requestId": "api-completion-1742407363675",
+  "duration": 506,
+  "answerLength": 34
+}
+[2025-03-19T18:02:44.404Z] [INFO] [OpenAI] Generating speech {
+  "requestId": "tts-1742407364404",
+  "textLength": 34,
+  "voice": "alloy"
+}
+[2025-03-19T18:02:44.405Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-19T18:02:44.405Z] [DEBUG] [OpenAI] Calling speech API {
+  "requestId": "tts-1742407364404",
+  "model": "tts-1",
+  "voice": "alloy"
+}
+[2025-03-19T18:02:45.764Z] [INFO] [OpenAI] Speech generated successfully {
+  "requestId": "tts-1742407364404",
+  "duration": 1359,
+  "bufferSize": 40320
+}
+[2025-03-19T18:05:04.405Z] [INFO] [API] Getting server logs 
+[2025-03-19T18:05:04.406Z] [INFO] [API] Getting server logs 
+[2025-03-19T18:05:04.412Z] [INFO] [API] Getting server logs[2025-03-19T19:34:06.309Z] [INFO] [API] RAG service request received {
+  "requestId": "api-rag-1742412846309"
+}
+[2025-03-19T19:34:06.309Z] [DEBUG] [API] RAG service request details {
+  "requestId": "api-rag-1742412846309",
+  "query": "what is your favorite thing to do",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "159a8965-7a19-40ac-b5e0-c6d880dced28"
+}
+[2025-03-19T19:34:06.309Z] [DEBUG] [API] Calling queryDocuments {
+  "requestId": "api-rag-1742412846309"
+}
+[2025-03-19T19:34:06.309Z] [INFO] [RAG] Starting RAG query {
+  "requestId": "rag-1742412846309",
+  "query": "what is your favorite thing to do",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "159a8965-7a19-40ac-b5e0-c6d880dced28"
+}
+[2025-03-19T19:34:06.310Z] [DEBUG] [RAG] Generating embedding for query {
+  "requestId": "rag-1742412846309"
+}
+[2025-03-19T19:34:06.310Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742412846310",
+  "textLength": 33,
+  "textPreview": "what is your favorite thing to do"
+}
+[2025-03-19T19:34:06.310Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742412846310",
+  "model": "text-embedding-3-small"
+}
+[2025-03-19T19:34:06.958Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742412846310",
+  "duration": 648,
+  "dimensions": 1536
+}
+[2025-03-19T19:34:06.958Z] [DEBUG] [RAG] Embedding generated {
+  "requestId": "rag-1742412846309",
+  "embeddingSize": 1536
+}
+[2025-03-19T19:34:06.958Z] [DEBUG] [RAG] Querying Pinecone {
+  "requestId": "rag-1742412846309",
+  "topK": 5
+}
+[2025-03-19T19:34:07.295Z] [INFO] [RAG] Pinecone query complete {
+  "requestId": "rag-1742412846309",
+  "matchCount": 5,
+  "operationTime": 986
+}
+[2025-03-19T19:34:07.295Z] [DEBUG] [RAG] Logging RAG operation to database {
+  "requestId": "rag-1742412846309",
+  "conversationId": "159a8965-7a19-40ac-b5e0-c6d880dced28"
+}
+[2025-03-19T19:34:07.619Z] [INFO] [RAG] RAG operation logged to database {
+  "requestId": "rag-1742412846309",
+  "query": "what is your favorite thing to...",
+  "conversationId": "159a8965-7a19-40ac-b5e0-c6d880dced28"
+}
+[2025-03-19T19:34:07.619Z] [DEBUG] [RAG] Generated context {
+  "requestId": "rag-1742412846309",
+  "contextLength": 1839,
+  "contextStart": "Learn about powerful built-in tools like web search and file search.\n\n](/docs/guides/tools)[\n\nFuncti..."
+}
+[2025-03-19T19:34:07.620Z] [INFO] [RAG] RAG query complete {
+  "requestId": "rag-1742412846309",
+  "operationTime": 986,
+  "matchCount": 5
+}
+[2025-03-19T19:34:07.620Z] [INFO] [API] RAG service request completed {
+  "requestId": "api-rag-1742412846309",
+  "duration": 1311,
+  "matchCount": 5
+}
+[2025-03-19T19:34:07.626Z] [INFO] [API] Completion request received {
+  "requestId": "api-completion-1742412847626"
+}
+[2025-03-19T19:34:07.626Z] [DEBUG] [API] Completion request details {
+  "requestId": "api-completion-1742412847626",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 1839,
+  "conversationId": "159a8965-7a19-40ac-b5e0-c6d880dced28"
+}
+[2025-03-19T19:34:07.626Z] [DEBUG] [API] Calling getCompletion {
+  "requestId": "api-completion-1742412847626"
+}
+[2025-03-19T19:34:07.626Z] [INFO] [OpenAI] Getting completion {
+  "requestId": "completion-1742412847626",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 1839
+}
+[2025-03-19T19:34:07.626Z] [DEBUG] [OpenAI] Adding context to system message {
+  "requestId": "completion-1742412847626",
+  "contextLength": 1839
+}
+[2025-03-19T19:34:07.626Z] [DEBUG] [OpenAI] Calling chat completions API {
+  "requestId": "completion-1742412847626",
+  "model": "gpt-4o",
+  "messageCount": 2
+}
+[2025-03-19T19:34:09.345Z] [INFO] [OpenAI] Completion generated successfully {
+  "requestId": "completion-1742412847626",
+  "duration": 1719,
+  "promptTokens": 422,
+  "completionTokens": 50,
+  "totalTokens": 472,
+  "responseLength": 270
+}
+[2025-03-19T19:34:09.345Z] [DEBUG] [API] Logging messages to database {
+  "requestId": "api-completion-1742412847626",
+  "conversationId": "159a8965-7a19-40ac-b5e0-c6d880dced28",
+  "userMessageLength": 1928,
+  "assistantMessageLength": 270
+}
+[2025-03-19T19:34:09.468Z] [INFO] [API] Messages logged to database {
+  "requestId": "api-completion-1742412847626",
+  "conversationId": "159a8965-7a19-40ac-b5e0-c6d880dced28"
+}
+[2025-03-19T19:34:09.468Z] [INFO] [API] Completion request completed {
+  "requestId": "api-completion-1742412847626",
+  "duration": 1719,
+  "answerLength": 270
+}
+[2025-03-19T20:20:26.447Z] [INFO] [API] Creating conversation {
+  "requestId": "api-create-conv-1742415626447"
+}
+[2025-03-19T20:20:26.915Z] [INFO] [API] Conversation created {
+  "requestId": "api-create-conv-1742415626447",
+  "conversationId": "b0a088bf-8023-49ae-bc87-8c2261b97d58"
+}
+[2025-03-19T20:20:35.260Z] [INFO] [API] RAG service request received {
+  "requestId": "api-rag-1742415635260"
+}
+[2025-03-19T20:20:35.261Z] [DEBUG] [API] RAG service request details {
+  "requestId": "api-rag-1742415635260",
+  "query": "whats my name",
+  "topK": 5,
+  "source": "test-page",
+  "conversationId": "b0a088bf-8023-49ae-bc87-8c2261b97d58"
+}
+[2025-03-19T20:20:35.261Z] [DEBUG] [API] Calling queryDocuments {
+  "requestId": "api-rag-1742415635260"
+}
+[2025-03-19T20:20:35.261Z] [INFO] [RAG] Starting RAG query {
+  "requestId": "rag-1742415635261",
+  "query": "whats my name",
+  "topK": 5,
+  "source": "test-page",
+  "conversationId": "b0a088bf-8023-49ae-bc87-8c2261b97d58"
+}
+[2025-03-19T20:20:35.261Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-19T20:20:35.262Z] [DEBUG] [RAG] Generating embedding for query {
+  "requestId": "rag-1742415635261"
+}
+[2025-03-19T20:20:35.262Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742415635262",
+  "textLength": 13,
+  "textPreview": "whats my name"
+}
+[2025-03-19T20:20:35.262Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-19T20:20:35.262Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742415635262",
+  "model": "text-embedding-3-small"
+}
+[2025-03-19T20:20:35.981Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742415635262",
+  "duration": 719,
+  "dimensions": 1536
+}
+[2025-03-19T20:20:35.981Z] [DEBUG] [RAG] Embedding generated {
+  "requestId": "rag-1742415635261",
+  "embeddingSize": 1536
+}
+[2025-03-19T20:20:35.981Z] [DEBUG] [RAG] Querying Pinecone {
+  "requestId": "rag-1742415635261",
+  "topK": 5
+}
+[2025-03-19T20:20:36.411Z] [INFO] [RAG] Pinecone query complete {
+  "requestId": "rag-1742415635261",
+  "matchCount": 5,
+  "operationTime": 1150
+}
+[2025-03-19T20:20:36.411Z] [DEBUG] [RAG] Logging RAG operation to database {
+  "requestId": "rag-1742415635261",
+  "conversationId": "b0a088bf-8023-49ae-bc87-8c2261b97d58"
+}
+[2025-03-19T20:20:36.861Z] [INFO] [RAG] RAG operation logged to database {
+  "requestId": "rag-1742415635261",
+  "query": "whats my name...",
+  "conversationId": "b0a088bf-8023-49ae-bc87-8c2261b97d58"
+}
+[2025-03-19T20:20:36.862Z] [DEBUG] [RAG] Generated context {
+  "requestId": "rag-1742415635261",
+  "contextLength": 2417,
+  "contextStart": "type|When set to function_call, indicates this response contains arguments for a named function call..."
+}
+[2025-03-19T20:20:36.862Z] [INFO] [RAG] RAG query complete {
+  "requestId": "rag-1742415635261",
+  "operationTime": 1150,
+  "matchCount": 5
+}
+[2025-03-19T20:20:36.862Z] [INFO] [API] RAG service request completed {
+  "requestId": "api-rag-1742415635260",
+  "duration": 1601,
+  "matchCount": 5
+}
+[2025-03-19T20:20:43.834Z] [INFO] [API] Fetching RAG operations {
+  "requestId": "api-rag-ops-1742415643834",
+  "conversationId": "b0a088bf-8023-49ae-bc87-8c2261b97d58"
+}
+[2025-03-19T20:20:44.071Z] [INFO] [API] RAG operations fetched {
+  "requestId": "api-rag-ops-1742415643834",
+  "operationCount": 1
+}

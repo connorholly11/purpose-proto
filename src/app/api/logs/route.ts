@@ -1,118 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPrismaClient } from '@/lib/services/prisma';
+import fs from 'fs';
+import path from 'path';
+import logger from '@/lib/utils/logger';
 
-export async function GET(request: NextRequest) {
+// Path to log file
+const LOG_DIR = path.join(process.cwd(), 'logs');
+const LOG_FILE = path.join(LOG_DIR, 'app.log');
+
+// Ensure log directory exists
+if (!fs.existsSync(LOG_DIR)) {
+  fs.mkdirSync(LOG_DIR, { recursive: true });
+  
+  // Create an empty log file if it doesn't exist
+  if (!fs.existsSync(LOG_FILE)) {
+    fs.writeFileSync(LOG_FILE, '');
+  }
+}
+
+// GET: Return logs from the server
+export async function GET(req: NextRequest) {
+  logger.info('API', 'Getting server logs');
+  
   try {
-    const prisma = getPrismaClient();
-    const url = new URL(request.url);
-    
-    // Extract filters from URL params
-    const userId = url.searchParams.get('userId');
-    const liked = url.searchParams.get('liked');
-    const dateFrom = url.searchParams.get('dateFrom');
-    const dateTo = url.searchParams.get('dateTo');
-    const conversationId = url.searchParams.get('conversationId');
-    const search = url.searchParams.get('search');
-    
-    // Build filter object for Prisma
-    const whereClause: any = {
-      AND: [] as any[]
-    };
-    
-    // Apply filters if they exist
-    if (userId) {
-      whereClause.AND.push({
-        conversation: {
-          userId
-        }
-      });
+    // Check if log file exists
+    if (!fs.existsSync(LOG_FILE)) {
+      return NextResponse.json({ logs: [] });
     }
     
-    if (liked !== null && liked !== undefined) {
-      // This would need to be adjusted once we implement message feedback
-      if (liked === 'true') {
-        whereClause.AND.push({
-          feedback: {
-            some: {
-              type: 'LIKE'
-            }
-          }
-        });
-      } else if (liked === 'false') {
-        whereClause.AND.push({
-          feedback: {
-            some: {
-              type: 'DISLIKE'
-            }
-          }
-        });
-      }
-    }
+    // Read log file
+    const logContent = fs.readFileSync(LOG_FILE, 'utf-8');
+    const logs = logContent.split('\n').filter(Boolean);
     
-    if (dateFrom) {
-      whereClause.AND.push({
-        createdAt: {
-          gte: new Date(dateFrom)
-        }
-      });
-    }
+    // Get the most recent logs (last 1000 lines max)
+    const recentLogs = logs.slice(-1000);
     
-    if (dateTo) {
-      // Add 1 day to include the end date fully
-      const endDate = new Date(dateTo);
-      endDate.setDate(endDate.getDate() + 1);
-      
-      whereClause.AND.push({
-        createdAt: {
-          lt: endDate
-        }
-      });
-    }
-    
-    if (conversationId) {
-      whereClause.AND.push({
-        conversationId
-      });
-    }
-    
-    if (search) {
-      whereClause.AND.push({
-        content: {
-          contains: search,
-          mode: 'insensitive'
-        }
-      });
-    }
-    
-    // If no filters are applied, remove the AND clause
-    if (whereClause.AND.length === 0) {
-      delete whereClause.AND;
-    }
-    
-    // Get messages with applied filters
-    const messages = await prisma.message.findMany({
-      where: whereClause.AND?.length > 0 ? whereClause : {},
-      orderBy: {
-        createdAt: 'desc'
-      },
-      include: {
-        conversation: {
-          select: {
-            userId: true
-          }
-        }
-      },
-      take: 100 // Limit the number of results
-    });
-    
-    return NextResponse.json({
-      messages,
-      count: messages.length
-    });
+    return NextResponse.json({ logs: recentLogs });
   } catch (error) {
-    console.error('Error fetching logs:', error);
+    logger.error('API', 'Error getting server logs', { error: (error as Error).message });
     return NextResponse.json(
-      { error: 'Failed to fetch message logs' },
+      { error: 'Failed to retrieve server logs' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE: Clear the server logs
+export async function DELETE(req: NextRequest) {
+  logger.info('API', 'Clearing server logs');
+  
+  try {
+    // Check if log file exists
+    if (fs.existsSync(LOG_FILE)) {
+      // Write empty string to file (clearing it)
+      fs.writeFileSync(LOG_FILE, '');
+      
+      // Log that we cleared the logs (this will be the first entry in the new log file)
+      logger.info('API', 'Server logs cleared');
+    }
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    logger.error('API', 'Error clearing server logs', { error: (error as Error).message });
+    return NextResponse.json(
+      { error: 'Failed to clear server logs' },
       { status: 500 }
     );
   }

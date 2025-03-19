@@ -71,10 +71,10 @@ export interface RTCDataChannelEvent {
 }
 
 export interface AudioTranscriptEvent {
-  audio_transcript: {
-    delta: string;
-    text: string;
-  };
+  type: 'audio.transcript';
+  transcript: string;
+  is_final: boolean;
+  message_id?: string;
 }
 
 export interface TextResponseEvent {

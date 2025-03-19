@@ -9,6 +9,7 @@ import {
   TextResponseEvent,
   VoiceActivityEvent 
 } from '@/types';
+import browserLogger from '@/lib/utils/browser-logger';
 
 interface RealtimeVoiceProps {
   conversationId?: string;
@@ -158,40 +159,96 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
   const handleDataChannelMessage = (event: MessageEvent) => {
     try {
       const data = JSON.parse(event.data);
+      browserLogger.debug('RealtimeVoice', 'Data channel message received', { 
+        type: data.type,
+        messageId: data.message_id
+      });
       
-      // Handle partial transcripts
-      if (data && 'audio_transcript' in data) {
+      // Handle transcript updates
+      if (data.type === 'audio.transcript') {
         const transcriptEvent = data as AudioTranscriptEvent;
-        const transcript = transcriptEvent.audio_transcript.text;
-        setTranscript(transcript);
-        onPartialTranscript?.(transcript);
         
-        // If we have a conversation ID and enough transcript text, send to RAG
-        // Also log completed utterances from the user
-        if (conversationId && transcript.trim().length > 20) {
-          // Check if transcript appears to be complete (not ending with ...)
-          const isCompleteUtterance = !transcript.endsWith('...') && 
-            !transcript.endsWith('.') && 
-            !transcript.endsWith('?') && 
-            data.audio_transcript.is_final;
-          
-          if (isCompleteUtterance) {
-            console.log("Completed transcript:", transcript);
-            onCompletedTranscript?.(transcript);
-          }
-          
-          // Send to RAG API for memory/embeddings regardless - don't await the result
-          fetch('/api/rag', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-conversation-id': conversationId,
-              'x-source': 'realtime_voice', // Mark as coming from real-time voice
-            },
-            body: JSON.stringify({ userQuery: transcript }),
-          }).catch(err => {
-            console.error('Error sending transcript to RAG:', err);
+        if (transcriptEvent.transcript && transcriptEvent.is_final) {
+          // Final transcript from the current segment
+          const finalTranscript = transcriptEvent.transcript;
+          browserLogger.debug('RealtimeVoice', 'Final transcript segment received', {
+            isFinal: transcriptEvent.is_final,
+            transcriptLength: finalTranscript.length,
+            transcriptPreview: finalTranscript.length > 30 ? finalTranscript.substring(0, 30) + '...' : finalTranscript
           });
+          
+          // Check if this is a complete utterance (has punctuation at the end)
+          const isCompleteUtterance = /[.!?]$/.test(finalTranscript.trim());
+          
+          if (isCompleteUtterance && finalTranscript.trim().length > 0) {
+            // Process the complete utterance
+            browserLogger.info('RealtimeVoice', 'Complete utterance detected');
+            setTranscript(prev => {
+              const completeUtterance = prev + ' ' + finalTranscript;
+              const cleanedUtterance = completeUtterance.trim();
+              
+              browserLogger.debug('RealtimeVoice', 'Complete utterance details', {
+                utteranceLength: cleanedUtterance.length,
+                utterancePreview: cleanedUtterance.substring(0, 50) + (cleanedUtterance.length > 50 ? '...' : '')
+              });
+              
+              // Call callback for complete transcript
+              if (onCompletedTranscript) {
+                browserLogger.debug('RealtimeVoice', 'Calling onCompletedTranscript callback');
+                onCompletedTranscript(cleanedUtterance);
+              }
+              
+              // Embed the transcript for RAG
+              if (conversationId) {
+                browserLogger.info('RealtimeVoice', 'Embedding voice transcript with RAG', {
+                  conversationId,
+                  utteranceLength: cleanedUtterance.length
+                });
+                
+                // Use API endpoint instead of direct function call
+                fetch('/api/rag-service', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    query: cleanedUtterance,
+                    topK: 5,
+                    source: 'realtime_voice',
+                    conversationId
+                  }),
+                }).then(response => {
+                  if (response.ok) {
+                    browserLogger.info('RealtimeVoice', 'Voice transcript RAG successful');
+                  } else {
+                    browserLogger.warn('RealtimeVoice', 'Voice transcript RAG returned error', {
+                      status: response.status
+                    });
+                  }
+                }).catch(err => {
+                  browserLogger.error('RealtimeVoice', 'Error processing voice transcript for RAG', {
+                    error: (err as Error).message
+                  });
+                  console.error('Error processing voice transcript for RAG:', err);
+                });
+              }
+              
+              return ''; // Reset for next utterance
+            });
+          } else {
+            // Accumulate partial transcripts
+            browserLogger.debug('RealtimeVoice', 'Accumulating partial transcript');
+            setTranscript(prev => prev + ' ' + finalTranscript);
+            
+            // Call callback for partial transcript
+            if (onPartialTranscript) {
+              const updatedTranscript = transcript + ' ' + finalTranscript;
+              browserLogger.debug('RealtimeVoice', 'Calling onPartialTranscript callback', {
+                transcriptLength: updatedTranscript.length
+              });
+              onPartialTranscript(updatedTranscript);
+            }
+          }
         }
       }
       

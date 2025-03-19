@@ -2,6 +2,7 @@ import { Pinecone } from '@pinecone-database/pinecone';
 import { PineconeDocument, RAGQueryResult, RAGMatch } from '@/types';
 import { generateEmbedding } from './openai';
 import { getPrismaClient } from './prisma';
+import logger from '@/lib/utils/logger';
 
 let pineconeInstance: Pinecone | null = null;
 
@@ -11,9 +12,11 @@ export function getPineconeClient(): Pinecone {
     const host = process.env.PINECONE_HOST;
     
     if (!apiKey || !host) {
+      logger.error('Pinecone', 'Missing environment variables', { missingVars: ['PINECONE_API_KEY', 'PINECONE_HOST'].filter(v => !process.env[v]) });
       throw new Error('PINECONE_API_KEY or PINECONE_HOST is not defined in environment variables');
     }
     
+    logger.info('Pinecone', 'Initializing Pinecone client');
     pineconeInstance = new Pinecone({
       apiKey,
     });
@@ -23,10 +26,12 @@ export function getPineconeClient(): Pinecone {
 }
 
 export async function upsertDocuments(documents: { text: string; source?: string }[]): Promise<void> {
+  logger.info('Pinecone', 'Upserting documents', { count: documents.length });
   const pinecone = getPineconeClient();
   const indexName = process.env.PINECONE_INDEX;
   
   if (!indexName) {
+    logger.error('Pinecone', 'Missing PINECONE_INDEX environment variable');
     throw new Error('PINECONE_INDEX is not defined in environment variables');
   }
   
@@ -36,6 +41,11 @@ export async function upsertDocuments(documents: { text: string; source?: string
   
   for (let i = 0; i < documents.length; i++) {
     const doc = documents[i];
+    logger.debug('Pinecone', `Generating embedding for document ${i+1}/${documents.length}`, {
+      textLength: doc.text.length,
+      source: doc.source
+    });
+    
     const embedding = await generateEmbedding(doc.text);
     
     vectors.push({
@@ -48,24 +58,43 @@ export async function upsertDocuments(documents: { text: string; source?: string
     });
   }
   
+  logger.info('Pinecone', `Upserting ${vectors.length} vectors to Pinecone`);
   await index.upsert(vectors);
+  logger.info('Pinecone', 'Document upsert complete');
 }
 
 export async function queryDocuments(query: string, topK: number = 5, source: string = "chat", conversationId?: string): Promise<RAGQueryResult> {
   const startTime = Date.now();
+  const requestId = `rag-${Date.now()}`;
+  
+  logger.info('RAG', 'Starting RAG query', {
+    requestId,
+    query: query.length > 100 ? query.substring(0, 100) + '...' : query,
+    topK,
+    source,
+    conversationId: conversationId || 'none'
+  });
+  
   const pinecone = getPineconeClient();
   const indexName = process.env.PINECONE_INDEX;
   
   if (!indexName) {
+    logger.error('Pinecone', 'Missing PINECONE_INDEX environment variable', { requestId });
     throw new Error('PINECONE_INDEX is not defined in environment variables');
   }
   
   const index = pinecone.index(indexName);
   
   // Generate embedding for the query
+  logger.debug('RAG', 'Generating embedding for query', { requestId });
   const queryEmbedding = await generateEmbedding(query);
+  logger.debug('RAG', 'Embedding generated', { 
+    requestId,
+    embeddingSize: queryEmbedding.length
+  });
   
   // Query Pinecone
+  logger.debug('RAG', 'Querying Pinecone', { requestId, topK });
   const queryResponse = await index.query({
     vector: queryEmbedding,
     topK,
@@ -77,11 +106,17 @@ export async function queryDocuments(query: string, topK: number = 5, source: st
   
   // Get matches from the response
   const matches = queryResponse.matches || [];
+  logger.info('RAG', 'Pinecone query complete', { 
+    requestId,
+    matchCount: matches.length, 
+    operationTime
+  });
   
   // Log the RAG operation to the database if we have a conversationId
   if (conversationId) {
     // Use a separate try/catch to avoid failing the main operation if logging fails
     try {
+      logger.debug('RAG', 'Logging RAG operation to database', { requestId, conversationId });
       const prisma = getPrismaClient();
       
       // Use a transaction to perform both creations atomically
@@ -116,9 +151,17 @@ export async function queryDocuments(query: string, topK: number = 5, source: st
         });
       });
       
-      console.log(`Logged RAG operation for query: ${query.substring(0, 30)}...`);
+      logger.info('RAG', 'RAG operation logged to database', { 
+        requestId,
+        query: query.substring(0, 30) + '...',
+        conversationId
+      });
     } catch (error) {
-      console.error('Error logging RAG operation:', error);
+      logger.error('RAG', 'Error logging RAG operation', { 
+        requestId,
+        conversationId,
+        error: (error as Error).message 
+      });
       // Continue even if logging fails - don't block the main operation
     }
   }
@@ -129,8 +172,14 @@ export async function queryDocuments(query: string, topK: number = 5, source: st
     .map(match => match.metadata?.text)
     .join('\n\n');
   
+  logger.debug('RAG', 'Generated context', { 
+    requestId,
+    contextLength: context.length,
+    contextStart: context.substring(0, 100) + '...' 
+  });
+  
   // Return both the context and additional information about the operation
-  return {
+  const result = {
     context,
     matches: matches.map(match => ({
       id: match.id,
@@ -139,5 +188,14 @@ export async function queryDocuments(query: string, topK: number = 5, source: st
       source: match.metadata?.source ? String(match.metadata.source) : undefined,
     })) as RAGMatch[],
     operationTime,
+    requestId
   };
+  
+  logger.info('RAG', 'RAG query complete', { 
+    requestId,
+    operationTime, 
+    matchCount: matches.length
+  });
+  
+  return result;
 } 
