@@ -1,15 +1,13 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { FaPaperPlane, FaMicrophone, FaRobot, FaUser } from 'react-icons/fa';
+import { FaPaperPlane, FaMicrophone, FaRobot, FaUser, FaCog } from 'react-icons/fa';
 import AudioRecorder from './AudioRecorder';
 import RealtimeVoice from './RealtimeVoice';
 import Message from './Message';
 import { Message as MessageType } from '@/types';
-import { createConversation, createMessage } from '@/lib/services/prisma';
-import { useUser } from '../contexts/UserContext';
-import { getCompletion } from '@/lib/services/openai';
 import browserLogger from '@/lib/utils/browser-logger';
+import { useUser } from '@/app/contexts/UserContext';
 
 interface ChatInterfaceProps {
   initialConversationId?: string;
@@ -27,10 +25,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   const [responseMode, setResponseMode] = useState<'text' | 'voice'>('voice');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
   const [realtimeTranscript, setRealtimeTranscript] = useState<string | null>(null);
-  
-  // Loading from localStorage on mount
+  const [systemPrompts, setSystemPrompts] = useState<any[]>([]);
+  const [activePrompt, setActivePrompt] = useState<any | null>(null);
+  const [showPromptSelector, setShowPromptSelector] = useState(false);
+
+  // Load mode from localStorage on mount
   useEffect(() => {
     const savedMode = localStorage.getItem('responseMode');
     if (savedMode === 'text' || savedMode === 'voice') {
@@ -42,22 +42,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   useEffect(() => {
     localStorage.setItem('responseMode', responseMode);
   }, [responseMode]);
-  
-  // Initialize conversation if needed
+
+  // Initialize or load conversation
   useEffect(() => {
     if (!conversationId) {
       initializeConversation();
     } else {
-      // Load existing conversation
       loadConversation(conversationId);
     }
   }, [conversationId]);
-  
-  // Scroll to bottom of messages
+
+  // Scroll to bottom whenever messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-  
+
   // Play AI audio if available
   useEffect(() => {
     if (aiAudio && audioRef.current) {
@@ -68,91 +67,113 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
       });
     }
   }, [aiAudio]);
-  
-  // Reset and initialize conversation when user changes
+
+  // If user changes, reset conversation
   useEffect(() => {
-    // Clear current state
     setMessages([]);
     setConversationId(undefined);
-    
-    // Initialize a new conversation for this user
     initializeConversation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
-  
-  // Initialize a new conversation
+
+  // Load system prompts (example feature)
+  useEffect(() => {
+    const fetchSystemPrompts = async () => {
+      try {
+        const response = await fetch('/api/system-prompts');
+        if (response.ok) {
+          const data = await response.json();
+          setSystemPrompts(data.systemPrompts || []);
+
+          // Also fetch the active prompt
+          const activeResponse = await fetch('/api/system-prompts?activeOnly=true');
+          if (activeResponse.ok) {
+            const activeData = await activeResponse.json();
+            if (activeData.systemPrompt) {
+              setActivePrompt(activeData.systemPrompt);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching system prompts:', error);
+      }
+    };
+    fetchSystemPrompts();
+  }, []);
+
+  // ---------------------------------------
+  // create conversation
+  // ---------------------------------------
   const initializeConversation = async () => {
     try {
-      browserLogger.info('ChatInterface', 'Initializing conversation', { userId: currentUser?.id });
-      
+      if (!currentUser?.id) {
+        // If you need a user to create a conversation, handle it or skip
+        browserLogger.warn('ChatInterface', 'No currentUser found, conversation will be guest-based');
+      }
+
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
-      
-      // Add user ID if available
       if (currentUser) {
         headers['x-user-id'] = currentUser.id;
       }
-      
-      browserLogger.debug('ChatInterface', 'Calling /api/conversation', { headers });
-      const response = await fetch('/api/conversation', {
+
+      // Updated to call POST /api/conversations (not /create)
+      const response = await fetch('/api/conversations', {
         method: 'POST',
         headers,
       });
-      
+
       if (!response.ok) {
-        browserLogger.error('ChatInterface', 'Failed to create conversation', { status: response.status });
+        browserLogger.error('ChatInterface', 'Failed to create conversation', {
+          status: response.status
+        });
         throw new Error('Failed to create conversation');
       }
-      
+
       const data = await response.json();
       browserLogger.info('ChatInterface', 'Conversation created', { conversationId: data.id });
       setConversationId(data.id);
     } catch (error) {
-      browserLogger.error('ChatInterface', 'Error creating conversation', { error: (error as Error).message });
+      browserLogger.error('ChatInterface', 'Error creating conversation', {
+        error: (error as Error).message,
+      });
       console.error('Error creating conversation:', error);
     }
   };
-  
-  // Load existing conversation messages
+
+  // ---------------------------------------
+  // load conversation
+  // ---------------------------------------
   const loadConversation = async (id: string) => {
     try {
-      const response = await fetch(`/api/conversation/${id}`, {
-        method: 'GET',
-      });
-      
+      // Use the existing dynamic route: /api/conversations/[id]
+      const response = await fetch(`/api/conversations/${id}`, { method: 'GET' });
       if (!response.ok) {
         throw new Error('Failed to load conversation');
       }
-      
       const data = await response.json();
       setMessages(data.messages || []);
     } catch (error) {
       console.error('Error loading conversation:', error);
     }
   };
-  
-  // Scroll to bottom of messages
+
+  // scroll to bottom helper
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-  
-  // Handle user input submission
+
+  // handle user message submission (typed)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!input.trim() || isProcessing || !conversationId) return;
-    
+
     const userMessage = input.trim();
-    browserLogger.info('ChatInterface', 'Processing user message', { 
-      conversationId,
-      messageLength: userMessage.length,
-      preview: userMessage.substring(0, 50) + (userMessage.length > 50 ? '...' : '')
-    });
-    
     setInput('');
     setIsProcessing(true);
-    
-    // Add user message to UI
+
+    // Add user message to local state
     const newUserMessage: MessageType = {
       id: `temp-${Date.now()}`,
       conversationId,
@@ -160,19 +181,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
       content: userMessage,
       createdAt: new Date(),
     };
-    
-    browserLogger.debug('ChatInterface', 'Adding user message to UI');
     setMessages(prev => [...prev, newUserMessage]);
-    
+
     try {
-      // Use the new RAG service API endpoint
-      browserLogger.debug('ChatInterface', 'Calling RAG service', { conversationId });
-      const startRagTime = Date.now();
+      // 1) Call RAG service
       const ragResponse = await fetch('/api/rag-service', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: userMessage,
           topK: 5,
@@ -180,48 +195,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
           conversationId
         }),
       });
-      
       if (!ragResponse.ok) {
-        browserLogger.error('ChatInterface', 'RAG processing failed', { status: ragResponse.status });
         throw new Error(`RAG processing failed: ${ragResponse.status}`);
       }
-      
       const ragResult = await ragResponse.json();
-      const ragDuration = Date.now() - startRagTime;
-      browserLogger.info('ChatInterface', 'RAG processing complete', { 
-        ragDuration,
-        matchCount: ragResult.matches?.length || 0,
-        contextLength: ragResult.context?.length || 0
-      });
-      
-      // Get AI response with context
-      browserLogger.debug('ChatInterface', 'Calling completion API', { conversationId });
-      const startCompletionTime = Date.now();
+
+      // 2) Get AI completion
       const completionResponse = await fetch('/api/completion', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [{ role: 'user', content: userMessage }],
           context: ragResult.context,
           conversationId
         }),
       });
-      
       if (!completionResponse.ok) {
-        browserLogger.error('ChatInterface', 'Completion failed', { status: completionResponse.status });
         throw new Error(`Completion failed: ${completionResponse.status}`);
       }
-      
       const { answer } = await completionResponse.json();
-      const completionDuration = Date.now() - startCompletionTime;
-      browserLogger.info('ChatInterface', 'Completion received', { 
-        completionDuration,
-        answerLength: answer.length
-      });
-      
-      // Add AI response to UI
+
+      // Add AI message
       const newAiMessage: MessageType = {
         id: `temp-response-${Date.now()}`,
         conversationId,
@@ -229,265 +223,383 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
         content: answer,
         createdAt: new Date(),
       };
-      
-      browserLogger.debug('ChatInterface', 'Adding AI response to UI');
       setMessages(prev => [...prev, newAiMessage]);
-      
-      // Generate speech for the answer
-      browserLogger.debug('ChatInterface', 'Generating speech', { responseMode });
-      generateSpeech(answer);
+
+      // Optionally generate TTS
+      if (responseMode === 'voice') {
+        await generateSpeech(answer);
+      }
     } catch (error) {
-      browserLogger.error('ChatInterface', 'Error processing message', { error: (error as Error).message });
       console.error('Error processing message:', error);
     } finally {
       setIsProcessing(false);
     }
   };
-  
-  // Generate speech for AI response only if in voice mode
-  const generateSpeech = async (text: string) => {
-    if (responseMode === 'text') {
-      browserLogger.debug('ChatInterface', 'Skipping speech generation (text-only mode)');
-      return; // Skip speech generation in text-only mode
-    }
 
+  // optionally generate speech (TTS)
+  const generateSpeech = async (text: string) => {
     try {
-      browserLogger.debug('ChatInterface', 'Calling TTS API', { textLength: text.length });
-      const startTtsTime = Date.now();
       const ttsResponse = await fetch('/api/tts', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
       });
-      
       if (!ttsResponse.ok) {
-        browserLogger.error('ChatInterface', 'TTS API error', { status: ttsResponse.status });
         console.error(`TTS API error: ${ttsResponse.status}`);
         return;
       }
-      
       const { audioContent } = await ttsResponse.json();
-      const ttsDuration = Date.now() - startTtsTime;
-      
       if (audioContent) {
-        browserLogger.info('ChatInterface', 'TTS generation complete', { 
-          ttsDuration,
-          audioContentLength: audioContent.length
-        });
         setAiAudio(audioContent);
-      } else {
-        browserLogger.warn('ChatInterface', 'No audio content returned from TTS API');
       }
     } catch (error) {
-      browserLogger.error('ChatInterface', 'Error generating speech', { error: (error as Error).message });
       console.error('Error generating speech:', error);
-      // Continue without audio if TTS fails
     }
   };
-  
-  // Handle transcription from audio recorder
+
+  // handle transcription from short audio recordings
   const handleTranscription = (transcript: string) => {
     setInput(transcript);
   };
-  
-  // Handle AI response from audio recorder
+
+  // handle AI response from short audio recorder
   const handleAudioAIResponse = (answer: string, audioContent: string) => {
-    // Add user message from transcription
+    if (!conversationId) return;
+
     const newUserMessage: MessageType = {
       id: `temp-${Date.now()}`,
-      conversationId: conversationId || '',
+      conversationId,
       role: 'user',
       content: input,
       createdAt: new Date(),
     };
-    
-    // Add AI response
     const newAiMessage: MessageType = {
       id: `temp-response-${Date.now()}`,
-      conversationId: conversationId || '',
+      conversationId,
       role: 'assistant',
       content: answer,
       createdAt: new Date(),
     };
-    
     setMessages(prev => [...prev, newUserMessage, newAiMessage]);
     setAiAudio(audioContent);
     setInput('');
   };
-  
-  // Callback for partial transcripts from RealtimeVoice
+
+  // partial transcripts from Realtime
   const handlePartialTranscript = (transcript: string) => {
     setRealtimeTranscript(transcript);
   };
-  
-  // Callback for completed transcripts from RealtimeVoice
-  const handleCompletedTranscript = (transcript: string) => {
-    // Add the user message to the UI when transcript is complete
-    if (transcript && conversationId) {
-      const newUserMessage: MessageType = {
-        id: `temp-${Date.now()}`,
+
+  // NEW: handle final transcript from Realtime voice
+  const handleRealtimeUserMessage = async (transcript: string) => {
+    console.log(`📝 CHAT RECEIVED FINAL TRANSCRIPT: "${transcript}"`);
+    console.log(`🔍 DEBUG - conversationId: ${conversationId || 'undefined'}`);
+    
+    if (!transcript.trim() || !conversationId) {
+      console.log('⚠️ Empty transcript or missing conversationId - skipping processing');
+      return;
+    }
+
+    console.log('✏️ Adding user message to conversation');
+    // Add user message to local state
+    const newUserMessage: MessageType = {
+      id: `realtime-${Date.now()}`,
+      conversationId,
+      role: 'user',
+      content: transcript.trim(),
+      createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, newUserMessage]);
+    setRealtimeTranscript(null);
+
+    setIsProcessing(true);
+    try {
+      // 1) RAG with transcript
+      console.log('🔍 STARTING RAG RETRIEVAL for transcript...');
+      console.log('🔄 Making request to /api/rag-service with transcript:', transcript.trim());
+      const ragRes = await fetch('/api/rag-service', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: transcript.trim(),
+          topK: 5,
+          source: 'realtime_voice',
+          conversationId
+        }),
+      });
+      if (!ragRes.ok) {
+        console.error(`❌ RAG processing failed with status: ${ragRes.status}`);
+        const errorText = await ragRes.text();
+        console.error(`❌ RAG error details: ${errorText}`);
+        throw new Error(`RAG processing failed: ${ragRes.status}`);
+      }
+      const ragData = await ragRes.json();
+      console.log('✅ RAG RETRIEVAL COMPLETE - Context retrieved successfully');
+      console.log('📊 RAG context length:', ragData.context?.length || 0, 'characters');
+      if (ragData.matches?.length > 0) {
+        console.log(`📚 Retrieved ${ragData.matches.length} matches from knowledge base`);
+        console.log(`📄 First match: "${ragData.matches[0]?.text?.substring(0, 50)}..."`);
+      } else {
+        console.log('⚠️ No matches found in knowledge base');
+      }
+
+      // 2) Get AI completion
+      console.log('🤖 SENDING TO AI COMPLETION with RAG context...');
+      const completionRes = await fetch('/api/completion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: transcript.trim() }],
+          context: ragData.context,
+          conversationId
+        }),
+      });
+      if (!completionRes.ok) {
+        console.error(`❌ Completion failed with status: ${completionRes.status}`);
+        throw new Error(`Completion failed: ${completionRes.status}`);
+      }
+      const { answer } = await completionRes.json();
+      console.log('💬 AI RESPONSE RECEIVED:', answer.substring(0, 50) + (answer.length > 50 ? '...' : ''));
+
+      // 3) Add assistant message
+      console.log('📤 Adding AI response to conversation');
+      const aiMessage: MessageType = {
+        id: `realtime-response-${Date.now()}`,
         conversationId,
-        role: 'user',
-        content: transcript,
+        role: 'assistant',
+        content: answer,
         createdAt: new Date(),
       };
-      
-      setMessages(prev => [...prev, newUserMessage]);
-      setRealtimeTranscript(null);
+      setMessages(prev => [...prev, aiMessage]);
+
+      // 4) TTS if in voice mode
+      if (responseMode === 'voice') {
+        console.log('🔊 Generating speech for AI response');
+        await generateSpeech(answer);
+      }
+    } catch (err) {
+      console.error('❌ ERROR processing realtime message:', err);
+    } finally {
+      setIsProcessing(false);
+      console.log('✓ Realtime message processing complete');
     }
   };
-  
-  // Handle like/dislike of messages
+
+  // handle message likes
   const handleLikeMessage = async (messageId: string) => {
     try {
       await fetch(`/api/message/${messageId}/feedback`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feedback: 'like' }),
       });
     } catch (error) {
       console.error('Error liking message:', error);
     }
   };
-  
+
+  // handle message dislikes
   const handleDislikeMessage = async (messageId: string) => {
     try {
       await fetch(`/api/message/${messageId}/feedback`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feedback: 'dislike' }),
       });
     } catch (error) {
       console.error('Error disliking message:', error);
     }
   };
-  
-  // Toggle between text and voice modes
+
+  // toggle voice/text mode
   const toggleResponseMode = () => {
-    setResponseMode(prev => prev === 'text' ? 'voice' : 'text');
+    setResponseMode(prev => (prev === 'text' ? 'voice' : 'text'));
   };
-  
+
+  // set system prompt
+  const setSystemPrompt = async (promptId: string) => {
+    try {
+      const response = await fetch(`/api/system-prompts/${promptId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'active'
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setActivePrompt(data.systemPrompt);
+        setShowPromptSelector(false);
+      }
+    } catch (error) {
+      console.error('Error setting system prompt:', error);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto">
-      <div className="flex justify-between items-center p-4 border-b">
-        <h1 className="text-xl font-semibold">AI Voice Companion</h1>
-        <div className="flex items-center space-x-4">
-          {/* Response Mode Toggle */}
-          <div className="flex items-center">
-            <span className="text-sm mr-2">Response Mode:</span>
+    <div className="flex flex-col h-screen bg-gray-100">
+      {/* Top bar */}
+      <div className="bg-gray-800 text-white p-3 flex justify-between items-center">
+        <div className="flex items-center">
+          <FaRobot className="mr-2" />
+          <span className="text-sm">
+            {activePrompt ? activePrompt.name : 'Default System Prompt'}
+          </span>
+        </div>
+        <button
+          onClick={() => setShowPromptSelector(!showPromptSelector)}
+          className="text-white hover:text-gray-300"
+        >
+          <FaCog />
+        </button>
+      </div>
+
+      {showPromptSelector && (
+        <div className="bg-gray-700 text-white p-3">
+          <h3 className="text-sm font-bold mb-2">Select System Prompt</h3>
+          <div className="max-h-40 overflow-y-auto">
+            {systemPrompts.map(prompt => (
+              <div
+                key={prompt.id}
+                onClick={() => setSystemPrompt(prompt.id)}
+                className={`p-2 cursor-pointer rounded hover:bg-gray-600 ${
+                  activePrompt?.id === prompt.id ? 'bg-gray-600' : ''
+                }`}
+              >
+                <div className="font-medium">{prompt.name}</div>
+                <div className="text-xs text-gray-300">
+                  {prompt.content.substring(0, 60)}...
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="max-w-screen-lg mx-auto">
+          {messages.map(message => (
+            <Message
+              key={message.id}
+              message={message}
+              onLike={() => handleLikeMessage(message.id)}
+              onDislike={() => handleDislikeMessage(message.id)}
+            />
+          ))}
+          <div ref={messagesEndRef} />
+          {realtimeTranscript && (
+            <div className="my-3 p-4 bg-gray-200 rounded-lg max-w-3xl">
+              <div className="flex items-start">
+                <div className="mr-3 mt-0.5 text-gray-600">
+                  <FaUser />
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-600">
+                    You (speaking)...
+                  </div>
+                  <div className="mt-1 text-gray-800">{realtimeTranscript}</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Hidden audio element for AI TTS */}
+      <audio ref={audioRef} className="hidden" controls />
+
+      {/* Input area */}
+      <div className="p-4 border-t border-gray-200 bg-white">
+        <div className="max-w-screen-lg mx-auto">
+          <div className="flex justify-between mb-3">
             <button
               onClick={toggleResponseMode}
-              className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 hover:bg-gray-200"
+              className={`px-3 py-1 text-sm rounded-md ${
+                responseMode === 'voice'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-200 text-gray-600'
+              }`}
             >
-              {responseMode === 'voice' ? 'Voice' : 'Text'} 
-              <span className="ml-1 text-xs opacity-60">▼</span>
+              {responseMode === 'voice' ? 'Voice Mode' : 'Text-only Mode'}
             </button>
           </div>
 
-          {/* Existing Buttons */}
-          <div className="flex space-x-2">
-            <button
-              onClick={() => {
-                setShowAudioRecorder(!showAudioRecorder);
-                setShowRealtimeVoice(false);
-              }}
-              className={`p-2 rounded-md ${
-                showAudioRecorder ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
-              }`}
-            >
-              Short Audio
-            </button>
-            <button
-              onClick={() => {
-                setShowRealtimeVoice(!showRealtimeVoice);
-                setShowAudioRecorder(false);
-              }}
-              className={`p-2 rounded-md ${
-                showRealtimeVoice ? 'bg-green-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
-              }`}
-            >
-              Realtime Voice
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <div className="flex-1 overflow-auto p-4 space-y-4">
-        {messages.map((message, index) => (
-          <Message 
-            key={message.id} 
-            message={message} 
-            onLike={() => handleLikeMessage(message.id)}
-            onDislike={() => handleDislikeMessage(message.id)}
-          />
-        ))}
-        
-        {/* Show realtime transcript if available */}
-        {realtimeTranscript && (
-          <div className="mb-4 text-right animate-pulse">
-            <div className="inline-block p-3 bg-blue-300 text-white rounded-lg rounded-tr-none max-w-[80%]">
-              {realtimeTranscript}
+          {showRealtimeVoice ? (
+            <div>
+              <div className="flex justify-between mb-3">
+                <button
+                  onClick={() => setShowRealtimeVoice(false)}
+                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                >
+                  ← Back to Text Input
+                </button>
+              </div>
+              <RealtimeVoice
+                onPartialTranscript={handlePartialTranscript}
+                onCompletedTranscript={handleRealtimeUserMessage} 
+                onPartialResponse={() => {}}
+                onCompletedResponse={() => {}}
+                conversationId={conversationId}
+              />
             </div>
-          </div>
-        )}
-        
-        <div ref={messagesEndRef} />
+          ) : showAudioRecorder ? (
+            <div>
+              <div className="flex justify-between mb-3">
+                <button
+                  onClick={() => setShowAudioRecorder(false)}
+                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                >
+                  ← Back to Text Input
+                </button>
+              </div>
+              <AudioRecorder
+                onTranscription={handleTranscription}
+                onAIResponse={handleAudioAIResponse}
+                conversationId={conversationId}
+              />
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex items-center">
+              <input
+                type="text"
+                placeholder="Type your message..."
+                className="flex-1 py-2 px-4 rounded-l-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                disabled={isProcessing}
+              />
+              <button
+                type="button"
+                onClick={() => setShowAudioRecorder(true)}
+                className="bg-indigo-500 text-white py-2 px-4 border border-indigo-500 hover:bg-indigo-600"
+                disabled={isProcessing}
+                title="Record Short Voice Message"
+              >
+                <FaMicrophone />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowRealtimeVoice(true)}
+                className="bg-green-500 text-white py-2 px-4 border border-green-500 hover:bg-green-600"
+                disabled={isProcessing}
+                title="Start Real-time Voice Conversation"
+              >
+                <FaMicrophone className="animate-pulse" />
+              </button>
+              <button
+                type="submit"
+                className="bg-indigo-600 text-white py-2 px-4 rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                disabled={isProcessing || !input.trim()}
+              >
+                <FaPaperPlane />
+              </button>
+            </form>
+          )}
+        </div>
       </div>
-      
-      {showAudioRecorder ? (
-        <div className="p-4 border-t">
-          <AudioRecorder
-            onTranscription={handleTranscription}
-            onAIResponse={handleAudioAIResponse}
-            conversationId={conversationId}
-          />
-        </div>
-      ) : showRealtimeVoice ? (
-        <div className="p-4 border-t">
-          <RealtimeVoice
-            onPartialTranscript={handlePartialTranscript}
-            onCompletedTranscript={handleCompletedTranscript}
-            conversationId={conversationId}
-          />
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="p-4 border-t">
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={isProcessing}
-            />
-            <button
-              type="submit"
-              className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50"
-              disabled={!input.trim() || isProcessing}
-            >
-              <FaPaperPlane />
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowAudioRecorder(true)}
-              className="p-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors"
-            >
-              <FaMicrophone />
-            </button>
-          </div>
-        </form>
-      )}
-      
-      <audio ref={audioRef} className="hidden" />
     </div>
   );
 };
 
-export default ChatInterface; 
+export default ChatInterface;

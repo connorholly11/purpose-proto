@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navigation from "./components/Navigation";
 import { UserProvider } from "./contexts/UserContext";
+import FeedbackButton from './components/FeedbackButton';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
             <main className="flex-grow">
               {children}
             </main>
+            <FeedbackButton />
           </div>
         </UserProvider>
       </body>

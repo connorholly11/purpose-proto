@@ -20,16 +20,23 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   ragOperations RAGOperation[]
+  knowledgeItems UserKnowledgeItem[]
+  promptFeedback PromptFeedback[]
+  generalFeedback GeneralFeedback[]
+  performanceMetrics PerformanceMetrics[]
 }
 
 model Conversation {
   id            String         @id @default(uuid())
   userId        String?
   user          User?          @relation(fields: [userId], references: [id])
+  systemPromptId String?
+  systemPrompt   SystemPrompt? @relation(fields: [systemPromptId], references: [id])
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   messages      Message[]
   ragOperations RAGOperation[]
+  performanceMetrics PerformanceMetrics[]
 }
 
 model Message {
@@ -89,4 +96,63 @@ model Embedding {
   source         String          // "user_query" | "conversation_history" | "document"
   timestamp      DateTime        @default(now())
   ragOperations  RAGOperation[]
+}
+
+// New model for user-specific knowledge base
+model UserKnowledgeItem {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String?
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// System Prompt Testing Framework
+model SystemPrompt {
+  id          String           @id @default(uuid())
+  name        String
+  content     String           @db.Text
+  status      String           // "active", "test", "deprecated"
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  feedback    PromptFeedback[]
+  conversations Conversation[] // Track which conversations use this prompt
+}
+
+model PromptFeedback {
+  id             String        @id @default(uuid())
+  systemPromptId String
+  systemPrompt   SystemPrompt  @relation(fields: [systemPromptId], references: [id])
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id])
+  rating         Int           // 1-5 rating
+  comments       String?       @db.Text
+  createdAt      DateTime      @default(now())
+}
+
+// GeneralFeedback model for capturing user feedback
+model GeneralFeedback {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  category    String   // e.g. "UI/UX", "Voice", "AI Response", etc.
+  content     String   @db.Text // text from user
+  screenshot  String?  // optional link to screenshot
+  createdAt   DateTime @default(now())
+}
+
+// Performance Monitoring model
+model PerformanceMetrics {
+  id            String   @id @default(uuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  conversationId String?
+  conversation  Conversation? @relation(fields: [conversationId], references: [id])
+  feature       String   // e.g. "embedding", "completion", "tts"
+  responseTime  Int      // Time in milliseconds
+  tokensUsed    Int?
+  cost          Float?
+  timestamp     DateTime @default(now())
 }

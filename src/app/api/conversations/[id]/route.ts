@@ -28,8 +28,26 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching conversation:', error);
     return NextResponse.json(
-      { error: 'Error fetching conversation' },
+      { error: 'Failed to fetch conversation' },
       { status: 500 }
     );
   }
-} 
+}
+
+// If you want to PUT or DELETE here, you can define those methods. Example:
+
+/*
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  // update logic
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  // delete logic
+}
+*/

@@ -31,7 +31,10 @@ describe('Message Feedback API', () => {
         findUnique: jest.fn()
       },
       messageFeedback: {
-        upsert: jest.fn()
+        upsert: jest.fn(),
+        findUnique: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn()
       }
     };
     

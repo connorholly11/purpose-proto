@@ -223,4 +223,29 @@ export async function getRagOperationDetails(operationId: string): Promise<RAGOp
     console.error('Error getting RAG operation details:', error);
     return null;
   }
+}
+
+/**
+ * Get RAG operation by ID
+ * Used for testing and details view
+ */
+export async function getRagOperationById(id: string): Promise<any> {
+  const prisma = getPrismaClient();
+  
+  try {
+    const operation = await prisma.rAGOperation.findUnique({
+      where: { id },
+      include: {
+        retrievedDocs: true,
+        user: true,
+        conversation: true,
+        message: true
+      }
+    });
+    
+    return operation;
+  } catch (error) {
+    console.error('Error fetching RAG operation by ID:', error);
+    throw error;
+  }
 } 

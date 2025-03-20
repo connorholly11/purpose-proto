@@ -89,12 +89,12 @@ export default function AdminPage() {
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
 
-      {/* Navigation links */}
-      <div className="flex mb-6 space-x-4">
+      {/* Navigation links - RAG Analytics removed */}
+      {/* <div className="flex mb-6 space-x-4">
         <Link href="/admin/rag-analytics" className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
           RAG Analytics
         </Link>
-      </div>
+      </div> */}
 
       {/* Stats Cards */}
       {stats && (

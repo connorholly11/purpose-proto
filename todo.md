@@ -47,6 +47,7 @@
 - [x] Add navigation bar with links to Chat, Logs, and Admin
 - [x] Make navigation responsive and accessible
 - [x] Implement consistent layout across all pages
+- [x] Update navigation structure to move RAG Analytics to top level
 
 ## 10. Admin Panel
 - [x] Create basic analytics dashboard
@@ -97,8 +98,44 @@
 - [x] Create a visual indicator of which parts of context are being used
 - [x] Implement a UI to display both sides of the conversation in text form
 
+## 17. Fix Next.js Dynamic Route Params Warning
+- [x] Update API route files to properly use route params
+- [x] Fix `/api/conversation/[id]/route.ts`
+- [x] Fix `/api/message/[messageId]/feedback/route.ts`
+- [x] Fix `/api/admin/rag-operations/[id]/route.ts`
+- [x] Test all fixed routes
+
+## 18. User Knowledge Base
+- [x] Add UserKnowledgeItem model to schema
+- [x] Create API endpoints for managing knowledge items
+- [x] Build UI for adding/viewing/editing knowledge items
+- [x] Integrate user knowledge with RAG pipeline
+- [x] Test knowledge retrieval with user queries
+
+## 19. System Prompt Testing Framework
+- [x] Add SystemPrompt and PromptFeedback models to schema
+- [x] Create service for managing system prompts
+- [x] Build API endpoints for system prompts
+- [x] Implement UI for creating and managing prompts
+- [x] Add A/B testing functionality
+- [x] Add prompt feedback collection
+
+## 20. Feedback Capture Mechanism
+- [x] Add GeneralFeedback model to schema
+- [x] Create feedback service and API endpoints
+- [x] Build feedback form component
+- [x] Add feedback button to layout
+- [x] Implement admin view for feedback management
+
+## 21. Performance Monitoring Dashboard
+- [x] Add PerformanceMetrics model to schema
+- [x] Create service for tracking performance metrics
+- [x] Build API endpoints for performance data
+- [x] Implement dashboard UI with filters and charts
+- [x] Add cost calculation functionality
+
 ## Progress Tracking
 - **Current Focus**: Completed all tasks
-- **Completed**: Core functionality, Navigation, Admin Panel, Logs, User Implementation, Chat Enhancements, RAG verification, Real-time voice improvements
+- **Completed**: Core functionality, Navigation, Admin Panel, Logs, User Implementation, Chat Enhancements, RAG verification, Real-time voice improvements, User Knowledge Base, System Prompt Testing, Feedback Capture, Performance Monitoring
 - **In Progress**: None
 - **Blockers**: None 

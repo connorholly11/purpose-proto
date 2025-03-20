@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import logger from '@/lib/utils/logger';
+import { getPrismaClient } from '@/lib/services/prisma';
 
 // Path to log file
 const LOG_DIR = path.join(process.cwd(), 'logs');
@@ -19,24 +20,96 @@ if (!fs.existsSync(LOG_DIR)) {
 
 // GET: Return logs from the server
 export async function GET(req: NextRequest) {
-  logger.info('API', 'Getting server logs');
-  
+  logger.info('API', 'Getting server logs (and possibly message logs)');
+
+  const prisma = getPrismaClient();
+
+  // Check optional query params
+  const userId = req.nextUrl.searchParams.get('userId') || null;
+  const conversationId = req.nextUrl.searchParams.get('conversationId') || null;
+  const dateFrom = req.nextUrl.searchParams.get('dateFrom') || null;
+  const dateTo = req.nextUrl.searchParams.get('dateTo') || null;
+  const searchTerm = req.nextUrl.searchParams.get('search') || null;
+  const likedStr = req.nextUrl.searchParams.get('liked') || null; // e.g. 'true' / 'false'
+  let likedFilter: boolean | null = null;
+  if (likedStr === 'true') likedFilter = true;
+  else if (likedStr === 'false') likedFilter = false;
+
+  // If you want to unify "logs" to also return DB messages:
+  // We'll gather messages as well
+  let messages: any[] = [];
   try {
-    // Check if log file exists
-    if (!fs.existsSync(LOG_FILE)) {
-      return NextResponse.json({ logs: [] });
+    // Build a where filter
+    const whereClause: any = {};
+
+    // Filter by conversation userId
+    if (userId) {
+      whereClause.conversation = { userId };
     }
-    
-    // Read log file
+    // Filter by conversationId
+    if (conversationId) {
+      whereClause.conversationId = conversationId;
+    }
+    // Optionally filter date range
+    if (dateFrom || dateTo) {
+      whereClause.createdAt = {};
+      if (dateFrom) {
+        whereClause.createdAt.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        // end of day
+        const dt = new Date(dateTo);
+        dt.setHours(23, 59, 59, 999);
+        whereClause.createdAt.lte = dt;
+      }
+    }
+    // If searching content
+    if (searchTerm) {
+      whereClause.content = { contains: searchTerm, mode: 'insensitive' };
+    }
+
+    // If likedFilter is implemented, you'd join with messageFeedback table
+    // or store "liked" in the message table. For now, skip or do custom logic.
+
+    messages = await prisma.message.findMany({
+      where: whereClause,
+      include: {
+        conversation: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 200, // limit if you want
+    });
+  } catch (dbError) {
+    logger.error('API', 'Error fetching messages from DB', {
+      error: (dbError as Error).message,
+    });
+    messages = [];
+  }
+
+  // Now read the local log file
+  try {
+    if (!fs.existsSync(LOG_FILE)) {
+      return NextResponse.json({ logs: [], messages });
+    }
+
     const logContent = fs.readFileSync(LOG_FILE, 'utf-8');
     const logs = logContent.split('\n').filter(Boolean);
-    
-    // Get the most recent logs (last 1000 lines max)
     const recentLogs = logs.slice(-1000);
-    
-    return NextResponse.json({ logs: recentLogs });
+
+    return NextResponse.json({
+      logs: recentLogs,
+      messages,
+    });
   } catch (error) {
-    logger.error('API', 'Error getting server logs', { error: (error as Error).message });
+    logger.error('API', 'Error getting server logs from file', {
+      error: (error as Error).message,
+    });
     return NextResponse.json(
       { error: 'Failed to retrieve server logs' },
       { status: 500 }
@@ -49,12 +122,8 @@ export async function DELETE(req: NextRequest) {
   logger.info('API', 'Clearing server logs');
   
   try {
-    // Check if log file exists
     if (fs.existsSync(LOG_FILE)) {
-      // Write empty string to file (clearing it)
       fs.writeFileSync(LOG_FILE, '');
-      
-      // Log that we cleared the logs (this will be the first entry in the new log file)
       logger.info('API', 'Server logs cleared');
     }
     
@@ -66,4 +135,4 @@ export async function DELETE(req: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

@@ -33,6 +33,17 @@ jest.mock('@/lib/services/openai', () => ({
   generateEmbedding: jest.fn().mockResolvedValue([0.1, 0.2, 0.3])
 }));
 
+// Mock user knowledge items
+jest.mock('@/lib/services/knowledgeService', () => ({
+  getUserKnowledgeItems: jest.fn().mockResolvedValue([
+    {
+      id: 'knowledge-1',
+      title: 'User Knowledge 1',
+      content: 'This is some user-specific knowledge'
+    }
+  ])
+}));
+
 describe('Pinecone Service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -61,7 +72,7 @@ describe('Pinecone Service', () => {
   describe('upsertDocuments', () => {
     it('should generate embeddings and upsert documents', async () => {
       const documents = [
-        { text: 'Document 1', source: 'source1' },
+        { text: 'Document 1', source: 'source1', userId: 'user1' },
         { text: 'Document 2', source: 'source2' }
       ];
 
@@ -80,7 +91,7 @@ describe('Pinecone Service', () => {
       expect(indexInstance.upsert).toHaveBeenCalledWith(expect.arrayContaining([
         expect.objectContaining({
           values: [0.1, 0.2, 0.3],
-          metadata: { text: 'Document 1', source: 'source1' }
+          metadata: { text: 'Document 1', source: 'source1', userId: 'user1' }
         }),
         expect.objectContaining({
           values: [0.1, 0.2, 0.3],
@@ -111,12 +122,22 @@ describe('Pinecone Service', () => {
       expect(indexInstance.query).toHaveBeenCalledWith({
         vector: [0.1, 0.2, 0.3],
         topK: 5,
-        includeMetadata: true
+        includeMetadata: true,
+        filter: undefined
       });
       
       // Check that the result is correctly formatted
-      expect(result).toContain('Sample document text 1');
-      expect(result).toContain('Sample document text 2');
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual(expect.objectContaining({
+        id: 'doc-1',
+        score: 0.9,
+        content: 'Sample document text 1'
+      }));
+      expect(result[1]).toEqual(expect.objectContaining({
+        id: 'doc-2',
+        score: 0.8,
+        content: 'Sample document text 2'
+      }));
     });
 
     it('should use the provided topK parameter', async () => {
@@ -130,8 +151,33 @@ describe('Pinecone Service', () => {
       expect(indexInstance.query).toHaveBeenCalledWith({
         vector: [0.1, 0.2, 0.3],
         topK,
-        includeMetadata: true
+        includeMetadata: true,
+        filter: undefined
       });
+    });
+
+    it('should include additionalContext in the query embedding generation', async () => {
+      const query = 'Test query';
+      const additionalContext = 'Additional context for embedding';
+      
+      await queryDocuments(query, 5, undefined, additionalContext);
+      
+      // Check that generateEmbedding was called with the combined query
+      expect(generateEmbedding).toHaveBeenCalledWith('Test query Additional context for embedding');
+    });
+
+    it('should include user knowledge when userId is provided', async () => {
+      const query = 'Test query';
+      const userId = 'user1';
+      const { getUserKnowledgeItems } = require('@/lib/services/knowledgeService');
+      
+      const result = await queryDocuments(query, 5, userId);
+      
+      // Check that getUserKnowledgeItems was called with the userId
+      expect(getUserKnowledgeItems).toHaveBeenCalledWith(userId);
+      
+      // The result should include both Pinecone matches and user knowledge
+      expect(result.length).toBeGreaterThan(0);
     });
 
     it('should throw an error if PINECONE_INDEX is not defined', async () => {

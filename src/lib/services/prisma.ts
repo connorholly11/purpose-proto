@@ -1,23 +1,21 @@
 import { PrismaClient } from '@prisma/client';
-import { Message } from '@/types';
+import logger from '@/lib/utils/logger';
+import { upsertDocuments } from '@/lib/services/pinecone';
 
-// Create a singleton instance of PrismaClient
 let prismaInstance: PrismaClient | null = null;
 
-// Use a global variable to ensure single instance across hot reloads in development
 declare global {
+  // eslint-disable-next-line no-var
   var _prismaClient: PrismaClient | undefined;
 }
 
 export function getPrismaClient(): PrismaClient {
   if (process.env.NODE_ENV === 'production') {
-    // In production, use regular singleton pattern
     if (!prismaInstance) {
       prismaInstance = new PrismaClient();
     }
     return prismaInstance;
   } else {
-    // In development, use global to preserve instance across hot reloads
     if (!global._prismaClient) {
       global._prismaClient = new PrismaClient();
     }
@@ -25,7 +23,9 @@ export function getPrismaClient(): PrismaClient {
   }
 }
 
-// User operations
+// --------------------------------
+// USER
+// --------------------------------
 export async function createUser(name?: string) {
   const prisma = getPrismaClient();
   return prisma.user.create({
@@ -49,13 +49,16 @@ export async function getUserById(id: string) {
   });
 }
 
-// Conversation operations
-export async function createConversation(userId?: string) {
+// --------------------------------
+// CONVERSATION
+// --------------------------------
+export async function createConversation(userId?: string, systemPromptId?: string) {
   const prisma = getPrismaClient();
   return prisma.conversation.create({
     data: {
       userId,
-    },
+      systemPromptId,
+    } as any,
   });
 }
 
@@ -89,16 +92,46 @@ export async function listConversations(userId?: string, limit: number = 10) {
   });
 }
 
-// Message operations
+// --------------------------------
+// MESSAGE
+// --------------------------------
 export async function createMessage(data: {
   conversationId: string;
   role: string;
   content: string;
 }) {
   const prisma = getPrismaClient();
-  return prisma.message.create({
+  const message = await prisma.message.create({
     data,
   });
+
+  // If it's a user message, embed it in Pinecone
+  if (message.role === 'user' && message.content && message.content.length > 0) {
+    try {
+      const conversation = await prisma.conversation.findUnique({
+        where: { id: message.conversationId },
+      });
+      if (conversation?.userId) {
+        logger.info('Prisma', 'Embedding user message to Pinecone', {
+          conversationId: conversation.id,
+          userId: conversation.userId,
+          messageId: message.id,
+        });
+        await upsertDocuments([{
+          text: message.content,
+          source: 'user_message',
+          userId: conversation.userId,
+        }]);
+      }
+    } catch (embedErr) {
+      logger.error('Prisma', 'Error embedding message to Pinecone', {
+        error: (embedErr as Error).message,
+        messageId: message.id,
+      });
+    }
+  }
+
+  return message;
 }
 
 export async function getConversationMessages(conversationId: string) {
@@ -122,28 +155,50 @@ export async function addExchange(
   const prisma = getPrismaClient();
   
   return prisma.$transaction(async (tx) => {
-    // Add the user message
-    await tx.message.create({
+    // Create the user message
+    const userMessage = await tx.message.create({
       data: {
         conversationId,
         role: 'user',
         content: userContent,
       },
     });
-    
-    // Add the AI response
-    await tx.message.create({
+
+    // Create the AI response
+    const assistantMessage = await tx.message.create({
       data: {
         conversationId,
         role: 'assistant',
         content: aiContent,
       },
     });
-    
-    // Update conversation's updatedAt timestamp
+
+    // Update conversation updatedAt
     await tx.conversation.update({
       where: { id: conversationId },
       data: { updatedAt: new Date() },
     });
+
+    // Attempt to embed the user message
+    try {
+      if (userMessage.content && userMessage.content.length > 0) {
+        const conversation = await tx.conversation.findUnique({
+          where: { id: conversationId },
+        });
+        if (conversation?.userId) {
+          await upsertDocuments([{
+            text: userMessage.content,
+            source: 'user_message',
+            userId: conversation.userId,
+          }]);
+        }
+      }
+    } catch (embedErr) {
+      logger.error('Prisma', 'Error embedding user message in addExchange', {
+        error: (embedErr as Error).message,
+      });
+    }
+
+    return { userMessage, assistantMessage };
   });
-} 
+}

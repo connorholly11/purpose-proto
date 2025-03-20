@@ -107,6 +107,7 @@ export interface RAGQueryResult {
   context: string;
   matches: RAGMatch[];
   operationTime: number;
+  requestId: string;
 }
 
 export interface RAGMatch {

@@ -34,6 +34,8 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
   const [response, setResponse] = useState<string>('');
   const [volume, setVolume] = useState<number>(0.8);
   const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [messageCount, setMessageCount] = useState<number>(0);
+  const [lastTranscriptTime, setLastTranscriptTime] = useState<number>(0);
   
   // WebRTC refs
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -43,11 +45,13 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
   
   // Initialize the connection to the Realtime API
   const initRealtime = useCallback(async () => {
+    console.log('🎙️ STARTING REALTIME VOICE SESSION - Initialization beginning');
     try {
       setStatus('Requesting ephemeral token...');
       setError(null);
       
       // Get ephemeral token from our backend
+      console.log('🔑 Requesting ephemeral token from /api/rt-session');
       const tokenResponse = await fetch('/api/rt-session', {
         method: 'POST',
         headers: {
@@ -68,6 +72,7 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
       setStatus('Setting up WebRTC connection...');
       
       // Create and configure RTCPeerConnection
+      console.log('🔄 Setting up WebRTC peer connection and data channel');
       const pc = new RTCPeerConnection();
       peerConnectionRef.current = pc;
       
@@ -92,6 +97,7 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
       
       // Handle data channel events
       dc.onopen = () => {
+        console.log('📣 WebRTC data channel opened successfully');
         setIsConnected(true);
         setStatus('Connected');
       };
@@ -115,21 +121,23 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       
-      // Ensure the local description is set before continuing
       if (!pc.localDescription) {
         throw new Error('Failed to set local description');
       }
       
       // Send the SDP to the Realtime API
       setStatus('Connecting to OpenAI Realtime...');
-      const sdpResponse = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${client_secret.value}`,
-          'Content-Type': 'application/sdp',
-        },
-        body: pc.localDescription.sdp,
-      });
+      const sdpResponse = await fetch(
+        `https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${client_secret.value}`,
+            'Content-Type': 'application/sdp',
+          },
+          body: pc.localDescription.sdp,
+        }
+      );
       
       if (!sdpResponse.ok) {
         throw new Error(`Error connecting to Realtime API: ${sdpResponse.status}`);
@@ -144,7 +152,7 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
       
       setStatus('Connected to Realtime');
     } catch (err: any) {
-      console.error('Error setting up Realtime connection:', err);
+      console.error('❌ Error setting up Realtime connection:', err);
       setError(err.message || 'Failed to connect to Realtime API');
       setStatus('Connection failed');
       
@@ -158,7 +166,14 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
   // Handle incoming data channel messages
   const handleDataChannelMessage = (event: MessageEvent) => {
     try {
+      // Log raw data for debugging
+      console.log('📨 RAW DATA CHANNEL MESSAGE:', event.data.substring(0, 100) + (event.data.length > 100 ? '...' : ''));
+      
+      // Increment message counter
+      setMessageCount(prev => prev + 1);
+      
       const data = JSON.parse(event.data);
+      console.log('🧩 DATA CHANNEL MESSAGE TYPE:', data.type);
       browserLogger.debug('RealtimeVoice', 'Data channel message received', { 
         type: data.type,
         messageId: data.message_id
@@ -166,10 +181,12 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
       
       // Handle transcript updates
       if (data.type === 'audio.transcript') {
+        console.log(`🎤 Transcript event received: ${data.is_final ? 'FINAL' : 'partial'}`);
         const transcriptEvent = data as AudioTranscriptEvent;
+        setLastTranscriptTime(Date.now());
         
-        if (transcriptEvent.transcript && transcriptEvent.is_final) {
-          // Final transcript from the current segment
+        if (transcriptEvent.transcript) {
+          console.log(`📝 RAW TRANSCRIPT: "${transcriptEvent.transcript}" (is_final: ${transcriptEvent.is_final})`);
           const finalTranscript = transcriptEvent.transcript;
           browserLogger.debug('RealtimeVoice', 'Final transcript segment received', {
             isFinal: transcriptEvent.is_final,
@@ -181,6 +198,7 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
           const isCompleteUtterance = /[.!?]$/.test(finalTranscript.trim());
           
           if (isCompleteUtterance && finalTranscript.trim().length > 0) {
+            console.log(`✅ COMPLETE UTTERANCE DETECTED: "${finalTranscript}"`);
             // Process the complete utterance
             browserLogger.info('RealtimeVoice', 'Complete utterance detected');
             setTranscript(prev => {
@@ -194,48 +212,18 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
               
               // Call callback for complete transcript
               if (onCompletedTranscript) {
+                console.log(`📢 SENDING FINAL TRANSCRIPT TO RAG PIPELINE: "${cleanedUtterance}"`);
                 browserLogger.debug('RealtimeVoice', 'Calling onCompletedTranscript callback');
+                console.log(`🔤 Final transcript received: "${cleanedUtterance}"`);
                 onCompletedTranscript(cleanedUtterance);
               }
               
-              // Embed the transcript for RAG
-              if (conversationId) {
-                browserLogger.info('RealtimeVoice', 'Embedding voice transcript with RAG', {
-                  conversationId,
-                  utteranceLength: cleanedUtterance.length
-                });
-                
-                // Use API endpoint instead of direct function call
-                fetch('/api/rag-service', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    query: cleanedUtterance,
-                    topK: 5,
-                    source: 'realtime_voice',
-                    conversationId
-                  }),
-                }).then(response => {
-                  if (response.ok) {
-                    browserLogger.info('RealtimeVoice', 'Voice transcript RAG successful');
-                  } else {
-                    browserLogger.warn('RealtimeVoice', 'Voice transcript RAG returned error', {
-                      status: response.status
-                    });
-                  }
-                }).catch(err => {
-                  browserLogger.error('RealtimeVoice', 'Error processing voice transcript for RAG', {
-                    error: (err as Error).message
-                  });
-                  console.error('Error processing voice transcript for RAG:', err);
-                });
-              }
+              // (Removed direct rag-service call here; parent handles RAG now)
               
               return ''; // Reset for next utterance
             });
           } else {
+            console.log(`📝 Accumulating partial transcript: "${finalTranscript}"`);
             // Accumulate partial transcripts
             browserLogger.debug('RealtimeVoice', 'Accumulating partial transcript');
             setTranscript(prev => prev + ' ' + finalTranscript);
@@ -247,6 +235,17 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
                 transcriptLength: updatedTranscript.length
               });
               onPartialTranscript(updatedTranscript);
+            }
+          }
+          
+          // Make a more permissive utterance checker after a certain amount of content is accumulated
+          if (transcript.trim().length > 15 && data.is_final) {
+            console.log(`💡 SIGNIFICANT CONTENT DETECTED (${transcript.length} chars) - Processing as utterance`);
+            const cleanedUtterance = transcript.trim();
+            if (onCompletedTranscript) {
+              console.log(`📢 SENDING SIGNIFICANT CONTENT TO RAG: "${cleanedUtterance}"`);
+              onCompletedTranscript(cleanedUtterance);
+              setTranscript('');
             }
           }
         }
@@ -271,15 +270,14 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
         setIsSpeaking(voiceEvent.voice_activity.is_active);
       }
       
-      // Handle other events as needed
-      // console.log('Data channel event:', data);
     } catch (err) {
-      console.error('Error processing data channel message:', err);
+      console.error('❌ Error processing data channel message:', err);
     }
   };
   
   // Disconnect and clean up
   const disconnect = useCallback(() => {
+    console.log('🛑 ENDING REALTIME VOICE SESSION - Cleaning up resources');
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
       peerConnectionRef.current = null;
@@ -313,6 +311,25 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
       disconnect();
     };
   }, [disconnect]);
+  
+  // Force-send transcript after silence
+  useEffect(() => {
+    if (!transcript || !isConnected) return;
+    
+    const checkSilenceTimer = setTimeout(() => {
+      const silenceTime = Date.now() - lastTranscriptTime;
+      if (silenceTime > 2000 && transcript.trim().length > 0) {
+        console.log(`⏱️ SILENCE DETECTED FOR ${silenceTime}ms - Force sending transcript: "${transcript}"`);
+        if (onCompletedTranscript) {
+          console.log(`📢 FORCE-SENDING TRANSCRIPT TO RAG PIPELINE: "${transcript}"`);
+          onCompletedTranscript(transcript);
+          setTranscript('');
+        }
+      }
+    }, 2500);
+    
+    return () => clearTimeout(checkSilenceTimer);
+  }, [transcript, lastTranscriptTime, isConnected, onCompletedTranscript]);
   
   // Toggle mute
   const toggleMute = () => {
@@ -366,6 +383,20 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
             <div className="italic text-sm">
               {transcript || 'Waiting for speech...'}
             </div>
+            {transcript && (
+              <button 
+                onClick={() => {
+                  if (transcript.trim() && onCompletedTranscript) {
+                    console.log(`🔔 MANUALLY SENDING TRANSCRIPT: "${transcript}"`);
+                    onCompletedTranscript(transcript);
+                    setTranscript('');
+                  }
+                }}
+                className="mt-2 text-xs bg-blue-500 text-white px-2 py-1 rounded"
+              >
+                Force Send This Text
+              </button>
+            )}
           </div>
           
           <div className="p-2 bg-blue-50 dark:bg-gray-600 rounded shadow">
@@ -373,6 +404,13 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
             <div className="text-sm">
               {response || 'Waiting for response...'}
             </div>
+          </div>
+          
+          {/* Debug info */}
+          <div className="p-2 bg-yellow-50 dark:bg-gray-700 rounded shadow text-xs">
+            <div className="text-gray-500">Debug Info:</div>
+            <div>Messages received: {messageCount}</div>
+            <div>Last transcript: {lastTranscriptTime > 0 ? new Date(lastTranscriptTime).toLocaleTimeString() : 'None'}</div>
           </div>
           
           <div className="flex items-center space-x-2">
@@ -402,4 +440,4 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
   );
 };
 
-export default RealtimeVoice; 
+export default RealtimeVoice;

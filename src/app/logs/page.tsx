@@ -7,6 +7,7 @@ import { useUser } from '../contexts/UserContext';
 export default function LogsPage() {
   const { currentUser } = useUser();
   const [messages, setMessages] = useState<(Message & { conversation: { userId: string | null } })[]>([]);
+  const [serverLogs, setServerLogs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -18,12 +19,12 @@ export default function LogsPage() {
   const [filterConversation, setFilterConversation] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   
-  // Get users for filter dropdown
+  // For user dropdown
   const [users, setUsers] = useState<{ id: string, name: string }[]>([]);
-  // Get conversations for filter dropdown
+  // For conversation dropdown
   const [conversations, setConversations] = useState<{ id: string, createdAt: string }[]>([]);
   
-  // Set the current user as filter when it changes
+  // Set current user as default filter
   useEffect(() => {
     if (currentUser) {
       setFilterUser(currentUser.id);
@@ -31,78 +32,81 @@ export default function LogsPage() {
   }, [currentUser]);
   
   useEffect(() => {
-    const fetchMessages = async () => {
+    async function fetchAllData() {
       try {
         setLoading(true);
-        const response = await fetch('/api/logs?' + new URLSearchParams({
-          ...(filterUser && { userId: filterUser }),
-          ...(filterLiked !== null && { liked: filterLiked.toString() }),
-          ...(filterDateFrom && { dateFrom: filterDateFrom }),
-          ...(filterDateTo && { dateTo: filterDateTo }),
-          ...(filterConversation && { conversationId: filterConversation }),
-          ...(searchTerm && { search: searchTerm })
-        }));
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch messages');
+
+        // Build query params
+        const queryParams = new URLSearchParams({
+          ...(filterUser ? { userId: filterUser } : {}),
+          ...(filterLiked !== null ? { liked: filterLiked.toString() } : {}),
+          ...(filterDateFrom ? { dateFrom: filterDateFrom } : {}),
+          ...(filterDateTo ? { dateTo: filterDateTo } : {}),
+          ...(filterConversation ? { conversationId: filterConversation } : {}),
+          ...(searchTerm ? { search: searchTerm } : {}),
+        });
+
+        const logsResponse = await fetch(`/api/logs?${queryParams.toString()}`);
+        if (!logsResponse.ok) {
+          console.error(`Failed to fetch logs: ${logsResponse.status} ${logsResponse.statusText}`);
+          setMessages([]);
+          setServerLogs([]);
+          setError(`Failed to fetch logs: ${logsResponse.status}`);
+        } else {
+          const data = await logsResponse.json();
+          setMessages(data.messages || []);
+          setServerLogs(data.logs || []);
+          setError(null);
         }
-        
-        const data = await response.json();
-        setMessages(data.messages);
+
+        // get users
+        const usersRes = await fetch('/api/users');
+        if (usersRes.ok) {
+          const userData = await usersRes.json();
+          setUsers(userData.users || []);
+        } else {
+          console.error(`Failed to fetch users: ${usersRes.status} ${usersRes.statusText}`);
+          setUsers([]);
+        }
+
+        // get conversations
+        const convoRes = await fetch('/api/conversations');
+        if (convoRes.ok) {
+          const convoData = await convoRes.json();
+          setConversations(convoData.conversations || []);
+        } else {
+          console.error(`Failed to fetch conversations: ${convoRes.status} ${convoRes.statusText}`);
+          setConversations([]);
+        }
       } catch (err) {
+        console.error('Error fetching messages/logs:', err);
+        setMessages([]);
+        setServerLogs([]);
         setError(err instanceof Error ? err.message : 'An error occurred');
-        console.error(err);
       } finally {
         setLoading(false);
       }
-    };
+    }
 
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch('/api/users');
-        if (!response.ok) throw new Error('Failed to fetch users');
-        const data = await response.json();
-        setUsers(data.users);
-      } catch (err) {
-        console.error('Error fetching users:', err);
-      }
-    };
-
-    const fetchConversations = async () => {
-      try {
-        // In case the fetch fails, don't mark the whole component as error
-        const response = await fetch('/api/conversations');
-        if (!response.ok) {
-          console.error(`Failed to fetch conversations: ${response.status} ${response.statusText}`);
-          // Still set empty conversations array rather than throwing error
-          setConversations([]);
-          return;
-        }
-        const data = await response.json();
-        setConversations(data.conversations || []);
-      } catch (err) {
-        console.error('Error fetching conversations:', err);
-        // Set empty array instead of throwing error
-        setConversations([]);
-      }
-    };
-    
-    fetchMessages();
-    fetchUsers();
-    fetchConversations();
+    fetchAllData();
   }, [filterUser, filterLiked, filterDateFrom, filterDateTo, filterConversation, searchTerm]);
-  
-  if (loading) return <div className="flex justify-center p-8">Loading messages...</div>;
-  if (error) return <div className="text-red-500 p-8">Error: {error}</div>;
-  
+
+  if (loading) {
+    return <div className="flex justify-center p-8">Loading messages and logs...</div>;
+  }
+  if (error) {
+    return <div className="text-red-500 p-8">Error: {error}</div>;
+  }
+
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Conversation Logs</h1>
+      <h1 className="text-2xl font-bold mb-6">Conversation Logs + Server Logs</h1>
       
       {/* Filter controls */}
       <div className="bg-gray-100 p-4 mb-6 rounded-lg">
         <h2 className="text-lg font-semibold mb-3">Filters</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* User */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">User</label>
             <select 
@@ -111,12 +115,13 @@ export default function LogsPage() {
               onChange={(e) => setFilterUser(e.target.value || null)}
             >
               <option value="">All Users</option>
-              {users.map(user => (
-                <option key={user.id} value={user.id}>{user.name || user.id}</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>{u.name || u.id}</option>
               ))}
             </select>
           </div>
           
+          {/* Feedback */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Feedback</label>
             <select 
@@ -133,6 +138,7 @@ export default function LogsPage() {
             </select>
           </div>
           
+          {/* Conversation */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Conversation</label>
             <select 
@@ -141,7 +147,7 @@ export default function LogsPage() {
               onChange={(e) => setFilterConversation(e.target.value || null)}
             >
               <option value="">All Conversations</option>
-              {conversations.map(convo => (
+              {conversations.map((convo) => (
                 <option key={convo.id} value={convo.id}>
                   {new Date(convo.createdAt).toLocaleString()} - {convo.id.slice(0, 8)}
                 </option>
@@ -149,6 +155,7 @@ export default function LogsPage() {
             </select>
           </div>
           
+          {/* Date From */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
             <input 
@@ -159,6 +166,7 @@ export default function LogsPage() {
             />
           </div>
           
+          {/* Date To */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
             <input 
@@ -169,6 +177,7 @@ export default function LogsPage() {
             />
           </div>
           
+          {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
             <input 
@@ -183,7 +192,7 @@ export default function LogsPage() {
       </div>
       
       {/* Messages list */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+      <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8">
         {messages.length === 0 ? (
           <div className="p-6 text-center text-gray-500">No messages found with the current filters.</div>
         ) : (
@@ -205,7 +214,9 @@ export default function LogsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <span className={`px-2 py-1 rounded-full text-xs ${
-                      message.role === 'assistant' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                      message.role === 'assistant'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-green-100 text-green-800'
                     }`}>
                       {message.role}
                     </span>
@@ -228,6 +239,24 @@ export default function LogsPage() {
           </table>
         )}
       </div>
+
+      {/* Server log lines (optional) */}
+      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        <h2 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+          Server Log Lines
+        </h2>
+        {serverLogs.length === 0 ? (
+          <div className="p-6 text-center text-gray-500">No server logs found.</div>
+        ) : (
+          <div className="p-4 max-h-64 overflow-y-auto text-sm text-gray-800">
+            {serverLogs.map((line, idx) => (
+              <div key={idx} className="mb-1 whitespace-pre-wrap">
+                {line}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
-} 
+}

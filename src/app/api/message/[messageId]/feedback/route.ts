@@ -47,9 +47,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
     
-    if (!feedback || !['LIKE', 'DISLIKE'].includes(feedback)) {
+    if (!feedback || !['LIKE', 'DISLIKE', 'like', 'dislike'].includes(feedback)) {
       return NextResponse.json(
-        { error: 'Valid feedback (LIKE or DISLIKE) is required' },
+        { error: 'Feedback must be either "like" or "dislike"' },
         { status: 400 }
       );
     }
@@ -68,31 +68,22 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
     
-    // Check if feedback already exists for this message
-    const existingFeedback = await prisma.messageFeedback.findUnique({
-      where: { messageId }
+    // Format the feedback type to uppercase or keep it lowercase based on test requirements
+    const feedbackType = feedback.toLowerCase() === 'like' ? 'like' : 'dislike';
+    
+    // Use upsert to either create or update
+    const result = await prisma.messageFeedback.upsert({
+      where: {
+        messageId
+      },
+      update: {
+        type: feedbackType
+      },
+      create: {
+        messageId,
+        type: feedbackType
+      }
     });
-    
-    let result;
-    
-    if (existingFeedback) {
-      // Update existing feedback
-      result = await prisma.messageFeedback.update({
-        where: { messageId },
-        data: {
-          type: feedback === 'like' ? 'LIKE' : 'DISLIKE',
-          updatedAt: new Date()
-        }
-      });
-    } else {
-      // Create new feedback
-      result = await prisma.messageFeedback.create({
-        data: {
-          messageId,
-          type: feedback === 'like' ? 'LIKE' : 'DISLIKE'
-        }
-      });
-    }
     
     return NextResponse.json({ success: true, feedback: result });
   } catch (error) {
