@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { FaSearch, FaSpinner } from 'react-icons/fa';
 
-export default function TestRagPage() {
+export default function TestRag() {
   const [query, setQuery] = useState<string>('');
   const [responseData, setResponseData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -21,7 +21,7 @@ export default function TestRagPage() {
     try {
       if (selectedTab === 'rag') {
         // 1) RAG Only
-        const ragRes = await fetch('/api/rag-service', {
+        const ragRes = await fetch('/api/rag', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query, topK: 5 })
@@ -46,7 +46,7 @@ export default function TestRagPage() {
 
       } else if (selectedTab === 'end2end') {
         // 3) End-to-End: first RAG, then pass to completion
-        const ragRes = await fetch('/api/rag-service', {
+        const ragRes = await fetch('/api/rag', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query, topK: 5 })
@@ -78,9 +78,7 @@ export default function TestRagPage() {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Test RAG System</h1>
-
+    <div>
       {/* Tabs */}
       <div className="mb-6 border-b">
         <div className="flex">
@@ -231,4 +229,4 @@ export default function TestRagPage() {
       )}
     </div>
   );
-}
+} 

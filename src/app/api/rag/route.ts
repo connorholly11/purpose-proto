@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { queryDocuments } from '@/lib/services/pinecone';
+import { getRagAnalytics, getRagOperationDetails } from '@/lib/services/ragAnalytics';
 import logger from '@/lib/utils/logger';
 
 export async function POST(req: NextRequest) {
@@ -66,3 +67,36 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function GET(req: NextRequest) {
+  try {
+    const url = new URL(req.url);
+    const action = url.searchParams.get('action');
+    const userId = url.searchParams.get('userId');
+    const operationId = url.searchParams.get('operationId');
+    
+    // If operationId is provided, get operation details
+    if (operationId) {
+      const operation = await getRagOperationDetails(operationId);
+      
+      if (!operation) {
+        return NextResponse.json(
+          { error: 'Operation not found' },
+          { status: 404 }
+        );
+      }
+      
+      return NextResponse.json(operation);
+    }
+    
+    // Default: get analytics
+    const analytics = await getRagAnalytics(userId || undefined);
+    return NextResponse.json(analytics);
+  } catch (error) {
+    console.error('Error in RAG API:', error);
+    return NextResponse.json(
+      { error: 'Error processing RAG request' },
+      { status: 500 }
+    );
+  }
+} 

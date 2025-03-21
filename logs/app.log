@@ -6172,3 +6172,362 @@
   "duration": 3817,
   "matchCount": 5
 }
+[2025-03-21T14:06:47.131Z] [INFO] [OpenAI] Transcribing audio {
+  "requestId": "transcribe-1742566007131",
+  "bufferSize": 40961
+}
+[2025-03-21T14:06:47.134Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-21T14:06:47.135Z] [DEBUG] [OpenAI] Writing audio to temporary file {
+  "requestId": "transcribe-1742566007131",
+  "tempFilePath": "/var/folders/v1/bb0s1r1d2_n7rq8bzlxr29b40000gn/T/audio-1742566007135.webm"
+}
+[2025-03-21T14:06:47.135Z] [DEBUG] [OpenAI] Calling transcription API {
+  "requestId": "transcribe-1742566007131",
+  "model": "whisper-1"
+}
+[2025-03-21T14:06:48.666Z] [INFO] [OpenAI] Audio transcription complete {
+  "requestId": "transcribe-1742566007131",
+  "duration": 1531,
+  "transcriptionLength": 34
+}
+[2025-03-21T14:06:55.593Z] [INFO] [API] RAG service request received {
+  "requestId": "api-rag-1742566015593"
+}
+[2025-03-21T14:06:55.593Z] [DEBUG] [API] RAG service request details {
+  "requestId": "api-rag-1742566015593",
+  "query": "Testing, testing, can you hear me?",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "780d67fb-b38b-4582-9b41-14048ea96f67"
+}
+[2025-03-21T14:06:55.593Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742566015593",
+  "textLength": 34,
+  "textPreview": "Testing, testing, can you hear me?"
+}
+[2025-03-21T14:06:55.593Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-21T14:06:55.593Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742566015593",
+  "model": "text-embedding-3-small"
+}
+[2025-03-21T14:06:56.461Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742566015593",
+  "duration": 868,
+  "dimensions": 1536
+}
+[2025-03-21T14:06:56.462Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-21T14:06:56.464Z] [DEBUG] [Pinecone] Querying Pinecone {
+  "topK": 5,
+  "userId": "none",
+  "hasAdditionalContext": false
+}
+[2025-03-21T14:06:57.468Z] [INFO] [API] RAG service request completed {
+  "requestId": "api-rag-1742566015593",
+  "duration": 1875,
+  "matchCount": 5
+}
+[2025-03-21T14:06:57.653Z] [INFO] [API] Completion request received {
+  "requestId": "api-completion-1742566017653"
+}
+[2025-03-21T14:06:57.653Z] [DEBUG] [API] Completion request details {
+  "requestId": "api-completion-1742566017653",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 2456,
+  "conversationId": "780d67fb-b38b-4582-9b41-14048ea96f67"
+}
+[2025-03-21T14:06:57.653Z] [DEBUG] [API] Calling getCompletion {
+  "requestId": "api-completion-1742566017653"
+}
+[2025-03-21T14:06:57.653Z] [INFO] [OpenAI] Getting completion {
+  "requestId": "completion-1742566017653",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 2456
+}
+[2025-03-21T14:06:57.653Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-21T14:06:57.654Z] [DEBUG] [OpenAI] Adding context to system message {
+  "requestId": "completion-1742566017653",
+  "contextLength": 2456
+}
+[2025-03-21T14:06:57.654Z] [DEBUG] [OpenAI] Calling chat completions API {
+  "requestId": "completion-1742566017653",
+  "model": "gpt-4o",
+  "messageCount": 2
+}
+[2025-03-21T14:06:59.108Z] [INFO] [OpenAI] Completion generated successfully {
+  "requestId": "completion-1742566017653",
+  "duration": 1454,
+  "promptTokens": 646,
+  "completionTokens": 24,
+  "totalTokens": 670,
+  "responseLength": 86
+}
+[2025-03-21T14:06:59.109Z] [DEBUG] [API] Logging messages to database {
+  "requestId": "api-completion-1742566017653",
+  "conversationId": "780d67fb-b38b-4582-9b41-14048ea96f67",
+  "userMessageLength": 2545,
+  "assistantMessageLength": 86
+}
+[2025-03-21T14:06:59.369Z] [INFO] [API] Messages logged to database {
+  "requestId": "api-completion-1742566017653",
+  "conversationId": "780d67fb-b38b-4582-9b41-14048ea96f67"
+}
+[2025-03-21T14:06:59.369Z] [INFO] [API] Completion request completed {
+  "requestId": "api-completion-1742566017653",
+  "duration": 1456,
+  "answerLength": 86
+}
+[2025-03-21T14:06:59.565Z] [INFO] [OpenAI] Generating speech {
+  "requestId": "tts-1742566019565",
+  "textLength": 86,
+  "voice": "alloy"
+}
+[2025-03-21T14:06:59.566Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-21T14:06:59.566Z] [DEBUG] [OpenAI] Calling speech API {
+  "requestId": "tts-1742566019565",
+  "model": "tts-1",
+  "voice": "alloy"
+}
+[2025-03-21T14:07:02.302Z] [INFO] [OpenAI] Speech generated successfully {
+  "requestId": "tts-1742566019565",
+  "duration": 2736,
+  "bufferSize": 102720
+}
+[2025-03-21T14:13:06.786Z] [INFO] [OpenAI] Transcribing audio {
+  "requestId": "transcribe-1742566386786",
+  "bufferSize": 29576
+}
+[2025-03-21T14:13:06.787Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-21T14:13:06.787Z] [DEBUG] [OpenAI] Writing audio to temporary file {
+  "requestId": "transcribe-1742566386786",
+  "tempFilePath": "/var/folders/v1/bb0s1r1d2_n7rq8bzlxr29b40000gn/T/audio-1742566386787.webm"
+}
+[2025-03-21T14:13:06.788Z] [DEBUG] [OpenAI] Calling transcription API {
+  "requestId": "transcribe-1742566386786",
+  "model": "whisper-1"
+}
+[2025-03-21T14:13:07.940Z] [INFO] [OpenAI] Audio transcription complete {
+  "requestId": "transcribe-1742566386786",
+  "duration": 1152,
+  "transcriptionLength": 26
+}
+[2025-03-21T14:14:34.587Z] [INFO] [OpenAI] Transcribing audio {
+  "requestId": "transcribe-1742566474587",
+  "bufferSize": 40081
+}
+[2025-03-21T14:14:34.588Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-21T14:14:34.588Z] [DEBUG] [OpenAI] Writing audio to temporary file {
+  "requestId": "transcribe-1742566474587",
+  "tempFilePath": "/var/folders/v1/bb0s1r1d2_n7rq8bzlxr29b40000gn/T/audio-1742566474588.webm"
+}
+[2025-03-21T14:14:34.588Z] [DEBUG] [OpenAI] Calling transcription API {
+  "requestId": "transcribe-1742566474587",
+  "model": "whisper-1"
+}
+[2025-03-21T14:14:35.594Z] [INFO] [OpenAI] Audio transcription complete {
+  "requestId": "transcribe-1742566474587",
+  "duration": 1006,
+  "transcriptionLength": 35
+}
+[2025-03-21T14:14:50.154Z] [INFO] [OpenAI] Transcribing audio {
+  "requestId": "transcribe-1742566490154",
+  "bufferSize": 34415
+}
+[2025-03-21T14:14:50.154Z] [DEBUG] [OpenAI] Writing audio to temporary file {
+  "requestId": "transcribe-1742566490154",
+  "tempFilePath": "/var/folders/v1/bb0s1r1d2_n7rq8bzlxr29b40000gn/T/audio-1742566490154.webm"
+}
+[2025-03-21T14:14:50.155Z] [DEBUG] [OpenAI] Calling transcription API {
+  "requestId": "transcribe-1742566490154",
+  "model": "whisper-1"
+}
+[2025-03-21T14:14:51.361Z] [INFO] [OpenAI] Audio transcription complete {
+  "requestId": "transcribe-1742566490154",
+  "duration": 1206,
+  "transcriptionLength": 19
+}
+[2025-03-21T14:15:50.248Z] [INFO] [OpenAI] Transcribing audio {
+  "requestId": "transcribe-1742566550248",
+  "bufferSize": 25460
+}
+[2025-03-21T14:15:50.249Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-21T14:15:50.249Z] [DEBUG] [OpenAI] Writing audio to temporary file {
+  "requestId": "transcribe-1742566550248",
+  "tempFilePath": "/var/folders/v1/bb0s1r1d2_n7rq8bzlxr29b40000gn/T/audio-1742566550249.webm"
+}
+[2025-03-21T14:15:50.249Z] [DEBUG] [OpenAI] Calling transcription API {
+  "requestId": "transcribe-1742566550248",
+  "model": "whisper-1"
+}
+[2025-03-21T14:15:51.776Z] [INFO] [OpenAI] Audio transcription complete {
+  "requestId": "transcribe-1742566550248",
+  "duration": 1527,
+  "transcriptionLength": 5
+}
+[2025-03-21T14:17:47.470Z] [INFO] [OpenAI] Transcribing audio {
+  "requestId": "transcribe-1742566667470",
+  "bufferSize": 50858
+}
+[2025-03-21T14:17:47.471Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-21T14:17:47.472Z] [DEBUG] [OpenAI] Writing audio to temporary file {
+  "requestId": "transcribe-1742566667470",
+  "tempFilePath": "/var/folders/v1/bb0s1r1d2_n7rq8bzlxr29b40000gn/T/audio-1742566667472.webm"
+}
+[2025-03-21T14:17:47.472Z] [DEBUG] [OpenAI] Calling transcription API {
+  "requestId": "transcribe-1742566667470",
+  "model": "whisper-1"
+}
+[2025-03-21T14:17:49.334Z] [INFO] [OpenAI] Audio transcription complete {
+  "requestId": "transcribe-1742566667470",
+  "duration": 1862,
+  "transcriptionLength": 67
+}
+[2025-03-21T14:17:50.579Z] [INFO] [OpenAI] Transcribing audio {
+  "requestId": "transcribe-1742566670579",
+  "bufferSize": 15713
+}
+[2025-03-21T14:17:50.580Z] [DEBUG] [OpenAI] Writing audio to temporary file {
+  "requestId": "transcribe-1742566670579",
+  "tempFilePath": "/var/folders/v1/bb0s1r1d2_n7rq8bzlxr29b40000gn/T/audio-1742566670580.webm"
+}
+[2025-03-21T14:17:50.580Z] [DEBUG] [OpenAI] Calling transcription API {
+  "requestId": "transcribe-1742566670579",
+  "model": "whisper-1"
+}
+[2025-03-21T14:17:51.381Z] [INFO] [OpenAI] Audio transcription complete {
+  "requestId": "transcribe-1742566670579",
+  "duration": 801,
+  "transcriptionLength": 21
+}
+[2025-03-21T14:20:25.747Z] [INFO] [OpenAI] Transcribing audio {
+  "requestId": "transcribe-1742566825747",
+  "bufferSize": 46805
+}
+[2025-03-21T14:20:25.748Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-21T14:20:25.748Z] [DEBUG] [OpenAI] Writing audio to temporary file {
+  "requestId": "transcribe-1742566825747",
+  "tempFilePath": "/var/folders/v1/bb0s1r1d2_n7rq8bzlxr29b40000gn/T/audio-1742566825748.webm"
+}
+[2025-03-21T14:20:25.749Z] [DEBUG] [OpenAI] Calling transcription API {
+  "requestId": "transcribe-1742566825747",
+  "model": "whisper-1"
+}
+[2025-03-21T14:20:26.828Z] [INFO] [OpenAI] Audio transcription complete {
+  "requestId": "transcribe-1742566825747",
+  "duration": 1079,
+  "transcriptionLength": 37
+}
+[2025-03-21T14:20:45.601Z] [INFO] [API] Getting server logs (and possibly message logs) 
+[2025-03-21T14:20:45.602Z] [INFO] [API] Getting server logs (and possibly message logs) 
+[2025-03-21T14:20:46.102Z] [INFO] [API] Getting server logs (and possibly message logs) 
+[2025-03-21T14:20:53.301Z] [INFO] [API] Getting server logs (and possibly message logs) 
+[2025-03-21T14:20:53.303Z] [INFO] [API] Getting server logs (and possibly message logs) 
+[2025-03-21T14:20:53.474Z] [INFO] [API] Getting server logs (and possibly message logs) 
+[2025-03-21T14:30:07.432Z] [INFO] [API] RAG service request received {
+  "requestId": "api-rag-1742567407432"
+}
+[2025-03-21T14:30:07.432Z] [DEBUG] [API] RAG service request details {
+  "requestId": "api-rag-1742567407432",
+  "query": "hello",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "50ff60db-b545-46eb-899f-d5750e04ad33"
+}
+[2025-03-21T14:30:07.433Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742567407433",
+  "textLength": 5,
+  "textPreview": "hello"
+}
+[2025-03-21T14:30:07.433Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-21T14:30:07.433Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742567407433",
+  "model": "text-embedding-3-small"
+}
+[2025-03-21T14:30:08.076Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742567407433",
+  "duration": 643,
+  "dimensions": 1536
+}
+[2025-03-21T14:30:08.077Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-21T14:30:08.078Z] [DEBUG] [Pinecone] Querying Pinecone {
+  "topK": 5,
+  "userId": "none",
+  "hasAdditionalContext": false
+}
+[2025-03-21T14:30:08.861Z] [INFO] [API] RAG service request completed {
+  "requestId": "api-rag-1742567407432",
+  "duration": 1429,
+  "matchCount": 5
+}
+[2025-03-21T14:30:09.615Z] [INFO] [API] Completion request received {
+  "requestId": "api-completion-1742567409615"
+}
+[2025-03-21T14:30:09.615Z] [DEBUG] [API] Completion request details {
+  "requestId": "api-completion-1742567409615",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 1909,
+  "conversationId": "50ff60db-b545-46eb-899f-d5750e04ad33"
+}
+[2025-03-21T14:30:09.615Z] [DEBUG] [API] Calling getCompletion {
+  "requestId": "api-completion-1742567409615"
+}
+[2025-03-21T14:30:09.616Z] [INFO] [OpenAI] Getting completion {
+  "requestId": "completion-1742567409616",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 1909
+}
+[2025-03-21T14:30:09.616Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-21T14:30:09.616Z] [DEBUG] [OpenAI] Adding context to system message {
+  "requestId": "completion-1742567409616",
+  "contextLength": 1909
+}
+[2025-03-21T14:30:09.616Z] [DEBUG] [OpenAI] Calling chat completions API {
+  "requestId": "completion-1742567409616",
+  "model": "gpt-4o",
+  "messageCount": 2
+}
+[2025-03-21T14:30:10.088Z] [INFO] [OpenAI] Completion generated successfully {
+  "requestId": "completion-1742567409616",
+  "duration": 472,
+  "promptTokens": 485,
+  "completionTokens": 10,
+  "totalTokens": 495,
+  "responseLength": 34
+}
+[2025-03-21T14:30:10.089Z] [DEBUG] [API] Logging messages to database {
+  "requestId": "api-completion-1742567409615",
+  "conversationId": "50ff60db-b545-46eb-899f-d5750e04ad33",
+  "userMessageLength": 1998,
+  "assistantMessageLength": 34
+}
+[2025-03-21T14:30:10.273Z] [INFO] [API] Messages logged to database {
+  "requestId": "api-completion-1742567409615",
+  "conversationId": "50ff60db-b545-46eb-899f-d5750e04ad33"
+}
+[2025-03-21T14:30:10.273Z] [INFO] [API] Completion request completed {
+  "requestId": "api-completion-1742567409615",
+  "duration": 473,
+  "answerLength": 34
+}
+[2025-03-21T14:30:10.795Z] [INFO] [OpenAI] Generating speech {
+  "requestId": "tts-1742567410795",
+  "textLength": 34,
+  "voice": "alloy"
+}
+[2025-03-21T14:30:10.795Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-21T14:30:10.795Z] [DEBUG] [OpenAI] Calling speech API {
+  "requestId": "tts-1742567410795",
+  "model": "tts-1",
+  "voice": "alloy"
+}
+[2025-03-21T14:30:11.822Z] [INFO] [OpenAI] Speech generated successfully {
+  "requestId": "tts-1742567410795",
+  "duration": 1027,
+  "bufferSize": 35520
+}
+[2025-03-21T14:30:15.362Z] [INFO] [API] Getting server logs (and possibly message logs) 
+[2025-03-21T14:30:15.362Z] [INFO] [API] Getting server logs (and possibly message logs) 
+[2025-03-21T14:30:15.652Z] [INFO] [API] Getting server logs (and possibly message logs) 

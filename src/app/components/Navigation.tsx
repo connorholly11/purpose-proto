@@ -30,17 +30,9 @@ const Navigation = () => {
                   className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/admin')} hover:bg-indigo-700 transition-colors`}>
               Admin
             </Link>
-            <Link href="/test-rag" 
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/test-rag')} hover:bg-indigo-700 transition-colors`}>
-              Test RAG
-            </Link>
-            <Link href="/rag-analytics" 
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/rag-analytics')} hover:bg-indigo-700 transition-colors`}>
-              RAG Analytics
-            </Link>
-            <Link href="/user-knowledge" 
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/user-knowledge')} hover:bg-indigo-700 transition-colors`}>
-              Knowledge Base
+            <Link href="/rag" 
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/rag')} hover:bg-indigo-700 transition-colors`}>
+              RAG
             </Link>
             <Link href="/system-prompts" 
                   className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/system-prompts')} hover:bg-indigo-700 transition-colors`}>

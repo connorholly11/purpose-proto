@@ -11,7 +11,7 @@ interface KnowledgeItem {
   updatedAt: string;
 }
 
-export default function UserKnowledgePage() {
+export default function KnowledgeBase() {
   const { currentUser } = useUser();
   const [knowledgeItems, setKnowledgeItems] = useState<KnowledgeItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,9 +103,7 @@ export default function UserKnowledgePage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Personal Knowledge Base</h1>
-      
+    <div className="container mx-auto">
       {/* Add new knowledge item form */}
       <div className="bg-white p-4 rounded-lg shadow-md mb-6">
         <h2 className="text-xl font-semibold mb-4">Add Knowledge</h2>

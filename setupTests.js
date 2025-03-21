@@ -1,5 +1,5 @@
 /**
- * Jest setup file
+ * Jest setup file for backend/integration tests
  * 
  * This file runs before each test file
  */

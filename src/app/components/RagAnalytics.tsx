@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@/app/contexts/UserContext';
 import { RAGAnalytics, RAGOperationData, RetrievedDocumentData } from '@/types';
 
-export default function RagAnalyticsPage() {
+export default function RagAnalytics() {
   const { currentUser } = useUser();
   const [analytics, setAnalytics] = useState<RAGAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -13,62 +13,43 @@ export default function RagAnalyticsPage() {
   const [showOperationDetails, setShowOperationDetails] = useState(false);
 
   useEffect(() => {
-    const fetchRagAnalytics = async () => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      
       try {
-        setLoading(true);
+        // Get user filter from current user
+        const userFilter = currentUser?.id || null;
         
-        // Fetch RAG analytics data
-        const userId = currentUser?.id;
-        let url = '/api/rag-analytics';
-        if (userId) {
-          url += `?userId=${userId}`;
+        // Call the API to get RAG analytics data
+        let url = '/api/rag';
+        if (userFilter) {
+          url += `?userId=${encodeURIComponent(userFilter)}`;
         }
         
         const response = await fetch(url);
         if (!response.ok) {
-          console.error(`Failed to fetch RAG analytics: ${response.status} ${response.statusText}`);
-          // Set empty data structure instead of throwing error
-          setAnalytics({
-            totalOperations: 0,
-            avgResponseTime: 0,
-            successRate: 0,
-            operationsBySource: { chat: 0, realtime_voice: 0 },
-            topDocuments: [],
-            recentOperations: []
-          });
-          setError('Data unavailable. Please try again later.');
-          setLoading(false);
-          return;
+          throw new Error(`Failed to fetch data: ${response.status}`);
         }
         
         const data = await response.json();
         setAnalytics(data);
-        setError(null);
       } catch (err) {
-        console.error(err);
-        // Set empty data structure on error
-        setAnalytics({
-          totalOperations: 0,
-          avgResponseTime: 0,
-          successRate: 0,
-          operationsBySource: { chat: 0, realtime_voice: 0 },
-          topDocuments: [],
-          recentOperations: []
-        });
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        setError(err instanceof Error ? err.message : 'Error loading analytics data');
+        console.error('Analytics fetch error:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRagAnalytics();
+    fetchData();
   }, [currentUser]);
 
   const handleViewOperationDetails = async (operationId: string) => {
     try {
       setLoading(true);
       
-      const response = await fetch(`/api/rag-operations/${operationId}`);
+      const response = await fetch(`/api/rag?operationId=${operationId}`);
       if (!response.ok) {
         console.error(`Failed to fetch operation details: ${response.status} ${response.statusText}`);
         setError('Could not load operation details');
@@ -92,9 +73,7 @@ export default function RagAnalyticsPage() {
   if (error) return <div className="text-red-500 p-8">Error: {error}</div>;
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">RAG Analytics</h1>
-
+    <div>
       {/* Stats Cards */}
       {analytics && (
         <div className="bg-white p-6 rounded-lg shadow mb-8">
