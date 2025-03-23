@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { FaUser, FaRobot, FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
+import React, { useState, useEffect, useRef } from 'react';
 import { Message as MessageType } from '@/types';
 
 interface MessageProps {
@@ -13,6 +12,39 @@ interface MessageProps {
 const Message: React.FC<MessageProps> = ({ message, onLike, onDislike }) => {
   const isUser = message.role === 'user';
   const [feedbackState, setFeedbackState] = useState<'like' | 'dislike' | null>(null);
+  const [isDelivered, setIsDelivered] = useState(false);
+  const [showImpact, setShowImpact] = useState(true);
+  const [showSentEffect, setShowSentEffect] = useState(isUser);
+  const messageRef = useRef<HTMLDivElement>(null);
+  
+  // Message bubble impact effect on first render
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowImpact(false);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Simulate message delivery status with ping sound effect
+  useEffect(() => {
+    if (isUser) {
+      // First animate the ping effect
+      const pingTimer = setTimeout(() => {
+        setShowSentEffect(false);
+      }, 500);
+      
+      // Then show delivered status
+      const deliveredTimer = setTimeout(() => {
+        setIsDelivered(true);
+      }, 800);
+      
+      return () => {
+        clearTimeout(pingTimer);
+        clearTimeout(deliveredTimer);
+      };
+    }
+  }, [isUser]);
   
   // Fetch feedback status when component mounts
   useEffect(() => {
@@ -54,44 +86,75 @@ const Message: React.FC<MessageProps> = ({ message, onLike, onDislike }) => {
     setFeedbackState('dislike');
     onDislike?.();
   };
+
+  // Format timestamp if available
+  const formatTime = (timestamp?: Date) => {
+    if (!timestamp) return '';
+    return timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  };
+
+  // Get message time
+  const messageTime = formatTime(message.createdAt);
   
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex w-full my-1 ${isUser ? 'justify-end' : 'justify-start'} relative`}>
+      {/* Message sent ping effect (for user messages) */}
+      {isUser && showSentEffect && (
+        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 message-sent-ping"></div>
+      )}
+      
       <div
-        className={`max-w-[75%] rounded-lg p-3 ${
-          isUser
-            ? 'bg-blue-500 text-white rounded-tr-none'
-            : 'bg-gray-200 text-gray-800 rounded-tl-none'
-        }`}
+        ref={messageRef}
+        className={`
+          relative max-w-[75%] px-4 py-2 mb-1 
+          ${isUser 
+            ? 'bg-[var(--imessage-blue)] text-[var(--imessage-text-white)] rounded-t-2xl rounded-l-2xl animate-[message-out_0.3s_ease]' 
+            : 'bg-[var(--imessage-gray)] text-[var(--imessage-text-black)] rounded-t-2xl rounded-r-2xl animate-[message-in_0.3s_ease]'
+          }
+          ${showImpact ? 'bubble-impact' : ''}
+        `}
       >
-        <div className="flex items-center mb-1">
-          {isUser ? (
-            <>
-              <span className="font-medium mr-2">You</span>
-              <FaUser size={12} />
-            </>
-          ) : (
-            <>
-              <span className="font-medium mr-2">AI</span>
-              <FaRobot size={12} />
-            </>
-          )}
-        </div>
-        <p className="whitespace-pre-wrap">{message.content}</p>
+        <p className="text-[15px] font-normal whitespace-pre-wrap">{message.content}</p>
         
+        {/* Time and delivered indicator */}
+        <div className={`flex items-center justify-end mt-0.5 ${isUser ? 'text-blue-100' : 'text-gray-500'}`}>
+          {isUser && isDelivered && (
+            <span className="mr-1 text-[9px] animate-delivered">Delivered</span>
+          )}
+          <span className="text-[10px]">{messageTime}</span>
+        </div>
+        
+        {/* Tail for the chat bubble with animation */}
+        <div 
+          className={`
+            absolute bottom-0 w-4 h-4 
+            ${isUser 
+              ? 'right-0 translate-x-3 -translate-y-1 bg-[var(--imessage-blue)]' 
+              : 'left-0 -translate-x-3 -translate-y-1 bg-[var(--imessage-gray)]'
+            } 
+            rounded-full animate-[bubble-tail-pop_0.3s_ease_0.15s_both]
+          `}
+        />
+        
+        {/* Read receipt (blue dot for user messages) */}
+        {isUser && isDelivered && (
+          <div className="absolute -bottom-3 right-4 w-2 h-2 bg-blue-500 rounded-full animate-delivered"></div>
+        )}
+        
+        {/* Feedback buttons (hidden in iMessage-style but can be toggled) */}
         {!isUser && (onLike || onDislike) && (
-          <div className="flex mt-2 space-x-2 justify-end">
+          <div className="flex mt-1 space-x-2 justify-end opacity-40 hover:opacity-100 transition-opacity">
             {onLike && (
               <button 
                 onClick={handleLike}
                 className={`${
                   feedbackState === 'like' 
-                    ? 'text-green-500' 
-                    : 'text-gray-500 hover:text-green-500'
-                } transition-colors`}
+                    ? 'text-blue-500' 
+                    : 'text-gray-500 hover:text-blue-500'
+                } transition-colors text-xs`}
                 aria-label="Like message"
               >
-                <FaThumbsUp size={14} />
+                👍
               </button>
             )}
             
@@ -102,10 +165,10 @@ const Message: React.FC<MessageProps> = ({ message, onLike, onDislike }) => {
                   feedbackState === 'dislike' 
                     ? 'text-red-500' 
                     : 'text-gray-500 hover:text-red-500'
-                } transition-colors`}
+                } transition-colors text-xs`}
                 aria-label="Dislike message"
               >
-                <FaThumbsDown size={14} />
+                👎
               </button>
             )}
           </div>

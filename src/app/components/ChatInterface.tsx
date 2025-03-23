@@ -8,7 +8,8 @@ import Message from './Message';
 import { Message as MessageType } from '@/types';
 import browserLogger from '@/lib/utils/browser-logger';
 import { useUser } from '@/app/contexts/UserContext';
-import DebugPanel from './DebugPanel'; // NEW import for the debug panel
+import DebugPanel from './DebugPanel';
+import UserSelector from './UserSelector';
 
 interface ChatInterfaceProps {
   initialConversationId?: string;
@@ -40,6 +41,46 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   const [systemPrompts, setSystemPrompts] = useState<any[]>([]);
   const [activePrompt, setActivePrompt] = useState<any | null>(null);
   const [showPromptSelector, setShowPromptSelector] = useState(false);
+
+  // Sound effects
+  const sendSoundRef = useRef<HTMLAudioElement | null>(null);
+  const receiveSoundRef = useRef<HTMLAudioElement | null>(null);
+
+  // Create sound effect elements
+  useEffect(() => {
+    // Create send sound
+    const sendSound = new Audio();
+    sendSound.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAYGBgYGBgYGBgYGBgYGBgYGBgj4+Pj4+Pj4+Pj4+Pj4+Pj4+PwMDAwMDAwMDAwMDAwMDAwMDAwP//////////////////AAAAOkxhdmM1OC4xMzAAAAAAAAAAAAAAAAD/4ziMAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAACwABgYGBgYGBgYGBgYGBgYGBgYGCPj4+Pj4+Pj4+Pj4+Pj4+Pj4/AwMDAwMDAwMDAwMDAwMDAwMDA//////////////////8AAAAOTGF2YzU4LjEzLjEwMAD/4zDAAAAAIAMuEAAAAAgQJgqgGgqgOlzA2hRJEgQJJFuFQCgsCwLAgCAIAgCmGVOwZAZ7nUAhDUfFpfgID6/AID6/CgEBMSgEBMTQfPnAL4Pgz4OgmA+DOvg93pgPg+nofxaD8LNj33voRxfgEAAAU16FWVa8quV/fI7n+z6KhHrRIAAAAJiR2xvcgAAACYkdsb2cAAABiJHaWdnAAAAAA==';
+    sendSound.preload = 'auto';
+    sendSoundRef.current = sendSound;
+    
+    // Create receive sound
+    const receiveSound = new Audio();
+    receiveSound.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAABAAAAVAAMDAwMDAwQEBAQEBAQFBQUFBQUFBgYGBgYGBgcHBwcHBwcICAgICAgICQkJCQkJCQoKCgoKCgoLCwsLCwsLDAwMDAwMDA0NDQ0NDQ0ODg4ODg4ODw8PDw8PD//////////////////////8AAAAkTGF2YzU4LjEzAAAAAAAAAAAAAAAAJP/jOMAAAAAAAAAAAAAAAAAAAAAAAABJbmZvAAAADwAAAAQAAAFQADAwMDAwMEBAQEBAQEBQUFBQUFBQYGBgYGBgYHBwcHBwcHCAgICAgICAkJCQkJCQkKCgoKCgoKCwsLCwsLCwwMDAwMDAwNDQ0NDQ0NDg4ODg4ODg8PDw8PDw8P///////////////////wAAAAlMYXZjNTguMTMuMTAwAP/jMMAAAAAgCqsQAAAACBAoCoAUAKATAgCaJEkSQJAihzBGgiRIEkTInELwC0AgQCE71VggQCBA4t/wJgSDf8CYEg3+DP8GQXzALIvgEAAAAAKlUzPfNAAXOHWIc/1N3/Oi1s7zogAAABwRlbmdwZHQAAAEYWx2dHAAAAAA=';
+    receiveSound.preload = 'auto';
+    receiveSoundRef.current = receiveSound;
+    
+    return () => {
+      sendSound.pause();
+      receiveSound.pause();
+    };
+  }, []);
+  
+  // Play sound when sending a message
+  const playMessageSentSound = () => {
+    if (sendSoundRef.current) {
+      sendSoundRef.current.currentTime = 0;
+      sendSoundRef.current.play().catch(err => console.error('Failed to play sound:', err));
+    }
+  };
+  
+  // Play sound when receiving a message
+  const playMessageReceivedSound = () => {
+    if (receiveSoundRef.current) {
+      receiveSoundRef.current.currentTime = 0;
+      receiveSoundRef.current.play().catch(err => console.error('Failed to play sound:', err));
+    }
+  };
 
   // On initial mount, if no conversationId, create one
   useEffect(() => {
@@ -438,164 +479,281 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
     }
   }, [conversationId]);
 
+  const handleUserMessage = async (message: string) => {
+    if (!message.trim() || isProcessing) return;
+    
+    setIsProcessing(true);
+    
+    // Play send sound
+    playMessageSentSound();
+    
+    // Create a temporary message
+    const tempId = `temp-${Date.now()}`;
+    const userMessage: MessageType = {
+      id: tempId,
+      conversationId: conversationId || '',
+      role: 'user',
+      content: message,
+      createdAt: new Date(),
+    };
+    
+    // Add user message to state
+    setMessages(prevMessages => [...prevMessages, userMessage]);
+    
+    try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (currentUser?.id) {
+        headers['x-user-id'] = currentUser.id;
+      }
+      
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ content: message }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+      
+      const data = await response.json();
+      
+      // Update messages with real IDs
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === tempId ? { ...msg, id: data.userMessage.id } : msg
+        )
+      );
+      
+      // Add AI response
+      const aiMessage: MessageType = {
+        id: data.aiMessage.id,
+        conversationId: conversationId || '',
+        role: 'assistant',
+        content: data.aiMessage.content,
+        createdAt: new Date(data.aiMessage.createdAt),
+      };
+      
+      // Play receive sound
+      playMessageReceivedSound();
+      
+      // Add AI message to state
+      setMessages(prevMessages => [...prevMessages, aiMessage]);
+      
+      // Get audio if in voice mode
+      if (responseMode === 'voice') {
+        const ttsResponse = await fetch(`/api/tts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: data.aiMessage.content }),
+        });
+        
+        if (ttsResponse.ok) {
+          const audioData = await ttsResponse.json();
+          if (audioData.audioContent) {
+            setAiAudio(audioData.audioContent);
+          }
+        }
+      }
+      
+      // Add debug message
+      setDebugMessages(prev => [
+        ...prev,
+        { 
+          timestamp: new Date(), 
+          actionType: 'SENT_MESSAGE', 
+          details: `Sent: "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"` 
+        }
+      ]);
+      
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Add error to debug
+      setDebugMessages(prev => [
+        ...prev,
+        { 
+          timestamp: new Date(), 
+          actionType: 'ERROR', 
+          details: `Error sending message: ${(error as Error).message}` 
+        }
+      ]);
+    } finally {
+      setIsProcessing(false);
+      setInput('');
+    }
+  };
+
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
-      {/* Top bar */}
-      <div className="bg-gray-800 text-white p-3 flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center">
-            <FaRobot className="mr-2" />
-            <span className="text-sm">
-              {activePrompt ? activePrompt.name : 'Default System Prompt'}
-            </span>
-          </div>
-          
-          {/* New Conversation Tab */}
-          <button
+    <div className="flex flex-col h-full bg-[var(--imessage-bg)]">
+      {/* Header with improved iMessage style */}
+      <div className="flex items-center justify-between p-3 imessage-header border-b border-[var(--imessage-border)] shadow-sm">
+        <div className="flex items-center space-x-2">
+          <button 
             onClick={handleNewChat}
-            className="px-3 py-1 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 flex items-center"
+            className="text-[var(--imessage-blue)] font-medium text-sm px-2 py-1.5 rounded-full hover:bg-blue-50 dark:hover:bg-gray-800 transition flex items-center"
           >
-            <span className="mr-1">+</span> New Conversation
+            <span className="mr-1 text-lg">+</span> 
+            <span className="hidden sm:inline">New Message</span>
           </button>
         </div>
-        <button
-          onClick={() => setShowPromptSelector(!showPromptSelector)}
-          className="text-white hover:text-gray-300"
-        >
-          <FaCog />
-        </button>
+        <div className="text-center flex-1">
+          <h1 className="text-base font-semibold text-gray-800 dark:text-gray-200">Messages</h1>
+          <p className="text-xs text-gray-500">AI Assistant</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <UserSelector />
+          <button
+            onClick={() => setShowRealtimeVoice(prev => !prev)}
+            className={`p-2 rounded-full ${
+              showRealtimeVoice 
+                ? 'bg-[var(--imessage-blue)] text-white' 
+                : 'text-[var(--imessage-blue)] hover:bg-blue-50 dark:hover:bg-gray-800'
+            } transition`}
+            title="Voice chat"
+            aria-label="Voice chat"
+          >
+            <FaMicrophone size={14} />
+          </button>
+          <button
+            onClick={toggleResponseMode}
+            className={`p-2 rounded-full ${
+              responseMode === 'voice' 
+                ? 'bg-[var(--imessage-blue)] text-white' 
+                : 'text-[var(--imessage-blue)] hover:bg-blue-50 dark:hover:bg-gray-800'
+            } transition`}
+            title={responseMode === 'voice' ? 'Voice responses enabled' : 'Text-only responses'}
+            aria-label="Toggle response mode"
+          >
+            <FaRobot size={14} />
+          </button>
+          <button 
+            onClick={() => setShowDebug(!showDebug)}
+            className={`p-2 rounded-full ${
+              showDebug 
+                ? 'bg-[var(--imessage-blue)] text-white' 
+                : 'text-[var(--imessage-blue)] hover:bg-blue-50 dark:hover:bg-gray-800'
+            } transition`}
+            title="Debug panel"
+            aria-label="Show debug panel"
+          >
+            <FaCog size={14} />
+          </button>
+        </div>
       </div>
 
-      {showPromptSelector && (
-        <div className="bg-gray-700 text-white p-3">
-          <h3 className="text-sm font-bold mb-2">Select System Prompt</h3>
-          <div className="max-h-40 overflow-y-auto">
-            {systemPrompts.map(prompt => (
-              <div
-                key={prompt.id}
-                onClick={() => setSystemPrompt(prompt.id)}
-                className={`p-2 cursor-pointer rounded hover:bg-gray-600 ${
-                  activePrompt?.id === prompt.id ? 'bg-gray-600' : ''
-                }`}
-              >
-                <div className="font-medium">{prompt.name}</div>
-                <div className="text-xs text-gray-300">
-                  {prompt.content.substring(0, 60)}...
-                </div>
+      {/* Main chat container with iMessage style */}
+      <div className="flex flex-1 overflow-hidden max-h-[calc(100vh-120px)]">
+        <div className="flex-1 overflow-hidden relative">
+          <div className="h-full overflow-y-auto px-4 py-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent" ref={messagesEndRef}>
+            {/* User info at the top (like iMessage) */}
+            <div className="flex flex-col items-center justify-center pt-4 pb-6">
+              <div className="w-16 h-16 rounded-full bg-[var(--imessage-blue)] flex items-center justify-center text-white text-xl font-semibold mb-2 shadow-md">
+                AI
               </div>
+              <h2 className="text-base font-semibold dark:text-white">AI Assistant</h2>
+              <p className="text-xs text-gray-500 mt-1">iMessage</p>
+              <div className="text-xs text-[var(--imessage-blue)] mt-2 flex items-center">
+                <span className="w-2 h-2 rounded-full bg-green-500 mr-1 animate-pulse"></span>
+                Active Now
+              </div>
+            </div>
+            
+            {/* iMessage style date separator */}
+            <div className="flex justify-center my-4">
+              <div className="bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs px-3 py-1 rounded-full">
+                {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+              </div>
+            </div>
+
+            {messages.map((msg, index) => (
+              <Message
+                key={msg.id || `temp-${index}`}
+                message={msg}
+                onLike={msg.id && !msg.id.startsWith('temp') ? () => handleLikeMessage(msg.id) : undefined}
+                onDislike={msg.id && !msg.id.startsWith('temp') ? () => handleDislikeMessage(msg.id) : undefined}
+              />
             ))}
+            
+            {/* Refined iMessage typing indicator */}
+            {isProcessing && (
+              <div className="flex justify-start my-1">
+                <div className="typing-indicator">
+                  <div className="typing-dot"></div>
+                  <div className="typing-dot"></div>
+                  <div className="typing-dot"></div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
+        
+        {showDebug && <DebugPanel debugMessages={debugMessages} onClose={() => setShowDebug(false)} />}
+      </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-screen-lg mx-auto">
-          {messages.map(message => (
-            <Message
-              key={message.id}
-              message={message}
-              onLike={() => handleLikeMessage(message.id)}
-              onDislike={() => handleDislikeMessage(message.id)}
+      {/* Audio player for TTS */}
+      <audio ref={audioRef} className="hidden" />
+
+      {/* Input area with iMessage style */}
+      <div className="border-t border-[var(--imessage-border)] p-3 bg-[var(--imessage-bg)]">
+        {showRealtimeVoice ? (
+          <div className="rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-[var(--imessage-border)] p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Voice Chat</h3>
+              <button
+                onClick={() => setShowRealtimeVoice(false)}
+                className="text-[var(--imessage-blue)] text-sm hover:underline"
+              >
+                Switch to Text
+              </button>
+            </div>
+            <RealtimeVoice
+              onPartialTranscript={handlePartialTranscript}
+              onCompletedTranscript={handleRealtimeUserMessage}
+              onPartialResponse={(text) => {}} 
+              onCompletedResponse={(text) => {
+                // Extract audio content if needed
+                handleAudioAIResponse(text, '');
+              }}
+              conversationId={conversationId}
             />
-          ))}
-          <div ref={messagesEndRef} />
-          {realtimeTranscript && (
-            <div className="my-3 p-4 bg-gray-200 rounded-lg max-w-3xl">
-              <div className="flex items-start">
-                <div className="mr-3 mt-0.5 text-gray-600">
-                  <FaUser />
-                </div>
-                <div>
-                  <div className="font-semibold text-gray-600">
-                    You (speaking)...
-                  </div>
-                  <div className="mt-1 text-gray-800">{realtimeTranscript}</div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Hidden audio element for AI TTS */}
-      <audio ref={audioRef} className="hidden" controls />
-
-      {/* Input area */}
-      <div className="p-4 border-t border-gray-200 bg-white">
-        <div className="max-w-screen-lg mx-auto">
-          <div className="flex justify-between mb-3">
-            <button
-              onClick={toggleResponseMode}
-              className={`px-3 py-1 text-sm rounded-md ${
-                responseMode === 'voice'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}
-            >
-              {responseMode === 'voice' ? 'Voice Mode' : 'Text-only Mode'}
-            </button>
-
-            {/* NEW Chat & Debug Buttons */}
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setShowDebug(!showDebug)}
-                className="px-3 py-1 text-sm rounded-md bg-gray-400 text-white hover:bg-gray-500"
-              >
-                Toggle Debug
-              </button>
-            </div>
           </div>
-
-          {showRealtimeVoice ? (
-            <div>
-              <div className="flex justify-between mb-3">
-                <button
-                  onClick={() => setShowRealtimeVoice(false)}
-                  className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-                >
-                  ← Back to Text Input
-                </button>
-              </div>
-              <RealtimeVoice
-                onPartialTranscript={handlePartialTranscript}
-                onCompletedTranscript={handleRealtimeUserMessage}
-                onPartialResponse={() => {}}
-                onCompletedResponse={() => {}}
-                conversationId={conversationId}
-              />
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="flex items-center">
-              <input
-                type="text"
-                placeholder="Type your message..."
-                className="flex-1 py-2 px-4 rounded-l-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={isProcessing}
-              />
-              <AudioRecorder
-                onTranscription={handleTranscription}
-                onAIResponse={handleAudioAIResponse}
-                conversationId={conversationId}
-              />
-              <button
-                type="submit"
-                className="bg-indigo-600 text-white py-2 px-4 rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                disabled={isProcessing}
-              >
-                <FaPaperPlane />
-              </button>
-            </form>
-          )}
-        </div>
+        ) : (
+          <form 
+            onSubmit={handleSubmit} 
+            className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-sm border border-[var(--imessage-border)]"
+          >
+            <AudioRecorder 
+              onTranscription={handleTranscription} 
+              onAIResponse={handleAudioAIResponse}
+              conversationId={conversationId}
+            />
+            
+            <input
+              type="text"
+              value={realtimeTranscript || input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={!!realtimeTranscript || isProcessing}
+              placeholder="iMessage"
+              className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 text-base"
+            />
+            
+            <button
+              type="submit"
+              disabled={(!input && !realtimeTranscript) || isProcessing}
+              className={`p-1 rounded-full ${
+                (!input && !realtimeTranscript) || isProcessing
+                  ? 'text-gray-400'
+                  : 'text-[var(--imessage-blue)] hover:bg-blue-50 dark:hover:bg-gray-700'
+              } transition`}
+              aria-label="Send message"
+            >
+              <FaPaperPlane size={18} />
+            </button>
+          </form>
+        )}
       </div>
-
-      {/* DebugPanel Slide-Out (optional styling) */}
-      {showDebug && (
-        <DebugPanel debugMessages={debugMessages} onClose={() => setShowDebug(false)} />
-      )}
     </div>
   );
 };

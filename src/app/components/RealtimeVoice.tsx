@@ -341,101 +341,170 @@ const RealtimeVoice: React.FC<RealtimeVoiceProps> = ({
     setVolume(parseFloat(e.target.value));
   };
   
+  // Render the main UI for the realtime voice component
   return (
-    <div className="flex flex-col space-y-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-      <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center">
+      {/* Status display */}
+      <div className="w-full mb-4">
+        {error && (
+          <div className="text-red-500 text-sm mb-2 p-2 rounded-lg bg-red-50 dark:bg-red-900/20">
+            {error}
+          </div>
+        )}
+        
+        <div className="text-center">
+          <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+            isConnected 
+              ? 'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-400' 
+              : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+          }`}>
+            {status}
+          </div>
+        </div>
+      </div>
+      
+      {/* Voice visualization */}
+      <div className="flex justify-center items-center mb-4 relative">
+        <div className={`rounded-full flex items-center justify-center transition-all ${
+          isSpeaking 
+            ? 'w-20 h-20 bg-[var(--imessage-blue)] pulsate-scale' 
+            : 'w-16 h-16 bg-gray-200 dark:bg-gray-700'
+        }`}>
+          {isSpeaking ? (
+            <div className="flex items-center space-x-1">
+              {[...Array(4)].map((_, i) => (
+                <div 
+                  key={i}
+                  className="w-1 bg-white rounded-full animate-pulse"
+                  style={{ 
+                    height: `${8 + Math.random() * 16}px`,
+                    animationDelay: `${i * 150}ms`
+                  }}
+                ></div>
+              ))}
+            </div>
+          ) : (
+            <FaMicrophone 
+              size={24} 
+              className={isConnected ? 'text-[var(--imessage-blue)]' : 'text-gray-400'} 
+            />
+          )}
+        </div>
+        
+        {messageCount > 0 && (
+          <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+            {messageCount}
+          </div>
+        )}
+      </div>
+      
+      {/* Connection control buttons */}
+      <div className="flex justify-center space-x-4 mb-4">
         {!isConnected ? (
           <button
             onClick={initRealtime}
-            className="p-4 rounded-full bg-green-500 hover:bg-green-600 text-white transition-colors"
             disabled={status !== 'idle' && status !== 'Disconnected' && status !== 'Connection failed'}
+            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
+              status === 'idle' || status === 'Disconnected' || status === 'Connection failed'
+                ? 'bg-[var(--imessage-blue)] text-white hover:bg-blue-600'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
           >
             {status === 'idle' || status === 'Disconnected' || status === 'Connection failed' ? (
-              <FaMicrophone className="text-xl" />
+              'Start Voice Chat'
             ) : (
-              <FaSpinner className="text-xl animate-spin" />
+              <span className="flex items-center">
+                <FaSpinner className="animate-spin mr-2" size={14} />
+                Connecting...
+              </span>
             )}
           </button>
         ) : (
           <button
             onClick={disconnect}
-            className="p-4 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors"
+            className="px-5 py-2 rounded-full text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
           >
-            <FaStop className="text-xl" />
+            End Voice Chat
+          </button>
+        )}
+
+        {transcript && isConnected && (
+          <button 
+            onClick={() => {
+              if (transcript.trim() && onCompletedTranscript) {
+                console.log(`🔔 MANUALLY SENDING TRANSCRIPT: "${transcript}"`);
+                onCompletedTranscript(transcript);
+                setTranscript('');
+              }
+            }}
+            className="px-5 py-2 rounded-full text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            Send Message
           </button>
         )}
       </div>
       
-      <div className="text-center text-sm">
-        {status}
+      {/* Volume controls */}
+      <div className="w-full max-w-xs mb-4 px-4">
+        <div className="flex items-center space-x-2">
+          <button 
+            onClick={() => setIsMuted(prev => !prev)}
+            className="text-[var(--imessage-blue)]"
+          >
+            {isMuted ? <FaVolumeMute size={16} /> : <FaVolumeUp size={16} />}
+          </button>
+          
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={isMuted ? 0 : volume}
+            onChange={(e) => {
+              const val = parseFloat(e.target.value);
+              setVolume(val);
+              setIsMuted(val === 0);
+              if (audioElementRef.current) {
+                audioElementRef.current.volume = val;
+              }
+            }}
+            className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+          />
+          
+          <button 
+            onClick={() => {
+              const newVolume = Math.min(1, volume + 0.1);
+              setVolume(newVolume);
+              setIsMuted(false);
+              if (audioElementRef.current) {
+                audioElementRef.current.volume = newVolume;
+              }
+            }}
+            className="text-[var(--imessage-blue)]"
+          >
+            <FaVolumeUp size={16} />
+          </button>
+        </div>
       </div>
       
-      {error && (
-        <div className="text-red-500 text-sm text-center">
-          {error}
+      {/* Transcript display */}
+      {transcript && (
+        <div className="w-full p-3 mb-4 bg-[var(--imessage-gray)] text-sm rounded-2xl dark:text-black">
+          <p className="font-medium text-xs mb-1 text-gray-500">Your message:</p>
+          {transcript}
         </div>
       )}
       
-      {isConnected && (
-        <>
-          <div className="p-2 bg-white dark:bg-gray-700 rounded shadow">
-            <div className="text-xs text-gray-500 dark:text-gray-300 mb-1">You said:</div>
-            <div className="italic text-sm">
-              {transcript || 'Waiting for speech...'}
-            </div>
-            {transcript && (
-              <button 
-                onClick={() => {
-                  if (transcript.trim() && onCompletedTranscript) {
-                    console.log(`🔔 MANUALLY SENDING TRANSCRIPT: "${transcript}"`);
-                    onCompletedTranscript(transcript);
-                    setTranscript('');
-                  }
-                }}
-                className="mt-2 text-xs bg-blue-500 text-white px-2 py-1 rounded"
-              >
-                Force Send This Text
-              </button>
-            )}
-          </div>
-          
-          <div className="p-2 bg-blue-50 dark:bg-gray-600 rounded shadow">
-            <div className="text-xs text-gray-500 dark:text-gray-300 mb-1">Response:</div>
-            <div className="text-sm">
-              {response || 'Waiting for response...'}
-            </div>
-          </div>
-          
-          {/* Debug info */}
-          <div className="p-2 bg-yellow-50 dark:bg-gray-700 rounded shadow text-xs">
-            <div className="text-gray-500">Debug Info:</div>
-            <div>Messages received: {messageCount}</div>
-            <div>Last transcript: {lastTranscriptTime > 0 ? new Date(lastTranscriptTime).toLocaleTimeString() : 'None'}</div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <button onClick={toggleMute} className="p-2">
-              {isMuted ? (
-                <FaVolumeMute className="text-red-500" />
-              ) : volume < 0.3 ? (
-                <FaVolumeDown />
-              ) : (
-                <FaVolumeUp />
-              )}
-            </button>
-            
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={volume}
-              onChange={changeVolume}
-              className="w-full"
-            />
-          </div>
-        </>
+      {/* Response display */}
+      {response && (
+        <div className="w-full p-3 mb-4 bg-[var(--imessage-blue)] text-white text-sm rounded-2xl">
+          <p className="font-medium text-xs mb-1 text-blue-100">Response:</p>
+          {response}
+        </div>
       )}
+      
+      {/* Audio element for playback */}
+      <audio ref={audioElementRef} className="hidden" />
     </div>
   );
 };

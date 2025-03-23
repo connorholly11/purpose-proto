@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { FaMicrophone, FaSpinner } from 'react-icons/fa';
+import { FaMicrophone, FaSpinner, FaPaperPlane } from 'react-icons/fa';
 
 interface AudioRecorderProps {
   onTranscription: (text: string) => void;
@@ -17,9 +17,33 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [showSendButton, setShowSendButton] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const durationTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Timer for recording duration
+  useEffect(() => {
+    if (isRecording) {
+      durationTimerRef.current = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (durationTimerRef.current) {
+        clearInterval(durationTimerRef.current);
+        durationTimerRef.current = null;
+      }
+      setRecordingDuration(0);
+    }
+    
+    return () => {
+      if (durationTimerRef.current) {
+        clearInterval(durationTimerRef.current);
+      }
+    };
+  }, [isRecording]);
   
   // Toggle recording state
   const toggleRecording = async () => {
@@ -32,6 +56,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
         stream.getTracks().forEach((track) => track.stop());
         setIsRecording(false);
         setIsProcessing(true);
+        setShowSendButton(false);
       }
     } else {
       // Start recording
@@ -50,108 +75,141 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
           }
         };
         
+        // Define what happens when recording stops
         mediaRecorder.onstop = handleRecordingStop;
         
+        // Start recording
         mediaRecorder.start();
         setIsRecording(true);
+        
+        // After 3 seconds, show the send button
+        setTimeout(() => {
+          if (isRecording) {
+            setShowSendButton(true);
+          }
+        }, 3000);
       } catch (err) {
-        console.error('Error starting recording:', err);
-        setError('Could not access microphone');
+        console.error('Error accessing microphone:', err);
+        setError('Could not access microphone. Please ensure you have granted permission.');
       }
     }
   };
-  
+
   // Handle the recording stop event
   const handleRecordingStop = async () => {
+    if (audioChunksRef.current.length === 0) {
+      setIsProcessing(false);
+      return;
+    }
+    
     try {
-      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
       
-      // Create FormData to send to API
+      // Create FormData and append file
       const formData = new FormData();
-      formData.append('file', audioBlob, 'recording.webm');
+      formData.append('audioFile', audioBlob, 'recording.wav');
+      
+      if (conversationId) {
+        formData.append('conversationId', conversationId);
+      }
       
       // Send to transcription API
-      const transcriptionResponse = await fetch('/api/transcribe', {
+      const response = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData,
       });
       
-      if (!transcriptionResponse.ok) {
-        throw new Error(`Transcription failed: ${transcriptionResponse.status}`);
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
       }
       
-      const { transcript } = await transcriptionResponse.json();
+      const data = await response.json();
       
-      // Only perform transcription and pass the result to parent component
-      onTranscription(transcript);
+      if (data.error) {
+        throw new Error(data.error);
+      }
       
-    } catch (err: any) {
-      console.error('Error processing recording:', err);
-      setError(err.message || 'Error processing recording');
+      if (data.transcript) {
+        onTranscription(data.transcript);
+      }
+    } catch (err) {
+      console.error('Error processing audio:', err);
+      setError('Failed to process audio. Please try again.');
     } finally {
       setIsProcessing(false);
+      setShowSendButton(false);
     }
   };
   
-  // Cleanup function
-  useEffect(() => {
-    return () => {
-      if (mediaRecorderRef.current && isRecording) {
-        const stream = mediaRecorderRef.current.stream;
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, [isRecording]);
+  // Format duration as MM:SS
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
   
-  // Sound wave animation for recording indicator
+  // Animated sound wave component for recording state
   const SoundWave = () => (
-    <div className="flex items-center gap-1 h-4">
-      {[1, 2, 3, 4].map((i) => (
+    <div className="flex items-center space-x-1">
+      {[...Array(4)].map((_, i) => (
         <div 
           key={i}
-          className="w-1 bg-red-500 rounded-full animate-pulse"
+          className="w-0.5 bg-[var(--imessage-blue)] rounded-full animate-pulse"
           style={{ 
-            height: `${Math.random() * 16 + 4}px`,
-            animationDelay: `${i * 0.1}s`
+            height: `${6 + Math.random() * 8}px`,
+            animationDelay: `${i * 150}ms`, 
+            animationDuration: '1s' 
           }}
-        />
+        ></div>
       ))}
     </div>
   );
-  
+
   return (
-    <div className="relative">
+    <>
       {isRecording && (
-        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap flex flex-col items-center">
-          <span className="text-xs font-medium text-red-500">Listening</span>
-          <SoundWave />
+        <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-3 py-1 rounded-full text-xs">
+          {formatDuration(recordingDuration)}
         </div>
       )}
-      <button
-        type="button"
-        onClick={toggleRecording}
-        disabled={isProcessing}
-        className={`py-2 px-4 border transition-colors ${
-          isRecording 
-            ? 'bg-red-500 hover:bg-red-600 text-white border-red-500' 
-            : 'bg-indigo-500 hover:bg-indigo-600 text-white border-indigo-500'
-        }`}
-        title={isRecording ? "Stop recording" : "Start recording"}
-        aria-label={isRecording ? "Stop recording" : "Start recording"}
-      >
-        {isProcessing ? (
-          <FaSpinner className="text-lg animate-spin" />
-        ) : (
-          <FaMicrophone className="text-lg" />
-        )}
-      </button>
       
-      {error && (
-        <div className="absolute -bottom-8 left-0 text-red-500 text-xs whitespace-nowrap">
-          {error}
-        </div>
-      )}
-    </div>
+      <div className="flex items-center space-x-2">
+        <button
+          type="button"
+          onClick={toggleRecording}
+          disabled={isProcessing}
+          className={`
+            flex items-center justify-center rounded-full w-8 h-8
+            ${isRecording 
+              ? 'bg-[var(--imessage-blue)] text-white pulsate-scale'
+              : 'text-[var(--imessage-blue)] hover:bg-blue-50 dark:hover:bg-gray-700'
+            }
+            transition-all duration-200 ease-in-out
+            ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
+          `}
+          aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+        >
+          {isProcessing ? (
+            <FaSpinner className="animate-spin text-[var(--imessage-typing-gray)]" size={16} />
+          ) : isRecording ? (
+            <SoundWave />
+          ) : (
+            <FaMicrophone size={16} />
+          )}
+        </button>
+        
+        {isRecording && showSendButton && (
+          <button
+            type="button"
+            onClick={toggleRecording}
+            className="flex items-center justify-center rounded-full w-8 h-8 bg-[var(--imessage-blue)] text-white"
+            aria-label="Send voice message"
+          >
+            <FaPaperPlane size={14} />
+          </button>
+        )}
+      </div>
+    </>
   );
 };
 

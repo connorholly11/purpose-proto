@@ -3,6 +3,16 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* iMessage colors */
+  --imessage-blue: #0b93f6;
+  --imessage-gray: #e5e5ea;
+  --imessage-text-white: #ffffff;
+  --imessage-text-black: #000000;
+  --imessage-typing-gray: #8e8e93;
+  --imessage-bg: #f5f5f5;
+  --imessage-header-bg: #f9f9fc;
+  --imessage-border: #e2e2e7;
 }
 
 @theme inline {
@@ -14,13 +24,228 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #000000;
     --foreground: #ededed;
+    
+    /* iMessage dark mode colors */
+    --imessage-blue: #007aff;
+    --imessage-gray: #2c2c2e;
+    --imessage-text-white: #ffffff;
+    --imessage-text-black: #ffffff;
+    --imessage-typing-gray: #8e8e93;
+    --imessage-bg: #000000;
+    --imessage-header-bg: #1c1c1e;
+    --imessage-border: #38383a;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "San Francisco", Helvetica, Arial, sans-serif;
+}
+
+/* Custom scrollbar for iMessage style */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #d1d1d1;
+  border-radius: 20px;
+  border: 2px solid transparent;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #444;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: #a8a8a8;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
+/* Hide scrollbar when not hovered */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.scrollbar-thin:hover {
+  scrollbar-color: #d1d1d1 transparent;
+}
+
+.dark .scrollbar-thin:hover {
+  scrollbar-color: #444 transparent;
+}
+
+/* iMessage animations */
+@keyframes message-in {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes message-out {
+  0% {
+    transform: translateY(20px) scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Message bubble tail pop animation */
+@keyframes bubble-tail-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Typing indicator animation - refined to look more like iMessage */
+@keyframes typing-dot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Recording button pulse animation */
+@keyframes pulsate-scale {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(11, 147, 246, 0.7);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(11, 147, 246, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(11, 147, 246, 0);
+  }
+}
+
+.pulsate-scale {
+  animation: pulsate-scale 2s infinite;
+}
+
+/* Message bubble delivered animation */
+@keyframes delivered {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-delivered {
+  animation: delivered 0.3s ease-out;
+}
+
+/* iMessage bubble impacts */
+@keyframes bubble-impact {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+.bubble-impact {
+  animation: bubble-impact 0.3s ease;
+}
+
+/* Message sent sound */
+@keyframes message-sent-ping {
+  0% {
+    transform: scale(0);
+    opacity: 0.8;
+  }
+  80% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.message-sent-ping {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 100%;
+  background-color: var(--imessage-blue);
+  animation: message-sent-ping 0.5s ease-out forwards;
+}
+
+/* iMessage header style */
+.imessage-header {
+  background-color: var(--imessage-header-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Refined typing indicator */
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: var(--imessage-gray);
+  border-radius: 20px;
+  margin-top: 8px;
+  margin-left: 8px;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #888;
+  margin: 0 2px;
+}
+
+.typing-dot:nth-child(1) {
+  animation: typing-dot 1.4s infinite;
+  animation-delay: 0s;
+}
+
+.typing-dot:nth-child(2) {
+  animation: typing-dot 1.4s infinite;
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation: typing-dot 1.4s infinite;
+  animation-delay: 0.4s;
 }
