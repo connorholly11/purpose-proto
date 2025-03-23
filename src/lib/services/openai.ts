@@ -217,6 +217,41 @@ export async function getCompletion(messages: any[], context?: string): Promise<
   const openai = getOpenAIClient();
   
   try {
+    // Get the active system prompt
+    let systemPrompt = null;
+    try {
+      // Import at function level to avoid circular dependencies
+      const { getActiveSystemPrompt } = require('./promptService');
+      systemPrompt = await getActiveSystemPrompt();
+      logger.debug('OpenAI', 'Retrieved active system prompt', {
+        requestId,
+        hasSystemPrompt: !!systemPrompt,
+        promptName: systemPrompt?.name
+      });
+    } catch (error) {
+      logger.warn('OpenAI', 'Error retrieving system prompt', {
+        requestId,
+        error: (error as Error).message
+      });
+    }
+    
+    // Find or create a system message
+    const systemMessageIndex = messages.findIndex(msg => msg.role === 'system');
+    
+    if (systemPrompt) {
+      // Create or update system message with the active prompt
+      if (systemMessageIndex >= 0) {
+        // Replace existing system message with active prompt
+        messages[systemMessageIndex].content = systemPrompt.content;
+      } else {
+        // Create a new system message with active prompt
+        messages.unshift({
+          role: 'system',
+          content: systemPrompt.content
+        });
+      }
+    }
+    
     // If we have context from RAG, add it to the system message
     if (context) {
       logger.debug('OpenAI', 'Adding context to system message', {
@@ -224,14 +259,13 @@ export async function getCompletion(messages: any[], context?: string): Promise<
         contextLength: context.length
       });
       
-      // Find or create a system message
-      const systemMessageIndex = messages.findIndex(msg => msg.role === 'system');
-      
-      if (systemMessageIndex >= 0) {
+      // Find system message (which now must exist)
+      const sysIndex = messages.findIndex(msg => msg.role === 'system');
+      if (sysIndex >= 0) {
         // Append context to existing system message
-        messages[systemMessageIndex].content = `${messages[systemMessageIndex].content}\n\nContext:\n${context}`;
+        messages[sysIndex].content = `${messages[sysIndex].content}\n\nContext:\n${context}`;
       } else {
-        // Create a new system message with context
+        // Create a new system message with context (fallback)
         messages.unshift({
           role: 'system',
           content: `You are a helpful assistant. Please use the following context to inform your responses:\n\n${context}`

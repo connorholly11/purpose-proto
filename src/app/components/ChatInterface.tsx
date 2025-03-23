@@ -8,10 +8,17 @@ import Message from './Message';
 import { Message as MessageType } from '@/types';
 import browserLogger from '@/lib/utils/browser-logger';
 import { useUser } from '@/app/contexts/UserContext';
+import DebugPanel from './DebugPanel'; // NEW import for the debug panel
 
 interface ChatInterfaceProps {
   initialConversationId?: string;
 }
+
+type DebugMessage = {
+  timestamp: Date;
+  actionType: string;
+  details: string;
+};
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) => {
   const { currentUser } = useUser();
@@ -25,9 +32,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   const [responseMode, setResponseMode] = useState<'text' | 'voice'>('voice');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  // NEW: debug message state & show panel
+  const [debugMessages, setDebugMessages] = useState<DebugMessage[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
+
   const [systemPrompts, setSystemPrompts] = useState<any[]>([]);
   const [activePrompt, setActivePrompt] = useState<any | null>(null);
   const [showPromptSelector, setShowPromptSelector] = useState(false);
+
+  // On initial mount, if no conversationId, create one
+  useEffect(() => {
+    if (!conversationId) {
+      createNewConversation();
+    } else {
+      loadConversation(conversationId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
 
   // Load mode from localStorage on mount
   useEffect(() => {
@@ -41,15 +63,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   useEffect(() => {
     localStorage.setItem('responseMode', responseMode);
   }, [responseMode]);
-
-  // Initialize or load conversation
-  useEffect(() => {
-    if (!conversationId) {
-      initializeConversation();
-    } else {
-      loadConversation(conversationId);
-    }
-  }, [conversationId]);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -66,14 +79,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
       });
     }
   }, [aiAudio]);
-
-  // If user changes, reset conversation
-  useEffect(() => {
-    setMessages([]);
-    setConversationId(undefined);
-    initializeConversation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
 
   // Load system prompts (example feature)
   useEffect(() => {
@@ -101,38 +106,42 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   }, []);
 
   // ---------------------------------------
-  // create conversation
+  // create new conversation
   // ---------------------------------------
-  const initializeConversation = async () => {
+  const createNewConversation = async () => {
     try {
-      if (!currentUser?.id) {
-        // If you need a user to create a conversation, handle it or skip
-        browserLogger.warn('ChatInterface', 'No currentUser found, conversation will be guest-based');
-      }
-
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
-      if (currentUser) {
+      if (currentUser?.id) {
         headers['x-user-id'] = currentUser.id;
       }
 
-      // Updated to call POST /api/conversations (not /create)
       const response = await fetch('/api/conversations', {
         method: 'POST',
         headers,
       });
-
       if (!response.ok) {
         browserLogger.error('ChatInterface', 'Failed to create conversation', {
           status: response.status
         });
+        setDebugMessages(prev => [...prev, {
+          timestamp: new Date(),
+          actionType: 'ERROR',
+          details: `Failed to create conversation (status ${response.status})`
+        }]);
         throw new Error('Failed to create conversation');
       }
 
       const data = await response.json();
-      browserLogger.info('ChatInterface', 'Conversation created', { conversationId: data.id });
       setConversationId(data.id);
+      setMessages([]);
+
+      // debug logging
+      setDebugMessages(prev => [
+        ...prev,
+        { timestamp: new Date(), actionType: 'NEW_CONVERSATION', details: `Created conversation ${data.id}` }
+      ]);
     } catch (error) {
       browserLogger.error('ChatInterface', 'Error creating conversation', {
         error: (error as Error).message,
@@ -142,11 +151,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   };
 
   // ---------------------------------------
+  // "New Chat" button handler
+  // ---------------------------------------
+  const handleNewChat = async () => {
+    await createNewConversation();
+  };
+
+  // ---------------------------------------
   // load conversation
   // ---------------------------------------
   const loadConversation = async (id: string) => {
     try {
-      // Use the existing dynamic route: /api/conversations/[id]
+      setDebugMessages(prev => [
+        ...prev,
+        { timestamp: new Date(), actionType: 'LOAD_CONVERSATION', details: `Loading conversation ${id}` }
+      ]);
       const response = await fetch(`/api/conversations/${id}`, { method: 'GET' });
       if (!response.ok) {
         throw new Error('Failed to load conversation');
@@ -166,12 +185,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   // handle user message submission (typed)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!input.trim()) return;
 
     const userMessage = input.trim();
     setInput('');
     setIsProcessing(true);
 
-    // Add user message to local state
     const newUserMessage: MessageType = {
       id: `temp-${Date.now()}`,
       conversationId: conversationId || '',
@@ -181,11 +200,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
     };
     setMessages(prev => [...prev, newUserMessage]);
 
+    // debug
+    setDebugMessages(prev => [
+      ...prev,
+      { timestamp: new Date(), actionType: 'USER_MESSAGE', details: userMessage }
+    ]);
+
     try {
-      // 1) Call RAG service
+      // 1) RAG call
+      setDebugMessages(prev => [
+        ...prev,
+        { timestamp: new Date(), actionType: 'RAG_START', details: 'Calling /api/rag...' }
+      ]);
+
       const ragResponse = await fetch('/api/rag', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': currentUser?.id || ''
+        },
         body: JSON.stringify({
           query: userMessage,
           topK: 5,
@@ -198,10 +231,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
       }
       const ragResult = await ragResponse.json();
 
-      // 2) Get AI completion
+      setDebugMessages(prev => [
+        ...prev,
+        { timestamp: new Date(), actionType: 'RAG_DONE', details: `Retrieved context length: ${ragResult.context?.length || 0}` }
+      ]);
+
+      // 2) /api/completion
+      setDebugMessages(prev => [
+        ...prev,
+        { timestamp: new Date(), actionType: 'COMPLETION_START', details: 'Calling /api/completion...' }
+      ]);
+
       const completionResponse = await fetch('/api/completion', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           messages: [{ role: 'user', content: userMessage }],
           context: ragResult.context,
@@ -213,7 +258,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
       }
       const { answer } = await completionResponse.json();
 
-      // Add AI message
+      setDebugMessages(prev => [
+        ...prev,
+        { timestamp: new Date(), actionType: 'COMPLETION_DONE', details: `Got answer: ${answer.substring(0, 50)}...` }
+      ]);
+
+      // add AI message
       const newAiMessage: MessageType = {
         id: `temp-response-${Date.now()}`,
         conversationId: conversationId || '',
@@ -223,12 +273,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
       };
       setMessages(prev => [...prev, newAiMessage]);
 
-      // Optionally generate TTS
+      // optionally generate TTS
       if (responseMode === 'voice') {
+        setDebugMessages(prev => [
+          ...prev,
+          { timestamp: new Date(), actionType: 'TTS_START', details: 'Requesting TTS from /api/tts' }
+        ]);
+
         await generateSpeech(answer);
       }
     } catch (error) {
       console.error('Error processing message:', error);
+      setDebugMessages(prev => [
+        ...prev,
+        { timestamp: new Date(), actionType: 'ERROR', details: `Message process error: ${(error as Error).message}` }
+      ]);
     } finally {
       setIsProcessing(false);
     }
@@ -249,15 +308,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
       const { audioContent } = await ttsResponse.json();
       if (audioContent) {
         setAiAudio(audioContent);
+        setDebugMessages(prev => [
+          ...prev,
+          { timestamp: new Date(), actionType: 'TTS_DONE', details: 'Audio returned successfully' }
+        ]);
       }
     } catch (error) {
       console.error('Error generating speech:', error);
+      setDebugMessages(prev => [
+        ...prev,
+        { timestamp: new Date(), actionType: 'ERROR', details: `TTS error: ${(error as Error).message}` }
+      ]);
     }
   };
 
   // handle transcription from short audio recordings
   const handleTranscription = (transcript: string) => {
     setInput(transcript);
+    setDebugMessages(prev => [
+      ...prev,
+      { timestamp: new Date(), actionType: 'AUDIO_TRANSCRIBE', details: `Transcribed: ${transcript}` }
+    ]);
   };
 
   // handle AI response from short audio recorder
@@ -281,6 +352,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
     setMessages(prev => [...prev, newUserMessage, newAiMessage]);
     setAiAudio(audioContent);
     setInput('');
+
+    // debug
+    setDebugMessages(prev => [
+      ...prev,
+      { timestamp: new Date(), actionType: 'AUDIO_AI_RESPONSE', details: `Answer: ${answer}` }
+    ]);
   };
 
   // partial transcripts from Realtime
@@ -290,8 +367,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
 
   // NEW: handle final transcript from Realtime voice
   const handleRealtimeUserMessage = async (transcript: string) => {
-    // Functionality commented out
-    console.log('Real-time voice feature is currently disabled');
+    // Could optionally dispatch or treat similarly to typed messages
+    console.log('Real-time voice feature is currently disabled or incomplete');
   };
 
   // handle message likes
@@ -331,29 +408,55 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
       const response = await fetch(`/api/system-prompts/${promptId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'active'
-        }),
+        body: JSON.stringify({ status: 'active' }),
       });
       if (response.ok) {
         const data = await response.json();
         setActivePrompt(data.systemPrompt);
         setShowPromptSelector(false);
+        
+        // Add debug message
+        setDebugMessages(prev => [
+          ...prev,
+          { timestamp: new Date(), actionType: 'SYSTEM_PROMPT', details: `Set system prompt to ${data.systemPrompt.name}` }
+        ]);
+        
+        // If there's an existing conversation, create a new one to apply the new system prompt
+        if (conversationId) {
+          await createNewConversation();
+        }
       }
     } catch (error) {
       console.error('Error setting system prompt:', error);
     }
   };
 
+  // useEffect to reload conversation when navigating between tabs
+  useEffect(() => {
+    if (conversationId) {
+      loadConversation(conversationId);
+    }
+  }, [conversationId]);
+
   return (
     <div className="flex flex-col h-screen bg-gray-100">
       {/* Top bar */}
       <div className="bg-gray-800 text-white p-3 flex justify-between items-center">
-        <div className="flex items-center">
-          <FaRobot className="mr-2" />
-          <span className="text-sm">
-            {activePrompt ? activePrompt.name : 'Default System Prompt'}
-          </span>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center">
+            <FaRobot className="mr-2" />
+            <span className="text-sm">
+              {activePrompt ? activePrompt.name : 'Default System Prompt'}
+            </span>
+          </div>
+          
+          {/* New Conversation Tab */}
+          <button
+            onClick={handleNewChat}
+            className="px-3 py-1 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 flex items-center"
+          >
+            <span className="mr-1">+</span> New Conversation
+          </button>
         </div>
         <button
           onClick={() => setShowPromptSelector(!showPromptSelector)}
@@ -432,6 +535,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
             >
               {responseMode === 'voice' ? 'Voice Mode' : 'Text-only Mode'}
             </button>
+
+            {/* NEW Chat & Debug Buttons */}
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setShowDebug(!showDebug)}
+                className="px-3 py-1 text-sm rounded-md bg-gray-400 text-white hover:bg-gray-500"
+              >
+                Toggle Debug
+              </button>
+            </div>
           </div>
 
           {showRealtimeVoice ? (
@@ -446,7 +559,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
               </div>
               <RealtimeVoice
                 onPartialTranscript={handlePartialTranscript}
-                onCompletedTranscript={handleRealtimeUserMessage} 
+                onCompletedTranscript={handleRealtimeUserMessage}
                 onPartialResponse={() => {}}
                 onCompletedResponse={() => {}}
                 conversationId={conversationId}
@@ -470,7 +583,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
               <button
                 type="submit"
                 className="bg-indigo-600 text-white py-2 px-4 rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                disabled={isProcessing || !input.trim()}
+                disabled={isProcessing}
               >
                 <FaPaperPlane />
               </button>
@@ -478,6 +591,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
           )}
         </div>
       </div>
+
+      {/* DebugPanel Slide-Out (optional styling) */}
+      {showDebug && (
+        <DebugPanel debugMessages={debugMessages} onClose={() => setShowDebug(false)} />
+      )}
     </div>
   );
 };

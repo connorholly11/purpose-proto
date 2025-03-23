@@ -92,14 +92,20 @@ export async function queryDocuments(
     }
     const index = pinecone.index(indexName);
 
-    // Optional filter, not used by default
-    const filter = undefined;
+    // Prepare filter for user-specific data if userId provided
+    const filter = userId ? {
+      $or: [
+        { userId: { $eq: userId } },
+        { userId: { $exists: false } }
+      ]
+    } : undefined;
 
     // Query Pinecone
     logger.debug('Pinecone', 'Querying Pinecone', {
       topK: finalTopK,
       userId: userId || 'none',
-      hasAdditionalContext: !!additionalContext
+      hasAdditionalContext: !!additionalContext,
+      hasFilter: !!filter
     });
 
     const queryResponse = await index.query({
@@ -117,28 +123,72 @@ export async function queryDocuments(
     }));
 
     // If userId is provided, fetch user-specific knowledge from DB
+    let knowledgeMatches: any[] = [];
     if (userId) {
+      logger.debug('Pinecone', 'Fetching user knowledge items', { userId });
       const userKnowledgeItems = await getUserKnowledgeItems(userId);
+      
       if (userKnowledgeItems.length > 0) {
+        logger.info('Pinecone', 'Processing user knowledge items', { 
+          count: userKnowledgeItems.length,
+          userId
+        });
+        
         for (const item of userKnowledgeItems) {
           const itemEmbedding = await generateEmbedding(item.content);
           const similarity = cosineSimilarity(queryEmbedding, itemEmbedding);
-          if (similarity > 0.7) {
-            matches.push({
+          
+          logger.debug('Pinecone', 'Knowledge item similarity', {
+            itemId: item.id,
+            similarity,
+            title: item.title || 'Untitled'
+          });
+          
+          // Lower threshold to ensure knowledge items are included
+          if (similarity > 0.6) {
+            knowledgeMatches.push({
               id: item.id,
               score: similarity,
-              metadata: { source: 'user_knowledge', title: item.title },
+              metadata: { 
+                source: 'user_knowledge', 
+                title: item.title || 'Untitled',
+                userId: item.userId 
+              },
               content: item.content,
             });
           }
         }
-        // Re-sort and limit topK
-        matches.sort((a, b) => b.score - a.score);
-        return matches.slice(0, finalTopK);
+        
+        // Also upsert knowledge items to Pinecone for future queries
+        // We do this async so it doesn't slow down the current query
+        try {
+          logger.debug('Pinecone', 'Upserting knowledge items to Pinecone', { count: userKnowledgeItems.length });
+          upsertDocuments(userKnowledgeItems.map(item => ({
+            text: item.content,
+            source: 'user_knowledge',
+            userId: item.userId
+          }))).catch(err => {
+            logger.error('Pinecone', 'Error upserting knowledge items', { error: (err as Error).message });
+          });
+        } catch (error) {
+          logger.error('Pinecone', 'Error preparing knowledge items for upsert', { 
+            error: (error as Error).message 
+          });
+        }
       }
     }
-
-    return matches;
+    
+    // Combine and re-sort matches
+    const allMatches = [...matches, ...knowledgeMatches];
+    allMatches.sort((a, b) => b.score - a.score);
+    
+    logger.info('Pinecone', 'Query results combined', {
+      pineconeMatches: matches.length,
+      knowledgeMatches: knowledgeMatches.length,
+      totalMatches: allMatches.length
+    });
+    
+    return allMatches.slice(0, finalTopK);
   } catch (error) {
     console.error('Error querying Pinecone:', error);
     throw error;
