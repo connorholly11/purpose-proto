@@ -37,6 +37,8 @@ model Conversation {
   messages      Message[]
   ragOperations RAGOperation[]
   performanceMetrics PerformanceMetrics[]
+  summaries     ConversationSummary[]
+  lastSummarizedAt DateTime?    // Track when the conversation was last summarized
 }
 
 model Message {
@@ -155,4 +157,19 @@ model PerformanceMetrics {
   tokensUsed    Int?
   cost          Float?
   timestamp     DateTime @default(now())
+}
+
+// Model for conversation summaries with hierarchical memory
+model ConversationSummary {
+  id              String        @id @default(uuid())
+  conversationId  String
+  conversation    Conversation  @relation(fields: [conversationId], references: [id])
+  content         String        @db.Text
+  type            String        // "short_term", "medium_term", "long_term"
+  startMessageId  String?       // First message included in this summary
+  endMessageId    String?       // Last message included in this summary
+  embeddings      Json?         // Store vector embedding for retrieval 
+  createdAt       DateTime      @default(now())
+  priority        Int           @default(1) // Importance score (1-10)
+  lastAccessed    DateTime      @default(now()) // Track when this was last used
 }

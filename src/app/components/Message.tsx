@@ -96,8 +96,21 @@ const Message: React.FC<MessageProps> = ({ message, onLike, onDislike }) => {
   // Get message time
   const messageTime = formatTime(message.createdAt);
   
+  // Handle long messages on mobile
+  const formatContent = (content: string) => {
+    const words = content.split(' ');
+    // Ensure no word is too long for mobile screens
+    const formattedWords = words.map(word => {
+      if (word.length > 30) {
+        return word.match(/.{1,30}/g)?.join(' ') || word;
+      }
+      return word;
+    });
+    return formattedWords.join(' ');
+  };
+  
   return (
-    <div className={`flex w-full my-1 ${isUser ? 'justify-end' : 'justify-start'} relative`}>
+    <div className={`flex w-full my-1.5 sm:my-2 ${isUser ? 'justify-end' : 'justify-start'} relative group`}>
       {/* Message sent ping effect (for user messages) */}
       {isUser && showSentEffect && (
         <div className="absolute right-0 top-1/2 transform -translate-y-1/2 message-sent-ping"></div>
@@ -105,32 +118,47 @@ const Message: React.FC<MessageProps> = ({ message, onLike, onDislike }) => {
       
       <div
         ref={messageRef}
+        style={{
+          backgroundColor: isUser 
+            ? 'var(--primary-blue)' 
+            : 'var(--imessage-gray)',
+          color: isUser 
+            ? 'var(--imessage-text-white)' 
+            : 'var(--imessage-text-black)'
+        }}
         className={`
-          relative max-w-[75%] px-4 py-2 mb-1 
+          relative max-w-[80%] sm:max-w-[75%] px-3 sm:px-4 py-2 sm:py-3 mb-1 message-bubble
           ${isUser 
-            ? 'bg-[var(--imessage-blue)] text-[var(--imessage-text-white)] rounded-t-2xl rounded-l-2xl animate-[message-out_0.3s_ease]' 
-            : 'bg-[var(--imessage-gray)] text-[var(--imessage-text-black)] rounded-t-2xl rounded-r-2xl animate-[message-in_0.3s_ease]'
+            ? 'rounded-t-2xl rounded-l-2xl animate-[message-out_0.3s_ease]' 
+            : 'rounded-t-2xl rounded-r-2xl animate-[message-in_0.3s_ease]'
           }
           ${showImpact ? 'bubble-impact' : ''}
         `}
       >
-        <p className="text-[15px] font-normal whitespace-pre-wrap">{message.content}</p>
+        <p className="text-[14px] sm:text-[15px] font-normal whitespace-pre-wrap leading-[1.4] sm:leading-[1.5] break-words">
+          {formatContent(message.content)}
+        </p>
         
         {/* Time and delivered indicator */}
-        <div className={`flex items-center justify-end mt-0.5 ${isUser ? 'text-blue-100' : 'text-gray-500'}`}>
+        <div className={`flex items-center justify-end mt-1 ${isUser ? 'text-blue-100 opacity-80' : 'text-slate-500 opacity-70'}`}>
           {isUser && isDelivered && (
-            <span className="mr-1 text-[9px] animate-delivered">Delivered</span>
+            <span className="mr-1 text-[8px] sm:text-[9px] animate-delivered">Delivered</span>
           )}
-          <span className="text-[10px]">{messageTime}</span>
+          <span className="text-[9px] sm:text-[10px]">{messageTime}</span>
         </div>
         
         {/* Tail for the chat bubble with animation */}
         <div 
+          style={{
+            backgroundColor: isUser 
+              ? 'var(--primary-blue)' 
+              : 'var(--imessage-gray)'
+          }}
           className={`
-            absolute bottom-0 w-4 h-4 
+            absolute bottom-0 w-3 h-3 sm:w-4 sm:h-4 
             ${isUser 
-              ? 'right-0 translate-x-3 -translate-y-1 bg-[var(--imessage-blue)]' 
-              : 'left-0 -translate-x-3 -translate-y-1 bg-[var(--imessage-gray)]'
+              ? 'right-0 translate-x-2 sm:translate-x-3 -translate-y-1' 
+              : 'left-0 -translate-x-2 sm:-translate-x-3 -translate-y-1'
             } 
             rounded-full animate-[bubble-tail-pop_0.3s_ease_0.15s_both]
           `}
@@ -138,20 +166,20 @@ const Message: React.FC<MessageProps> = ({ message, onLike, onDislike }) => {
         
         {/* Read receipt (blue dot for user messages) */}
         {isUser && isDelivered && (
-          <div className="absolute -bottom-3 right-4 w-2 h-2 bg-blue-500 rounded-full animate-delivered"></div>
+          <div className="absolute -bottom-3 right-3 sm:right-4 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full animate-delivered"></div>
         )}
         
         {/* Feedback buttons (hidden in iMessage-style but can be toggled) */}
         {!isUser && (onLike || onDislike) && (
-          <div className="flex mt-1 space-x-2 justify-end opacity-40 hover:opacity-100 transition-opacity">
+          <div className="absolute -bottom-6 right-2 flex space-x-1 sm:space-x-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
             {onLike && (
               <button 
                 onClick={handleLike}
                 className={`${
                   feedbackState === 'like' 
-                    ? 'text-blue-500' 
-                    : 'text-gray-500 hover:text-blue-500'
-                } transition-colors text-xs`}
+                    ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/30' 
+                    : 'text-slate-500 hover:text-blue-500 bg-slate-100/80 dark:bg-slate-800/80'
+                } transition-colors p-1 rounded-full shadow-sm text-xs sm:text-sm`}
                 aria-label="Like message"
               >
                 👍
@@ -163,9 +191,9 @@ const Message: React.FC<MessageProps> = ({ message, onLike, onDislike }) => {
                 onClick={handleDislike}
                 className={`${
                   feedbackState === 'dislike' 
-                    ? 'text-red-500' 
-                    : 'text-gray-500 hover:text-red-500'
-                } transition-colors text-xs`}
+                    ? 'text-red-500 bg-red-50 dark:bg-red-900/30' 
+                    : 'text-slate-500 hover:text-red-500 bg-slate-100/80 dark:bg-slate-800/80'
+                } transition-colors p-1 rounded-full shadow-sm text-xs sm:text-sm`}
                 aria-label="Dislike message"
               >
                 👎

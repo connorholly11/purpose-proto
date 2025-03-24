@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useUser } from '../contexts/UserContext';
 import DeleteConfirmation from './DeleteConfirmation';
-import { FaUserPlus, FaTrash, FaUserCircle } from 'react-icons/fa';
 
 const UserSelector = () => {
   const { currentUser, setCurrentUser, users, isLoading, refreshUsers, deleteUser } = useUser();
@@ -78,14 +77,18 @@ const UserSelector = () => {
   return (
     <div className="relative">
       <button
-        className="flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium 
-                  text-[var(--imessage-blue)] bg-blue-50 dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-gray-700 
-                  border border-[var(--imessage-border)] transition-colors"
+        className="flex items-center space-x-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium 
+                  text-[var(--primary-blue)] bg-blue-50/80 dark:bg-slate-800/60 hover:bg-blue-100/80 dark:hover:bg-slate-700/70 
+                  border border-blue-100/80 dark:border-slate-700/40 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
+        aria-label={currentUser?.name ? `Current user: ${currentUser.name}` : 'Select user'}
       >
-        <span>{currentUser?.name || 'Select User'}</span>
+        <div className="w-5 h-5 rounded-full bg-[var(--primary-blue)] text-white flex items-center justify-center text-xs mr-1">
+          {currentUser?.name?.charAt(0) || 'U'}
+        </div>
+        <span className="max-w-[80px] sm:max-w-[120px] truncate">{currentUser?.name || 'Select User'}</span>
         <svg
-          className="h-3.5 w-3.5"
+          className="h-3 w-3 flex-shrink-0 ml-1"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -101,66 +104,68 @@ const UserSelector = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-60 rounded-xl shadow-lg bg-white dark:bg-gray-800 
-                       border border-[var(--imessage-border)] overflow-hidden backdrop-blur-lg z-10">
+        <div className="absolute right-0 mt-2 w-52 sm:w-60 rounded-xl shadow-lg bg-white/95 dark:bg-slate-800/95 
+                       border border-slate-200/80 dark:border-slate-700/80 overflow-hidden backdrop-blur-md z-10">
           <div className="py-1">
-            <div className="text-xs text-gray-500 px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+            <div className="text-xs text-slate-500 dark:text-slate-400 px-3 sm:px-4 py-2 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
               <span>Switch Account</span>
               <button 
                 onClick={() => {
                   setIsOpen(false);
                   setShowAddUserModal(true);
                 }}
-                className="text-[var(--imessage-blue)] hover:text-blue-700 transition-colors"
+                className="text-[var(--primary-blue)] hover:text-[var(--primary-blue-dark)] transition-colors"
                 title="Add new user"
               >
-                <FaUserPlus size={14} />
+                <span>➕</span>
               </button>
             </div>
-            {users.map((user) => (
-              <div 
-                key={user.id}
-                className={`block w-full text-left px-4 py-2.5 text-sm ${
-                  currentUser?.id === user.id 
-                    ? 'bg-blue-50 dark:bg-gray-700' 
-                    : 'text-gray-700 dark:text-gray-300'
-                } hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex justify-between items-center`}
-              >
-                <button 
-                  onClick={() => handleSelect(user.id)}
-                  className="flex items-center flex-1"
+            <div className="max-h-[40vh] overflow-y-auto scrollbar-thin">
+              {users.map((user) => (
+                <div 
+                  key={user.id}
+                  className={`block w-full text-left px-3 sm:px-4 py-2 text-xs sm:text-sm ${
+                    currentUser?.id === user.id 
+                      ? 'bg-blue-50/80 dark:bg-slate-700/80' 
+                      : 'text-slate-700 dark:text-slate-300'
+                  } hover:bg-slate-50/80 dark:hover:bg-slate-700/60 transition-colors flex justify-between items-center`}
                 >
-                  <div className="w-7 h-7 rounded-full bg-[var(--imessage-blue)] text-white flex items-center justify-center text-xs mr-2">
-                    {user.name?.charAt(0) || 'U'}
-                  </div>
-                  <span className={currentUser?.id === user.id ? 'text-[var(--imessage-blue)]' : ''}>
-                    {user.name || 'Anonymous'}
-                  </span>
-                </button>
-                {currentUser?.id !== user.id && (
-                  <button
-                    onClick={() => handleDeleteClick(user.id, user.name || 'Anonymous')}
-                    className="text-gray-500 hover:text-red-500 px-1 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                    title="Delete user"
+                  <button 
+                    onClick={() => handleSelect(user.id)}
+                    className="flex items-center flex-1"
                   >
-                    <FaTrash size={12} />
+                    <div className="w-6 h-6 rounded-full bg-[var(--primary-blue)] text-white flex items-center justify-center text-xs mr-2">
+                      {user.name?.charAt(0) || 'U'}
+                    </div>
+                    <span className={`truncate max-w-[120px] ${currentUser?.id === user.id ? 'text-[var(--primary-blue)] font-medium' : ''}`}>
+                      {user.name || 'Anonymous'}
+                    </span>
                   </button>
-                )}
-              </div>
-            ))}
+                  {currentUser?.id !== user.id && (
+                    <button
+                      onClick={() => handleDeleteClick(user.id, user.name || 'Anonymous')}
+                      className="text-slate-400 hover:text-red-500 p-1 rounded-full hover:bg-slate-100/80 dark:hover:bg-slate-700/80 transition-colors"
+                      title="Delete user"
+                    >
+                      <span>🗑️</span>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Add User Modal */}
+      {/* Add User Modal - Responsive */}
       {showAddUserModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-blue-100 dark:bg-blue-900">
-                <FaUserCircle className="w-6 h-6 text-blue-600 dark:text-blue-300" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200/60 dark:border-slate-700/60">
+            <div className="p-5 sm:p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-blue-100/80 dark:bg-blue-900/30">
+                <span className="text-2xl">👤</span>
               </div>
-              <h3 className="mb-4 text-lg font-medium text-center text-gray-900 dark:text-white">
+              <h3 className="mb-4 text-base sm:text-lg font-medium text-center text-slate-900 dark:text-white">
                 Add New User
               </h3>
               <div className="mb-4">
@@ -169,24 +174,24 @@ const UserSelector = () => {
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
                   placeholder="Enter user name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-3 py-2 bg-slate-50/80 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white text-sm sm:text-base"
                   autoFocus
                 />
               </div>
               <div className="flex justify-center space-x-3">
                 <button
                   onClick={() => setShowAddUserModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100/80 dark:bg-slate-700/70 dark:text-slate-300 rounded-md hover:bg-slate-200/80 dark:hover:bg-slate-600/70 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAddUser}
                   disabled={!newUserName.trim()}
-                  className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none ${
+                  className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${
                     newUserName.trim()
-                      ? 'bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-                      : 'bg-gray-400 cursor-not-allowed'
+                      ? 'bg-[var(--primary-blue)] hover:bg-[var(--primary-blue-dark)]'
+                      : 'bg-slate-400/80 dark:bg-slate-600/70 cursor-not-allowed'
                   }`}
                 >
                   Add User

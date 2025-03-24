@@ -1,0 +1,7 @@
+Place your icons here:
+
+1. icon-192x192.png (192x192 pixels)
+2. icon-512x512.png (512x512 pixels)
+3. apple-touch-icon.png (180x180 pixels)
+
+These are required for PWA functionality. 

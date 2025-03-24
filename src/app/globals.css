@@ -4,15 +4,36 @@
   --background: #ffffff;
   --foreground: #171717;
   
-  /* iMessage colors */
-  --imessage-blue: #0b93f6;
-  --imessage-gray: #e5e5ea;
+  /* Peaceful harmonious color palette */
+  --primary-blue: #3b82f6;
+  --primary-blue-light: #60a5fa;
+  --primary-blue-dark: #3a7eea;
+  --neutral-gray: #e5e7eb;
+  --neutral-gray-dark: #d1d5db;
+  
+  /* iMessage colors - enhanced with peaceful tones */
+  --imessage-blue: #4e95ff;
+  --imessage-gray: #edf0f5;
   --imessage-text-white: #ffffff;
-  --imessage-text-black: #000000;
-  --imessage-typing-gray: #8e8e93;
-  --imessage-bg: #f5f5f5;
-  --imessage-header-bg: #f9f9fc;
-  --imessage-border: #e2e2e7;
+  --imessage-text-black: #3c414c;
+  --imessage-typing-gray: #a1a8b8;
+  --imessage-bg: #f0f5ff;
+  --imessage-header-bg: #f9fafe;
+  --imessage-border: #e2e8f0;
+  
+  /* Enhanced UI variables */
+  --subtle-shadow: 0 2px 12px rgba(25, 55, 105, 0.04);
+  --card-shadow: 0 8px 24px rgba(25, 55, 105, 0.06);
+  --bubble-shadow: 0 2px 6px rgba(25, 55, 105, 0.06);
+  --transition-standard: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  --gradient-blue: linear-gradient(135deg, #4e95ff 0%, #3a7eea 100%);
+  --avatar-gradient: linear-gradient(135deg, #5e9fff 0%, #4186f0 100%);
+  --nav-gradient: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
+  --container-gradient: linear-gradient(to bottom right, rgba(255,255,255,0.8), rgba(245,248,255,0.9));
+  --user-bubble-bg: #e9f3ff;
+  --user-bubble-border: #cce3ff;
+  --assistant-bubble-bg: #f3f4f6;
+  --assistant-bubble-border: #e5e7eb;
 }
 
 @theme inline {
@@ -24,18 +45,34 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #000000;
-    --foreground: #ededed;
+    --background: #0f172a;
+    --foreground: #e9eef6;
     
-    /* iMessage dark mode colors */
-    --imessage-blue: #007aff;
-    --imessage-gray: #2c2c2e;
-    --imessage-text-white: #ffffff;
-    --imessage-text-black: #ffffff;
-    --imessage-typing-gray: #8e8e93;
-    --imessage-bg: #000000;
-    --imessage-header-bg: #1c1c1e;
-    --imessage-border: #38383a;
+    /* Dark mode - peaceful harmonious palette */
+    --primary-blue: #4186f0;
+    --primary-blue-light: #5e9fff;
+    --primary-blue-dark: #3070d9;
+    --neutral-gray: #1e293b;
+    --neutral-gray-dark: #2c3a52;
+    
+    /* iMessage dark mode colors - enhanced with peaceful dark tones */
+    --imessage-blue: #4186f0;
+    --imessage-gray: #1e293b;
+    --imessage-text-white: #e9eef6;
+    --imessage-text-black: #e9eef6;
+    --imessage-typing-gray: #8e98a8;
+    --imessage-bg: #0f172a;
+    --imessage-header-bg: #111b31;
+    --imessage-border: #1e293b;
+    
+    /* Adjusted shadows for dark mode */
+    --subtle-shadow: 0 2px 12px rgba(10, 14, 25, 0.2);
+    --card-shadow: 0 8px 24px rgba(10, 14, 25, 0.3);
+    --bubble-shadow: 0 2px 6px rgba(10, 14, 25, 0.25);
+    --gradient-blue: linear-gradient(135deg, #4186f0 0%, #3070d9 100%);
+    --avatar-gradient: linear-gradient(135deg, #5e9fff 0%, #3a7eea 100%);
+    --nav-gradient: linear-gradient(to right, #111b31, #1e293b);
+    --container-gradient: linear-gradient(to bottom right, rgba(15,23,42,0.8), rgba(22,32,55,0.9));
   }
 }
 
@@ -45,9 +82,9 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "San Francisco", Helvetica, Arial, sans-serif;
 }
 
-/* Custom scrollbar for iMessage style */
+/* Custom scrollbar for iMessage style - enhanced */
 .scrollbar-thin::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-track {
@@ -55,21 +92,21 @@ body {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: #d1d1d1;
+  background-color: rgba(180, 180, 180, 0.5);
   border-radius: 20px;
   border: 2px solid transparent;
 }
 
 .dark .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: #444;
+  background-color: rgba(80, 80, 80, 0.5);
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background-color: #a8a8a8;
+  background-color: rgba(150, 150, 150, 0.8);
 }
 
 .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background-color: #555;
+  background-color: rgba(100, 100, 100, 0.8);
 }
 
 /* Hide scrollbar when not hovered */
@@ -79,18 +116,21 @@ body {
 }
 
 .scrollbar-thin:hover {
-  scrollbar-color: #d1d1d1 transparent;
+  scrollbar-color: rgba(180, 180, 180, 0.5) transparent;
 }
 
 .dark .scrollbar-thin:hover {
-  scrollbar-color: #444 transparent;
+  scrollbar-color: rgba(80, 80, 80, 0.5) transparent;
 }
 
-/* iMessage animations */
+/* Enhanced iMessage animations */
 @keyframes message-in {
   0% {
     transform: translateY(20px);
     opacity: 0;
+  }
+  70% {
+    transform: translateY(-2px);
   }
   100% {
     transform: translateY(0);
@@ -100,8 +140,11 @@ body {
 
 @keyframes message-out {
   0% {
-    transform: translateY(20px) scale(0.9);
+    transform: translateY(20px) scale(0.95);
     opacity: 0;
+  }
+  70% {
+    transform: translateY(-2px) scale(1.01);
   }
   100% {
     transform: translateY(0) scale(1);
@@ -109,7 +152,7 @@ body {
   }
 }
 
-/* Message bubble tail pop animation */
+/* Message bubble tail pop animation - enhanced */
 @keyframes bubble-tail-pop {
   0% {
     transform: scale(0);
@@ -124,29 +167,29 @@ body {
   }
 }
 
-/* Typing indicator animation - refined to look more like iMessage */
+/* Typing indicator animation - refined to look more like iMessage with smoother motion */
 @keyframes typing-dot {
   0%, 60%, 100% {
     transform: translateY(0);
   }
   30% {
-    transform: translateY(-4px);
+    transform: translateY(-5px);
   }
 }
 
-/* Recording button pulse animation */
+/* Recording button pulse animation - enhanced */
 @keyframes pulsate-scale {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(11, 147, 246, 0.7);
+    box-shadow: 0 0 0 0 rgba(10, 132, 255, 0.7);
   }
   50% {
     transform: scale(1.05);
-    box-shadow: 0 0 0 10px rgba(11, 147, 246, 0);
+    box-shadow: 0 0 0 10px rgba(10, 132, 255, 0);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(11, 147, 246, 0);
+    box-shadow: 0 0 0 0 rgba(10, 132, 255, 0);
   }
 }
 
@@ -154,11 +197,14 @@ body {
   animation: pulsate-scale 2s infinite;
 }
 
-/* Message bubble delivered animation */
+/* Message bubble delivered animation - enhanced */
 @keyframes delivered {
   0% {
     opacity: 0;
     transform: scale(0.5);
+  }
+  50% {
+    transform: scale(1.15);
   }
   100% {
     opacity: 1;
@@ -170,28 +216,34 @@ body {
   animation: delivered 0.3s ease-out;
 }
 
-/* iMessage bubble impacts */
+/* iMessage bubble impacts - enhanced */
 @keyframes bubble-impact {
   0%, 100% {
     transform: scale(1);
   }
-  50% {
-    transform: scale(1.04);
+  40% {
+    transform: scale(1.05);
+  }
+  60% {
+    transform: scale(0.98);
+  }
+  80% {
+    transform: scale(1.02);
   }
 }
 
 .bubble-impact {
-  animation: bubble-impact 0.3s ease;
+  animation: bubble-impact 0.4s ease;
 }
 
-/* Message sent sound */
+/* Message sent sound - enhanced */
 @keyframes message-sent-ping {
   0% {
     transform: scale(0);
     opacity: 0.8;
   }
   80% {
-    transform: scale(1.5);
+    transform: scale(1.8);
     opacity: 0;
   }
   100% {
@@ -202,37 +254,42 @@ body {
 
 .message-sent-ping {
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 100%;
   background-color: var(--imessage-blue);
   animation: message-sent-ping 0.5s ease-out forwards;
+  filter: blur(1px);
 }
 
-/* iMessage header style */
+/* iMessage header style - enhanced with glass effect */
 .imessage-header {
   background-color: var(--imessage-header-bg);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--subtle-shadow);
+  border-bottom: 1px solid var(--imessage-border);
 }
 
-/* Refined typing indicator */
+/* Refined typing indicator - enhanced with smoother animation */
 .typing-indicator {
   display: inline-flex;
   align-items: center;
-  padding: 12px 16px;
+  padding: 10px 16px;
   background-color: var(--imessage-gray);
-  border-radius: 20px;
+  border-radius: 18px;
   margin-top: 8px;
   margin-left: 8px;
+  box-shadow: var(--bubble-shadow);
 }
 
 .typing-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: #888;
+  background-color: #8e8e93;
   margin: 0 2px;
+  opacity: 0.8;
 }
 
 .typing-dot:nth-child(1) {
@@ -248,4 +305,176 @@ body {
 .typing-dot:nth-child(3) {
   animation: typing-dot 1.4s infinite;
   animation-delay: 0.4s;
+}
+
+/* New enhanced UI classes */
+.enhanced-button {
+  transition: var(--transition-standard);
+  border-radius: 9999px;
+  box-shadow: var(--subtle-shadow);
+}
+
+.enhanced-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.enhanced-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .enhanced-button:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark .enhanced-button:active {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.avatar-container {
+  background: var(--avatar-gradient);
+  box-shadow: var(--subtle-shadow);
+  transition: var(--transition-standard);
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%);
+  border-radius: inherit;
+}
+
+.message-bubble {
+  box-shadow: var(--bubble-shadow);
+  transition: var(--transition-standard);
+}
+
+.input-container {
+  background-color: var(--imessage-bg);
+  border-top: 1px solid var(--imessage-border);
+  padding: 10px 16px;
+  position: relative;
+}
+
+.input-container::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: linear-gradient(to top, rgba(0,0,0,0.03), transparent);
+}
+
+.dark .input-container::before {
+  background: linear-gradient(to top, rgba(0,0,0,0.2), transparent);
+}
+
+.input-field {
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 20px;
+  padding: 10px 16px;
+  transition: var(--transition-standard);
+  box-shadow: var(--subtle-shadow);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dark .input-field {
+  background-color: rgba(45, 45, 45, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.input-field:focus {
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.3);
+  background-color: white;
+}
+
+.dark .input-field:focus {
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.5);
+  background-color: #333;
+}
+
+.floating-panel {
+  background-color: var(--background);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--imessage-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Add smooth ripple effect */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.4) 10%, transparent 10.01%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10, 10);
+  opacity: 0;
+  transition: transform 0.4s, opacity 0.5s;
+}
+
+.ripple:active::after {
+  transform: scale(0, 0);
+  opacity: 0.3;
+  transition: 0s;
+}
+
+.dark .ripple::after {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.2) 10%, transparent 10.01%);
+}
+
+/* Grid pattern backgrounds */
+.bg-grid-pattern {
+  background-size: 50px 50px;
+  background-repeat: repeat;
+}
+
+.bg-grid-light {
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+}
+
+.bg-grid-dark {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+/* Add responsive design improvements */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* PWA display improvements */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
 }

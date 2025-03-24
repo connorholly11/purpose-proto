@@ -82,6 +82,13 @@ export async function queryDocuments(
     // Parse topK safely
     const finalTopK = !topK || isNaN(topK) ? 5 : topK;
 
+    // Check if this is an identity-related query
+    const isIdentityQuery = query.toLowerCase().includes("who am i") || 
+                           query.toLowerCase().includes("about me") || 
+                           query.toLowerCase().includes("know about me") || 
+                           query.toLowerCase().includes("tell me about myself") ||
+                           query.toLowerCase().includes("what do you know");
+
     const combinedQuery = query + (additionalContext ? ` ${additionalContext}` : '');
     const queryEmbedding = await generateEmbedding(combinedQuery);
 
@@ -105,7 +112,9 @@ export async function queryDocuments(
       topK: finalTopK,
       userId: userId || 'none',
       hasAdditionalContext: !!additionalContext,
-      hasFilter: !!filter
+      hasFilter: !!filter,
+      queryLength: query.length,
+      isIdentityQuery
     });
 
     const queryResponse = await index.query({
@@ -122,6 +131,12 @@ export async function queryDocuments(
       content: match.metadata?.text || ''
     }));
 
+    logger.info('Pinecone', 'Pinecone search results', {
+      matchesFound: matches.length,
+      userId: userId || 'none',
+      topScore: matches.length > 0 ? matches[0].score : 0
+    });
+
     // If userId is provided, fetch user-specific knowledge from DB
     let knowledgeMatches: any[] = [];
     if (userId) {
@@ -131,31 +146,63 @@ export async function queryDocuments(
       if (userKnowledgeItems.length > 0) {
         logger.info('Pinecone', 'Processing user knowledge items', { 
           count: userKnowledgeItems.length,
-          userId
+          userId,
+          isIdentityQuery
         });
         
-        for (const item of userKnowledgeItems) {
-          const itemEmbedding = await generateEmbedding(item.content);
-          const similarity = cosineSimilarity(queryEmbedding, itemEmbedding);
+        // For identity queries, include ALL knowledge items with boosted scores
+        if (isIdentityQuery) {
+          logger.info('Pinecone', 'Identity query detected - including ALL knowledge items');
           
-          logger.debug('Pinecone', 'Knowledge item similarity', {
-            itemId: item.id,
-            similarity,
-            title: item.title || 'Untitled'
-          });
-          
-          // Lower threshold to ensure knowledge items are included
-          if (similarity > 0.6) {
-            knowledgeMatches.push({
-              id: item.id,
-              score: similarity,
-              metadata: { 
-                source: 'user_knowledge', 
-                title: item.title || 'Untitled',
-                userId: item.userId 
-              },
-              content: item.content,
+          knowledgeMatches = userKnowledgeItems.map(item => ({
+            id: item.id,
+            // Give a very high score to ensure these are prioritized
+            score: 0.95,
+            metadata: { 
+              source: 'user_knowledge', 
+              title: item.title || 'Personal Information',
+              userId: item.userId 
+            },
+            content: item.content,
+          }));
+        } else {
+          // Regular semantic similarity for non-identity queries
+          for (const item of userKnowledgeItems) {
+            const itemEmbedding = await generateEmbedding(item.content);
+            const similarity = cosineSimilarity(queryEmbedding, itemEmbedding);
+            
+            logger.debug('Pinecone', 'Knowledge item similarity', {
+              itemId: item.id,
+              similarity,
+              title: item.title || 'Untitled',
+              contentPreview: item.content.substring(0, 50) + (item.content.length > 50 ? '...' : '')
             });
+            
+            // Lower threshold to ensure knowledge items are included (0.6 -> 0.45)
+            // For general queries, be more liberal with inclusion of personal facts
+            if (similarity > 0.45 || 
+                query.toLowerCase().includes("tell me about") || 
+                query.toLowerCase().includes("who am i")) {
+              logger.info('Pinecone', 'Including knowledge item in results', {
+                itemId: item.id,
+                similarity,
+                title: item.title || 'Untitled'
+              });
+              
+              // Boost similarity scores for personal knowledge to ensure they get used
+              const boostedScore = Math.min(similarity * 1.5, 1.0);
+              
+              knowledgeMatches.push({
+                id: item.id,
+                score: boostedScore,
+                metadata: { 
+                  source: 'user_knowledge', 
+                  title: item.title || 'Untitled',
+                  userId: item.userId 
+                },
+                content: item.content,
+              });
+            }
           }
         }
         
@@ -175,22 +222,53 @@ export async function queryDocuments(
             error: (error as Error).message 
           });
         }
+      } else {
+        logger.info('Pinecone', 'No user knowledge items found', { userId });
       }
     }
     
     // Combine and re-sort matches
     const allMatches = [...matches, ...knowledgeMatches];
-    allMatches.sort((a, b) => b.score - a.score);
+    
+    // For identity queries, prioritize user knowledge over other matches
+    if (isIdentityQuery) {
+      // Sort first by source (user_knowledge first), then by score
+      allMatches.sort((a, b) => {
+        const aIsUserKnowledge = a.metadata?.source === 'user_knowledge' ? 1 : 0;
+        const bIsUserKnowledge = b.metadata?.source === 'user_knowledge' ? 1 : 0;
+        
+        if (aIsUserKnowledge !== bIsUserKnowledge) {
+          return bIsUserKnowledge - aIsUserKnowledge;
+        }
+        
+        return b.score - a.score;
+      });
+    } else {
+      // Regular sorting by score
+      allMatches.sort((a, b) => b.score - a.score);
+    }
     
     logger.info('Pinecone', 'Query results combined', {
       pineconeMatches: matches.length,
       knowledgeMatches: knowledgeMatches.length,
-      totalMatches: allMatches.length
+      totalMatches: allMatches.length,
+      topMatchType: allMatches.length > 0 ? allMatches[0].metadata?.source || 'unknown' : 'none',
+      isIdentityQuery
     });
     
-    return allMatches.slice(0, finalTopK);
+    // For testing or identity queries, return more matches than requested
+    // This ensures we show more user knowledge items
+    const finalLimit = (process.env.NODE_ENV === 'production' && !isIdentityQuery) 
+      ? finalTopK 
+      : Math.max(finalTopK, isIdentityQuery ? 20 : 8);
+    
+    return allMatches.slice(0, finalLimit);
   } catch (error) {
-    console.error('Error querying Pinecone:', error);
+    logger.error('Pinecone', 'Error querying documents', {
+      error: (error as Error).message,
+      query: query.substring(0, 50) + (query.length > 50 ? '...' : ''),
+      userId: userId || 'none'
+    });
     throw error;
   }
 }
