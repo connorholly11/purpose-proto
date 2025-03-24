@@ -10,7 +10,11 @@
     "ingest": "tsx scripts/ingest.ts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "verify-env": "node scripts/verify-deployment.js",
+    "postbuild": "npm run verify-env",
+    "db:fix": "curl -X POST http://localhost:3005/api/admin/db-fix -H 'x-admin-key: $ADMIN_SECRET_KEY'",
+    "db:migrations": "prisma migrate deploy"
   },
   "dependencies": {
     "@langchain/openai": "^0.4.7",

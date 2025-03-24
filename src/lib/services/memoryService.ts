@@ -1,7 +1,10 @@
 import { PrismaClient, Message, Prisma } from '@prisma/client';
 import { OpenAIEmbeddings } from '@langchain/openai';
+import { getPrismaClient } from './prisma';
+import logger from '@/lib/utils/logger';
 
-const prisma = new PrismaClient();
+// Use the shared Prisma client instead of creating a new one
+const prisma = getPrismaClient();
 const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
 
 export interface MemorySummary {
@@ -20,6 +23,11 @@ function embeddingToJson(embedding: number[]): Prisma.JsonValue {
 // Generate a summary of conversation messages
 export async function generateSummary(messages: Message[], type = 'short_term'): Promise<string> {
   try {
+    logger.info('MemoryService', 'Generating conversation summary', { 
+      messagesCount: messages.length,
+      type 
+    });
+    
     // Call OpenAI to summarize the conversation
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -46,9 +54,17 @@ export async function generateSummary(messages: Message[], type = 'short_term'):
     });
 
     const data = await response.json();
+    if (!data.choices || !data.choices[0]?.message?.content) {
+      logger.error('MemoryService', 'OpenAI summary response invalid', { data });
+      throw new Error('Invalid response from OpenAI');
+    }
+    
     return data.choices[0].message.content;
   } catch (error) {
-    console.error('Error generating summary:', error);
+    logger.error('MemoryService', 'Error generating summary', {
+      error: error instanceof Error ? error.message : String(error),
+      type
+    });
     throw error;
   }
 }
@@ -60,38 +76,82 @@ export async function createMemorySummary(
   type = 'short_term'
 ): Promise<any> {
   try {
+    logger.info('MemoryService', 'Creating memory summary', { conversationId, type });
+    
     // Generate summary of messages
     const summaryContent = await generateSummary(messages, type);
     
     // Create vector embedding for the summary
-    const embedding = await embeddings.embedQuery(summaryContent);
+    let embeddingVector: number[] = [];
+    try {
+      embeddingVector = await embeddings.embedQuery(summaryContent);
+    } catch (embedError) {
+      logger.error('MemoryService', 'Error creating embedding for summary', {
+        error: embedError instanceof Error ? embedError.message : String(embedError)
+      });
+      // Continue without embedding
+    }
     
-    // Create the summary manually with raw SQL query (workaround for schema issues)
-    await prisma.$executeRaw`
-      INSERT INTO "ConversationSummary" (
-        "id", "conversationId", "content", "type", 
-        "startMessageId", "endMessageId", "embeddings", 
-        "createdAt", "priority", "lastAccessed"
-      ) VALUES (
-        ${Prisma.raw('uuid_generate_v4()')}, 
-        ${conversationId}, 
-        ${summaryContent}, 
-        ${type}, 
-        ${messages[0].id}, 
-        ${messages[messages.length - 1].id}, 
-        ${Prisma.raw(`'${JSON.stringify(embedding)}'::jsonb`)}, 
-        ${Prisma.raw('now()')}, 
-        ${type === 'long_term' ? 10 : type === 'medium_term' ? 5 : 1},
-        ${Prisma.raw('now()')}
-      )
-    `;
-    
-    // Update the conversation's lastSummarizedAt with raw SQL
-    await prisma.$executeRaw`
-      UPDATE "Conversation"
-      SET "lastSummarizedAt" = ${Prisma.raw('now()')}
-      WHERE "id" = ${conversationId}
-    `;
+    try {
+      // Create the summary manually with raw SQL query (workaround for schema issues)
+      await prisma.$executeRaw`
+        INSERT INTO "ConversationSummary" (
+          "id", "conversationId", "content", "type", 
+          "startMessageId", "endMessageId", "embeddings", 
+          "createdAt", "priority", "lastAccessed"
+        ) VALUES (
+          ${Prisma.raw('uuid_generate_v4()')}, 
+          ${conversationId}, 
+          ${summaryContent}, 
+          ${type}, 
+          ${messages[0].id}, 
+          ${messages[messages.length - 1].id}, 
+          ${embeddingVector.length > 0 ? Prisma.raw(`'${JSON.stringify(embeddingVector)}'::jsonb`) : null}, 
+          ${Prisma.raw('now()')}, 
+          ${type === 'long_term' ? 10 : type === 'medium_term' ? 5 : 1},
+          ${Prisma.raw('now()')}
+        )
+      `;
+      
+      // Update the conversation's lastSummarizedAt with raw SQL
+      await prisma.$executeRaw`
+        UPDATE "Conversation"
+        SET "lastSummarizedAt" = ${Prisma.raw('now()')}
+        WHERE "id" = ${conversationId}
+      `;
+    } catch (sqlError) {
+      logger.error('MemoryService', 'SQL error creating memory summary', {
+        error: sqlError instanceof Error ? sqlError.message : String(sqlError),
+        conversationId
+      });
+      
+      // Try alternative approach if raw SQL fails (possibly missing uuid_generate_v4)
+      if (String(sqlError).includes('uuid_generate_v4')) {
+        logger.info('MemoryService', 'Attempting fallback summary creation without uuid_generate_v4');
+        // Generate a UUID client-side as fallback
+        const fallbackUuid = crypto.randomUUID();
+        await prisma.$executeRaw`
+          INSERT INTO "ConversationSummary" (
+            "id", "conversationId", "content", "type", 
+            "startMessageId", "endMessageId", "embeddings", 
+            "createdAt", "priority", "lastAccessed"
+          ) VALUES (
+            ${fallbackUuid}, 
+            ${conversationId}, 
+            ${summaryContent}, 
+            ${type}, 
+            ${messages[0].id}, 
+            ${messages[messages.length - 1].id}, 
+            ${embeddingVector.length > 0 ? Prisma.raw(`'${JSON.stringify(embeddingVector)}'::jsonb`) : null}, 
+            ${Prisma.raw('now()')}, 
+            ${type === 'long_term' ? 10 : type === 'medium_term' ? 5 : 1},
+            ${Prisma.raw('now()')}
+          )
+        `;
+      } else {
+        throw sqlError; // Re-throw if it's not a uuid issue
+      }
+    }
 
     // Fetch the created summary
     const summary = await prisma.$queryRaw<MemorySummary[]>`
@@ -104,7 +164,10 @@ export async function createMemorySummary(
 
     return summary[0];
   } catch (error) {
-    console.error('Error creating memory summary:', error);
+    logger.error('MemoryService', 'Error creating memory summary', {
+      error: error instanceof Error ? error.message : String(error),
+      conversationId
+    });
     throw error;
   }
 }
@@ -112,6 +175,8 @@ export async function createMemorySummary(
 // Get summaries for a conversation
 export async function getConversationSummaries(conversationId: string): Promise<MemorySummary[]> {
   try {
+    logger.info('MemoryService', 'Fetching conversation summaries', { conversationId });
+    
     // Use raw query to work around schema issues
     const summaries = await prisma.$queryRaw<MemorySummary[]>`
       SELECT "id", "content", "type", "createdAt", "priority"
@@ -122,8 +187,12 @@ export async function getConversationSummaries(conversationId: string): Promise<
     
     return summaries;
   } catch (error) {
-    console.error('Error fetching memory summaries:', error);
-    throw error;
+    logger.error('MemoryService', 'Error fetching memory summaries', {
+      error: error instanceof Error ? error.message : String(error),
+      conversationId
+    });
+    // Return empty array instead of failing
+    return [];
   }
 }
 
