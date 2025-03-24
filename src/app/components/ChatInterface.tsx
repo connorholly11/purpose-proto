@@ -58,56 +58,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
 
   // Create sound effect elements
   useEffect(() => {
-    // Create send sound
-    const sendSound = new Audio();
-    sendSound.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAYGBgYGBgYGBgYGBgYGBgYGBgj4+Pj4+Pj4+Pj4+Pj4+Pj4+PwMDAwMDAwMDAwMDAwMDAwMDAwP//////////////////AAAAOkxhdmM1OC4xMzAAAAAAAAAAAAAAAAD/4ziMAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAACwABgYGBgYGBgYGBgYGBgYGBgYGCPj4+Pj4+Pj4+Pj4+Pj4+Pj4/AwMDAwMDAwMDAwMDAwMDAwMDA//////////////////8AAAAOTGF2YzU4LjEzLjEwMAD/4zDAAAAAIAMuEAAAAAgQJgqgGgqgOlzA2hRJEgQJJFuFQCgsCwLAgCAIAgCmGVOwZAZ7nUAhDUfFpfgID6/AID6/CgEBMSgEBMTQfPnAL4Pgz4OgmA+DOvg93pgPg+nofxaD8LNj33voRxfgEAAAU16FWVa8quV/fI7n+z6KhHrRIAAAAJiR2xvcgAAACYkdsb2cAAABiJHaWdnAAAAAA==';
-    sendSound.preload = 'auto';
-    sendSoundRef.current = sendSound;
-    
-    // Create receive sound
-    const receiveSound = new Audio();
-    receiveSound.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAABAAAAVAAMDAwMDAwQEBAQEBAQFBQUFBQUFBgYGBgYGBgcHBwcHBwcICAgICAgICQkJCQkJCQoKCgoKCgoLCwsLCwsLDAwMDAwMDA0NDQ0NDQ0ODg4ODg4ODw8PDw8PD//////////////////////8AAAAkTGF2YzU4LjEzAAAAAAAAAAAAAAAAJP/jOMAAAAAAAAAAAAAAAAAAAAAAAABJbmZvAAAADwAAAAQAAAFQADAwMDAwMEBAQEBAQEBQUFBQUFBQYGBgYGBgYHBwcHBwcHCAgICAgICAkJCQkJCQkKCgoKCgoKCwsLCwsLCwwMDAwMDAwNDQ0NDQ0NDg4ODg4ODg8PDw8PDw8P///////////////////wAAAAlMYXZjNTguMTMuMTAwAP/jMMAAAAAgCqsQAAAACBAoCoAUAKATAgCaJEkSQJAihzBGgiRIEkTInELwC0AgQCE71VggQCBA4t/wJgSDf8CYEg3+DP8GQXzALIvgEAAAAAKlUzPfNAAXOHWIc/1N3/Oi1s7zogAAABwRlbmdwZHQAAAEYWx2dHAAAAAA=';
-    receiveSound.preload = 'auto';
-    receiveSoundRef.current = receiveSound;
-    
-    return () => {
-      sendSound.pause();
-      receiveSound.pause();
-    };
+    // No-op function for sound initialization
+    return () => {};
   }, []);
   
-  // Play sound when sending a message
+  // Play sound when sending a message - disabled
   const playMessageSentSound = () => {
-    if (sendSoundRef.current) {
-      // Create a new context each time to prevent microphone activation
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
-      // Use existing sound reference but don't automatically connect to audio output
-      sendSoundRef.current.currentTime = 0;
-      
-      // Only play the sound if not recording
-      const audioRecorderActive = document.querySelector('[aria-label="Stop recording"]');
-      if (!audioRecorderActive) {
-        sendSoundRef.current.play().catch(err => console.error('Failed to play sound:', err));
-      }
-    }
+    // Sound disabled
   };
   
-  // Play sound when receiving a message
+  // Play sound when receiving a message - disabled
   const playMessageReceivedSound = () => {
-    if (receiveSoundRef.current) {
-      // Create a new context each time to prevent microphone activation
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
-      // Use existing sound reference but don't automatically connect to audio output
-      receiveSoundRef.current.currentTime = 0;
-      
-      // Only play the sound if not recording
-      const audioRecorderActive = document.querySelector('[aria-label="Stop recording"]');
-      if (!audioRecorderActive) {
-        receiveSoundRef.current.play().catch(err => console.error('Failed to play sound:', err));
-      }
-    }
+    // Sound disabled
   };
 
   // Load user's conversation whenever the current user changes

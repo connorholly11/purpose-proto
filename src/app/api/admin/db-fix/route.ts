@@ -1,28 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrismaClient } from '@/lib/services/prisma';
 
-// Admin-only endpoint to fix database issues
 export async function POST(request: NextRequest) {
+  const prisma = getPrismaClient();
   try {
-    // Ensure this endpoint can only be accessed by authorized users in production
     const adminKey = request.headers.get('x-admin-key');
     if (process.env.NODE_ENV === 'production' && adminKey !== process.env.ADMIN_SECRET_KEY) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      console.error('db-fix error: Unauthorized attempt');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fix 1: Ensure the UUID extension is installed
+    // Attempt to install uuid-ossp extension
     try {
-      await getPrismaClient().$executeRaw`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
-    } catch (error) {
-      console.error('Failed to create UUID extension:', error);
+      await prisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+    } catch (error: unknown) {
+      console.error('Failed to create UUID extension:', error instanceof Error ? error.stack : error);
     }
 
-    // Fix 2: Add lastSummarizedAt column to Conversation table if it doesn't exist
+    // Example: If you want to ensure lastSummarizedAt column, etc.
     try {
-      await getPrismaClient().$executeRaw`
+      await prisma.$executeRawUnsafe(`
         DO $$
         BEGIN
           IF NOT EXISTS (
@@ -33,14 +30,14 @@ export async function POST(request: NextRequest) {
           END IF;
         END
         $$;
-      `;
-    } catch (error) {
-      console.error('Failed to add lastSummarizedAt column:', error);
+      `);
+    } catch (error: unknown) {
+      console.error('Failed to add lastSummarizedAt column:', error instanceof Error ? error.stack : error);
     }
 
-    // Fix 3: Create ConversationSummary table if it doesn't exist
+    // Example: If you want to ensure a table or index:
     try {
-      await getPrismaClient().$executeRaw`
+      await prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS "ConversationSummary" (
           "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
           "conversationId" TEXT NOT NULL,
@@ -52,43 +49,42 @@ export async function POST(request: NextRequest) {
           "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
           "priority" INTEGER NOT NULL DEFAULT 1,
           "lastAccessed" TIMESTAMP NOT NULL DEFAULT now(),
-          CONSTRAINT "ConversationSummary_conversationId_fkey" 
-            FOREIGN KEY ("conversationId") 
+          CONSTRAINT "ConversationSummary_conversationId_fkey"
+            FOREIGN KEY ("conversationId")
             REFERENCES "Conversation"("id") ON DELETE CASCADE
         );
-      `;
-    } catch (error) {
-      console.error('Failed to create ConversationSummary table:', error);
+      `);
+    } catch (error: unknown) {
+      console.error('Failed to create ConversationSummary table:', error instanceof Error ? error.stack : error);
     }
 
-    // Fix 4: Create an index on conversationId for faster retrieval
     try {
-      await getPrismaClient().$executeRaw`
-        CREATE INDEX IF NOT EXISTS "ConversationSummary_conversationId_idx" 
+      await prisma.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS "ConversationSummary_conversationId_idx"
         ON "ConversationSummary" ("conversationId");
-      `;
-    } catch (error) {
-      console.error('Failed to create index:', error);
+      `);
+    } catch (error: unknown) {
+      console.error('Failed to create index:', error instanceof Error ? error.stack : error);
     }
 
-    // Run a simple test query to verify the setup
-    let testResults = { };
+    // Test query
+    let testResults = {};
     try {
-      const convoCount = await getPrismaClient().conversation.count();
-      testResults = { conversations: convoCount };
-    } catch (error) {
-      console.error('Test query failed:', error);
+      const count = await prisma.conversation.count();
+      testResults = { conversations: count };
+    } catch (error: unknown) {
+      console.error('Test query failed:', error instanceof Error ? error.stack : error);
     }
 
     return NextResponse.json({
       message: 'Database fixes applied successfully',
       testResults
     });
-  } catch (error) {
-    console.error('Error fixing database:', error);
+  } catch (error: unknown) {
+    console.error('Error fixing database:', error instanceof Error ? error.stack : error);
     return NextResponse.json(
       { error: 'Failed to apply database fixes' },
       { status: 500 }
     );
   }
-} 
+}
