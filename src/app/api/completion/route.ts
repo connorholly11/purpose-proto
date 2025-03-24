@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCompletion } from '@/lib/services/openai';
-import { createMessage, getConversationById, getUserById } from '@/lib/services/prisma';
+import { createMessage } from '@/lib/services/prisma';
 import logger from '@/lib/utils/logger';
 import { extractKnowledgeFromMessage } from '@/lib/services/extraction';
 import { shouldSummarize, createMemorySummary, getMessagesSinceLastSummary } from '@/lib/services/memoryService';
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         });
         
         // Log assistant response
-        const assistantMessage = await createMessage({
+        await createMessage({
           conversationId,
           role: 'assistant',
           content: answer,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrismaClient, createUser } from '@/lib/services/prisma';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const prisma = getPrismaClient();
     const users = await prisma.user.findMany({

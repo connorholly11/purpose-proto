@@ -1,12 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Message } from '@prisma/client';
 import { useUser } from '../contexts/UserContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import browserLogger from '@/lib/utils/browser-logger';
 
+// Loading component for suspense
+function LogsPageLoading() {
+  return <div className="container mx-auto p-4">Loading logs...</div>;
+}
+
 export default function LogsPage() {
+  return (
+    <Suspense fallback={<LogsPageLoading />}>
+      <LogsPageContent />
+    </Suspense>
+  );
+}
+
+function LogsPageContent() {
   const { currentUser } = useUser();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -16,7 +29,6 @@ export default function LogsPage() {
   const [messages, setMessages] = useState<(Message & { conversation: { userId: string | null } })[]>([]);
   const [serverLogs, setServerLogs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
   // Filter states for messages tab
   const [filterUser, setFilterUser] = useState<string | null>(null);
@@ -82,12 +94,10 @@ export default function LogsPage() {
           console.error(`Failed to fetch logs: ${logsResponse.status} ${logsResponse.statusText}`);
           setMessages([]);
           setServerLogs([]);
-          setError(`Failed to fetch logs: ${logsResponse.status}`);
         } else {
           const data = await logsResponse.json();
           setMessages(data.messages || []);
           setServerLogs(data.logs || []);
-          setError(null);
         }
 
         // get users
@@ -113,7 +123,6 @@ export default function LogsPage() {
         console.error('Error fetching messages/logs:', err);
         setMessages([]);
         setServerLogs([]);
-        setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setLoading(false);
       }

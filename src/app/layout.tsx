@@ -4,7 +4,6 @@ import "./globals.css";
 import Navigation from "./components/Navigation";
 import { UserProvider } from "./contexts/UserContext";
 import FeedbackButton from './components/FeedbackButton';
-import Head from 'next/head';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

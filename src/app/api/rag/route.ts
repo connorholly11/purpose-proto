@@ -71,7 +71,6 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
-    const action = url.searchParams.get('action');
     const userId = url.searchParams.get('userId');
     const operationId = url.searchParams.get('operationId');
     

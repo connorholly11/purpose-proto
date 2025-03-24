@@ -31,15 +31,14 @@ export async function GET(req: NextRequest) {
   const dateTo = req.nextUrl.searchParams.get('dateTo') || null;
   const searchTerm = req.nextUrl.searchParams.get('search') || null;
   const likedStr = req.nextUrl.searchParams.get('liked') || null; // e.g. 'true' / 'false'
-  let likedFilter: boolean | null = null;
-  if (likedStr === 'true') likedFilter = true;
-  else if (likedStr === 'false') likedFilter = false;
 
   // If you want to unify "logs" to also return DB messages:
   // We'll gather messages as well
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let messages: any[] = [];
   try {
     // Build a where filter
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {};
 
     // Filter by conversation userId

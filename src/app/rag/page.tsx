@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
@@ -9,7 +9,20 @@ const KnowledgeBase = dynamic(() => import('../components/KnowledgeBase'), { ssr
 const RagAnalytics = dynamic(() => import('../components/RagAnalytics'), { ssr: false });
 const TestRag = dynamic(() => import('../components/TestRag'), { ssr: false });
 
+// Loading component for suspense
+function RagPageLoading() {
+  return <div className="container mx-auto px-4 py-6">Loading...</div>;
+}
+
 export default function RagPage() {
+  return (
+    <Suspense fallback={<RagPageLoading />}>
+      <RagPageContent />
+    </Suspense>
+  );
+}
+
+function RagPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'knowledge' | 'analytics' | 'test'>('analytics');

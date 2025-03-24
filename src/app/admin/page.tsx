@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { User } from '@prisma/client';
-import Link from 'next/link';
 import { useUser } from '../contexts/UserContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
@@ -13,6 +12,7 @@ import {
   FaRobot, 
   FaUserCircle
 } from 'react-icons/fa';
+import React from 'react';
 
 type ConversationStats = {
   totalConversations: number;

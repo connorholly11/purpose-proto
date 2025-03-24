@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import OpenAI from 'openai';
 import { transcribeAudio } from '@/lib/services/openai';
 import { TranscriptionResponse } from '@/types';
-import { getBodyBuffer } from '@/utils/formDataParser';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import * as fs from 'fs';
 
 // Disable the default body parser
 export const config = {

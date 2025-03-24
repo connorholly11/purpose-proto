@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { getPrismaClient } from '@/lib/services/prisma';
 
 // Admin-only endpoint to fix database issues
 export async function POST(request: NextRequest) {
@@ -17,14 +15,14 @@ export async function POST(request: NextRequest) {
 
     // Fix 1: Ensure the UUID extension is installed
     try {
-      await prisma.$executeRaw`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
+      await getPrismaClient().$executeRaw`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
     } catch (error) {
       console.error('Failed to create UUID extension:', error);
     }
 
     // Fix 2: Add lastSummarizedAt column to Conversation table if it doesn't exist
     try {
-      await prisma.$executeRaw`
+      await getPrismaClient().$executeRaw`
         DO $$
         BEGIN
           IF NOT EXISTS (
@@ -42,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Fix 3: Create ConversationSummary table if it doesn't exist
     try {
-      await prisma.$executeRaw`
+      await getPrismaClient().$executeRaw`
         CREATE TABLE IF NOT EXISTS "ConversationSummary" (
           "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
           "conversationId" TEXT NOT NULL,
@@ -65,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     // Fix 4: Create an index on conversationId for faster retrieval
     try {
-      await prisma.$executeRaw`
+      await getPrismaClient().$executeRaw`
         CREATE INDEX IF NOT EXISTS "ConversationSummary_conversationId_idx" 
         ON "ConversationSummary" ("conversationId");
       `;
@@ -76,7 +74,7 @@ export async function POST(request: NextRequest) {
     // Run a simple test query to verify the setup
     let testResults = { };
     try {
-      const convoCount = await prisma.conversation.count();
+      const convoCount = await getPrismaClient().conversation.count();
       testResults = { conversations: convoCount };
     } catch (error) {
       console.error('Test query failed:', error);

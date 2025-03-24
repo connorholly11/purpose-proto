@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 }
 
 // Newly added POST method
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     // If you want to parse userId from the request body or headers, do so here:
     // const { userId } = await req.json();
