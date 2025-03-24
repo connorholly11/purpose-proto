@@ -42,17 +42,12 @@ global.fetch = jest.fn().mockImplementation((url) => {
   if (url === '/api/transcribe') {
     return Promise.resolve({
       ok: true,
-      json: () => Promise.resolve({ transcript: 'This is a test transcript.' })
+      json: () => Promise.resolve({ text: 'This is a test transcript.' })
     });
   } else if (url === '/api/rag') {
     return Promise.resolve({
       ok: true,
       json: () => Promise.resolve({ answer: 'This is a test answer.' })
-    });
-  } else if (url === '/api/tts') {
-    return Promise.resolve({
-      ok: true,
-      json: () => Promise.resolve({ audioContent: 'base64-audio-data' })
     });
   }
   return Promise.reject(new Error(`Unknown URL: ${url}`));
@@ -60,8 +55,7 @@ global.fetch = jest.fn().mockImplementation((url) => {
 
 describe('AudioRecorder Component', () => {
   const mockOnTranscription = jest.fn();
-  const mockOnAIResponse = jest.fn();
-  const mockConversationId = 'test-conversation-id';
+  const mockOnRecordingStateChange = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -69,105 +63,91 @@ describe('AudioRecorder Component', () => {
 
   it('renders the record button initially', () => {
     render(
-      <AudioRecorder
+      <AudioRecorder 
         onTranscription={mockOnTranscription}
-        onAIResponse={mockOnAIResponse}
-        conversationId={mockConversationId}
+        onRecordingStateChange={mockOnRecordingStateChange}
       />
     );
-
+    
     expect(screen.getByRole('button')).toBeInTheDocument();
-    expect(screen.getByText('Click the button to start recording')).toBeInTheDocument();
+    expect(screen.getByLabelText('Start recording')).toBeInTheDocument();
   });
 
-  it('starts recording when the record button is clicked', async () => {
+  it('starts recording when the button is clicked', async () => {
     render(
-      <AudioRecorder
+      <AudioRecorder 
         onTranscription={mockOnTranscription}
-        onAIResponse={mockOnAIResponse}
-        conversationId={mockConversationId}
+        onRecordingStateChange={mockOnRecordingStateChange}
       />
     );
-
-    fireEvent.click(screen.getByRole('button'));
-
-    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({ audio: true });
     
+    // Click to start recording
+    fireEvent.click(screen.getByRole('button'));
+    
+    // Verify that MediaRecorder was called
     await waitFor(() => {
-      expect(MediaRecorderMock).toHaveBeenCalled();
-      expect(mockMediaRecorder.start).toHaveBeenCalled();
-      expect(screen.getByText('Recording... Click the button to stop')).toBeInTheDocument();
+      expect(MediaRecorderMock).toHaveBeenCalledTimes(1);
+      expect(mockMediaRecorder.start).toHaveBeenCalledTimes(1);
+      expect(mockOnRecordingStateChange).toHaveBeenCalledWith(true);
     });
+    
+    // Should now show Stop recording button
+    expect(screen.getByLabelText('Stop recording')).toBeInTheDocument();
   });
 
   it('stops recording and processes audio when stop button is clicked', async () => {
     render(
-      <AudioRecorder
+      <AudioRecorder 
         onTranscription={mockOnTranscription}
-        onAIResponse={mockOnAIResponse}
-        conversationId={mockConversationId}
+        onRecordingStateChange={mockOnRecordingStateChange}
       />
     );
-
-    // Start recording
+    
+    // Click to start recording
     fireEvent.click(screen.getByRole('button'));
     
-    await waitFor(() => {
-      expect(mockMediaRecorder.start).toHaveBeenCalled();
-    });
-
-    // Stop recording
+    // Click to stop recording
     fireEvent.click(screen.getByRole('button'));
     
-    expect(mockMediaRecorder.stop).toHaveBeenCalled();
-    expect(mockMediaRecorder.stream.getTracks).toHaveBeenCalled();
+    // Verify MediaRecorder stop was called
+    expect(mockMediaRecorder.stop).toHaveBeenCalledTimes(1);
+    expect(mockOnRecordingStateChange).toHaveBeenCalledWith(false);
     
-    await waitFor(() => {
-      expect(screen.getByText('Processing your audio...')).toBeInTheDocument();
-    });
-
-    // Manually trigger the onstop handler
-    const audioBlob = new Blob([], { type: 'audio/webm' });
-    const dataAvailableEvent = { data: audioBlob };
+    // Simulate ondataavailable event
+    const dataEvent = { data: new Blob(['audio data']) };
+    mockMediaRecorder.ondataavailable(dataEvent);
     
-    // @ts-ignore - We're mocking the event
-    mockMediaRecorder.ondataavailable(dataAvailableEvent);
+    // Simulate the onstop event
+    mockMediaRecorder.onstop();
     
-    // @ts-ignore - Calling the onstop handler directly
-    await mockMediaRecorder.onstop();
-    
-    // Verify the API calls
+    // Verify API calls
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith('/api/transcribe', expect.any(Object));
-      expect(global.fetch).toHaveBeenCalledWith('/api/rag', expect.any(Object));
-      expect(global.fetch).toHaveBeenCalledWith('/api/tts', expect.any(Object));
-      
       expect(mockOnTranscription).toHaveBeenCalledWith('This is a test transcript.');
-      expect(mockOnAIResponse).toHaveBeenCalledWith('This is a test answer.', 'base64-audio-data');
     });
   });
 
-  it('displays an error message when getUserMedia fails', async () => {
-    // Mock getUserMedia to fail
+  it('handles errors in getUserMedia', async () => {
+    // Mock getUserMedia to reject
     Object.defineProperty(global.navigator, 'mediaDevices', {
       value: {
         getUserMedia: jest.fn().mockRejectedValue(new Error('Permission denied'))
-      },
-      writable: true
+      }
     });
-
+    
     render(
-      <AudioRecorder
+      <AudioRecorder 
         onTranscription={mockOnTranscription}
-        onAIResponse={mockOnAIResponse}
-        conversationId={mockConversationId}
+        onRecordingStateChange={mockOnRecordingStateChange}
       />
     );
-
+    
+    // Click to start recording
     fireEvent.click(screen.getByRole('button'));
     
+    // Should show an error message
     await waitFor(() => {
-      expect(screen.getByText('Could not access microphone')).toBeInTheDocument();
+      expect(screen.getByText(/Could not access microphone/)).toBeInTheDocument();
     });
   });
 }); 

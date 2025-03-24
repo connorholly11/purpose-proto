@@ -4,6 +4,7 @@ import "./globals.css";
 import Navigation from "./components/Navigation";
 import { UserProvider } from "./contexts/UserContext";
 import FeedbackButton from './components/FeedbackButton';
+import ServiceWorkerRegistration from './components/ServiceWorkerRegistration';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon.ico',
-    apple: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
   appleWebApp: {
     capable: true,
@@ -36,7 +37,8 @@ export const viewport = {
   themeColor: '#3b82f6', 
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({
@@ -48,7 +50,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="AI Voice Companion" />
@@ -64,20 +66,11 @@ export default function RootLayout({
         <UserProvider>
           <div className="min-h-screen flex flex-col">
             <Navigation />
-            <main className="flex-grow py-2 px-2 md:py-6 md:px-4">
-              <div 
-                style={{ 
-                  background: 'var(--container-gradient)',
-                  boxShadow: 'var(--card-shadow)',
-                  borderRadius: '18px',
-                  border: '1px solid rgba(226, 232, 240, 0.7)',
-                }}
-                className="mx-auto h-full max-w-4xl overflow-hidden backdrop-blur-md dark:border-slate-700/40"
-              >
-                {children}
-              </div>
+            <main className="flex-grow flex flex-col">
+              {children}
             </main>
             <FeedbackButton />
+            <ServiceWorkerRegistration />
           </div>
         </UserProvider>
       </body>

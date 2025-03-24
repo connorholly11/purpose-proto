@@ -1,10 +1,12 @@
+/**
+ * Test suite for API endpoints
+ */
 import { NextRequest, NextResponse } from 'next/server';
-import { POST as ragPostHandler } from '@/app/api/rag/route';
 import { POST as transcribePostHandler } from '@/app/api/transcribe/route';
-import { POST as ttsPostHandler } from '@/app/api/tts/route';
 import { POST as completionPostHandler } from '@/app/api/completion/route';
-import { GET as conversationGetHandler } from '@/app/api/conversation/[id]/route';
-import { POST as conversationPostHandler } from '@/app/api/conversation/route';
+import { POST as ragPostHandler } from '@/app/api/rag/route';
+import { GET as conversationGetHandler } from '@/app/api/conversations/[id]/route';
+import { POST as conversationPostHandler } from '@/app/api/conversations/route';
 
 // Mock global fetch for API calls
 const mockFetch = jest.fn();
@@ -139,13 +141,17 @@ describe('API Endpoints Integration Tests', () => {
   });
 
   describe('Transcribe API Endpoint', () => {
-    it('should transcribe audio', async () => {
-      // Mock FormData and File for the request
+    it('should transcribe audio files', async () => {
+      // Create a mock FormData with an audio file
       const mockFormData = {
-        get: jest.fn().mockReturnValue(new Blob(['test audio data'])),
+        get: jest.fn().mockImplementation((key) => {
+          if (key === 'file') {
+            return new File(['audio content'], 'test-audio.webm', { type: 'audio/webm' });
+          }
+          return null;
+        })
       };
-      global.FormData = jest.fn().mockImplementation(() => mockFormData);
-      
+
       // Create a mock request
       const mockRequest = createMockRequest('POST');
       mockRequest.formData = jest.fn().mockResolvedValue(mockFormData);
@@ -160,37 +166,7 @@ describe('API Endpoints Integration Tests', () => {
       const data = await parseResponseJson(response);
       
       // Verify the response structure
-      expect(data).toHaveProperty('transcript');
-    });
-  });
-
-  describe('TTS API Endpoint', () => {
-    it('should generate speech from text', async () => {
-      // Create a mock request with text
-      const mockRequest = createMockRequest('POST', { text: 'Test text to generate speech' });
-
-      // Call the handler
-      const response = await ttsPostHandler(mockRequest);
-      
-      // Verify response status
-      expect(response.status).toBe(200);
-      
-      // Parse the response JSON
-      const data = await parseResponseJson(response);
-      
-      // Verify the response structure
-      expect(data).toHaveProperty('audioContent');
-    });
-
-    it('should return 400 for invalid requests', async () => {
-      // Create a mock request without text
-      const mockRequest = createMockRequest('POST', {});
-
-      // Call the handler
-      const response = await ttsPostHandler(mockRequest);
-      
-      // Verify response status
-      expect(response.status).toBe(400);
+      expect(data).toHaveProperty('text');
     });
   });
 

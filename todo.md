@@ -1,141 +1,106 @@
-# AI Voice Companion Implementation Todo List
+# Technical Debt Cleanup To-Do List
 
-## 1. Project Setup
-- [x] Install required dependencies (openai, pinecone, prisma, formidable, etc.)
-- [x] Set up environment variables
-- [x] Configure project structure according to rules.md
+## Mobile-First and PWA Cleanup
 
-## 2. Prisma + Supabase Setup
-- [x] Initialize Prisma
-- [x] Define schema (Conversation, Message models)
-- [x] Reset/push database schema
-- [x] Test database connection
+- [x] Fix linter errors in `ChatInterface.tsx`:
+  - [x] Type error in `shouldSummarize` function (expects string, receives Message[])
+  - [x] Fix properties mismatch in `Message` components (showAvatar, timestamp, isLoading)
+  - [x] Address incorrect role types ('system' not in the allowed values)
 
-## 3. Pinecone & RAG Implementation
-- [x] Create document ingestion script
-- [x] Implement RAG endpoint
-- [x] Test RAG functionality
+- [x] Fix missing properties in `MemoryManager` component:
+  - [x] Add proper `onClose` prop implementation
 
-## 4. Short Audio Mode
-- [x] Implement STT (Speech-to-Text) endpoint
-- [x] Implement TTS (Text-to-Speech) endpoint
-- [x] Create front-end interface for short audio mode
+- [x] Optimize PWA icon assets:
+  - [x] Create proper 192x192 and 512x512 icons in `/public/icons/` directory
+  - [x] Create proper sized apple-touch-icon.png (at least 180x180)
+  - [x] Create screenshot images for PWA manifest
 
-## 5. Real-Time Streaming (WebRTC) with GPT-4o
-- [x] Implement ephemeral token route
-- [x] Create WebRTC client-side setup
-- [x] Add RAG integration with real-time mode
-- [x] Implement VAD (Voice Activity Detection)
+## Voice & Text-to-Speech Cleanup
 
-## 6. Logging & Conversation History
-- [x] Add logging service
-- [x] Implement conversation history storage
+- [x] Remove all remaining voice and TTS related code:
+  - [x] Delete unused TTS API routes (`/api/tts` if exists)
+  - [x] Delete unused real-time voice API routes (`/api/realtime-session` if exists)
+  - [x] Remove all remaining voice-related imports in components
+  - [x] Clean up any remaining TTS response handling in API services
 
-## 7. UI Components
-- [x] Build voice recording component
-- [x] Create chat interface
-- [x] Add real-time indicators (typing, processing, etc.)
+- [x] Clean up type definitions:
+  - [x] Remove `TTSRequest` and `TTSResponse` interfaces
+  - [x] Remove `RealtimeSessionResponse` interface
+  - [x] Remove WebRTC-related interfaces (RTCDataChannelEvent, AudioTranscriptEvent, etc.)
+  - [x] Fix Message type to properly support 'system' role and other added properties
 
-## 8. Testing & Polishing
-- [x] Test short audio flow
-- [x] Test real-time audio flow
-- [x] Test RAG functionality
-- [x] Add error handling
-- [x] Optimize for performance
+## Component Simplification
 
-## 9. Navigation & Layout
-- [x] Add navigation bar with links to Chat, Logs, and Admin
-- [x] Make navigation responsive and accessible
-- [x] Implement consistent layout across all pages
-- [x] Update navigation structure to move RAG Analytics to top level
+- [x] Simplify AudioRecorder component:
+  - [x] Make transcription API call consistent with Message type (text vs transcript)
+  - [x] Ensure proper error handling and user feedback
 
-## 10. Admin Panel
-- [x] Create basic analytics dashboard
-- [x] Show conversation statistics
-- [x] Display user activity metrics
-- [x] Add RAG/embedding performance monitoring tab
-- [x] Implement admin permissions if needed
+- [x] Improve DebugPanel implementation:
+  - [x] Fix prop types to ensure it can receive messages properly
+  - [x] Update debug message categories to match the current app functionality
+  - [x] Ensure it doesn't interfere with mobile layout
 
-## 11. Logs Page
-- [x] Create interface to view all chat messages
-- [x] Implement filtering by like/dislike status
-- [x] Add filtering by user
-- [x] Add filtering by date range
-- [x] Add filtering by conversation
-- [x] Implement search functionality
+- [x] Audit Chat Interface:
+  - [x] Remove any remaining vestiges of real-time voice features
+  - [x] Ensure the conversation memory features still work properly
+  - [x] Fix the prompt selector to work properly on mobile
 
-## 12. User Implementation
-- [x] Create user model in schema
-- [x] Seed three initial users (Connor, Raj, Mark)
-- [x] Associate conversations and logs with specific users
-- [x] Add user authentication system
-- [x] Create user profile page
+## API Routes and Services
 
-## 13. Chat Interface Enhancements
-- [x] Add toggle between "Text" and "Voice" modes
-- [x] Implement text-only response mode (no speech)
-- [x] Maintain voice response mode for voice interactions
-- [x] Make mode selection persistent for the session
+- [x] Audit and clean up API routes:
+  - [x] Verify all API endpoints are still needed and functional
+  - [x] Ensure API response formats match the updated type definitions
+  - [x] Fix /api/transcribe route to return 'text' instead of 'transcript'
 
-## 14. RAG Analytics
-- [x] Add visualization for embedding performance
-- [x] Show which documents are being retrieved most frequently
-- [x] Display confidence scores for RAG responses
-- [x] Allow admin to view raw vector data
+- [x] Consolidate services:
+  - [x] Update memoryService's shouldSummarize function to accept Message[] instead of string
+  - [x] Ensure any other services properly match the updated type definitions
 
-## 15. RAG Verification & Improvements
-- [x] Add monitoring of actual Pinecone operations in the RAG pipeline
-- [x] Create a debug view showing retrieved documents for each query
-- [x] Log and display similarity scores for retrieved documents
-- [x] Visualize which parts of user history are being used in conversations
-- [x] Implement personalization tracking to show how AI learns about the user
-- [x] Store and display which chunks of information are most frequently retrieved
+## Admin Interface
 
-## 16. Real-Time Voice Enhancements
-- [x] Add live transcription display showing user's speech in real-time
-- [x] Display partial AI responses as they're being generated
-- [x] Show confidence scores for speech recognition
-- [x] Create a visual indicator of which parts of context are being used
-- [x] Implement a UI to display both sides of the conversation in text form
+- [x] Audit admin interface:
+  - [x] Fix any broken routes or components in the admin area
+  - [x] Ensure the admin area is responsive and works on mobile
+  - [x] Check if logs page is referenced but not implemented
 
-## 17. Fix Next.js Dynamic Route Params Warning
-- [x] Update API route files to properly use route params
-- [x] Fix `/api/conversation/[id]/route.ts`
-- [x] Fix `/api/message/[messageId]/feedback/route.ts`
-- [x] Fix `/api/admin/rag-operations/[id]/route.ts`
-- [x] Test all fixed routes
+## Testing and Documentation
 
-## 18. User Knowledge Base
-- [x] Add UserKnowledgeItem model to schema
-- [x] Create API endpoints for managing knowledge items
-- [x] Build UI for adding/viewing/editing knowledge items
-- [x] Integrate user knowledge with RAG pipeline
-- [x] Test knowledge retrieval with user queries
+- [x] Update tests to match new implementation:
+  - [x] Fix any broken tests that rely on removed features
+  - [x] Add tests for mobile-first behavior
+  - [x] Test PWA installation and functionality
 
-## 19. System Prompt Testing Framework
-- [x] Add SystemPrompt and PromptFeedback models to schema
-- [x] Create service for managing system prompts
-- [x] Build API endpoints for system prompts
-- [x] Implement UI for creating and managing prompts
-- [x] Add A/B testing functionality
-- [x] Add prompt feedback collection
+- [x] Update documentation:
+  - [x] Document removed features and why they were removed
+  - [x] Add mobile/responsive design documentation
+  - [x] Update any API documentation to match current implementation
 
-## 20. Feedback Capture Mechanism
-- [x] Add GeneralFeedback model to schema
-- [x] Create feedback service and API endpoints
-- [x] Build feedback form component
-- [x] Add feedback button to layout
-- [x] Implement admin view for feedback management
+## Performance Optimization
 
-## 21. Performance Monitoring Dashboard
-- [x] Add PerformanceMetrics model to schema
-- [x] Create service for tracking performance metrics
-- [x] Build API endpoints for performance data
-- [x] Implement dashboard UI with filters and charts
-- [x] Add cost calculation functionality
+- [x] Optimize bundle size:
+  - [x] Remove unused dependencies from package.json
+  - [x] Analyze and optimize bundle size with tools like @next/bundle-analyzer
+  - [x] Lazy load non-critical components
 
-## Progress Tracking
-- **Current Focus**: Completed all tasks
-- **Completed**: Core functionality, Navigation, Admin Panel, Logs, User Implementation, Chat Enhancements, RAG verification, Real-time voice improvements, User Knowledge Base, System Prompt Testing, Feedback Capture, Performance Monitoring
-- **In Progress**: None
-- **Blockers**: None 
+- [x] Improve mobile performance:
+  - [x] Use proper image optimization for any images
+  - [x] Minimize main thread blocking operations
+  - [x] Optimize CSS for better mobile performance
+
+## Future-Proofing
+
+- [x] Prepare for future features:
+  - [x] Ensure code structure supports adding features back if needed
+  - [x] Ensure API abstraction allows for different backend implementations
+  - [x] Document extension points for future development
+
+## Build and Deployment
+
+- [x] Fix any build warnings or errors:
+  - [x] Address any TypeScript errors
+  - [x] Fix any ESLint warnings
+  - [x] Ensure proper Next.js app router structure
+
+- [x] Optimize deployment:
+  - [x] Configure PWA for installation but without offline functionality
+  - [x] Verify PWA works correctly when deployed

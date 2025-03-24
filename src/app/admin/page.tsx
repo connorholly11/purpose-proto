@@ -3,14 +3,16 @@
 import { useState, useEffect } from 'react';
 import { User } from '@prisma/client';
 import { useUser } from '../contexts/UserContext';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { 
   FaDatabase, 
   FaClipboardList, 
   FaMemory, 
   FaChartLine, 
   FaRobot, 
-  FaUserCircle
+  FaUserCircle,
+  FaFileAlt
 } from 'react-icons/fa';
 import React from 'react';
 
@@ -28,7 +30,6 @@ type UserWithActivity = User & {
 };
 
 export default function AdminPage() {
-  const router = useRouter();
   const pathname = usePathname();
   const { currentUser } = useUser();
   const [users, setUsers] = useState<User[]>([]);
@@ -41,12 +42,13 @@ export default function AdminPage() {
 
   // Admin tabs
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: <FaUserCircle className="w-4 h-4" /> },
-    { id: 'knowledge', label: 'Knowledge Base', icon: <FaDatabase className="w-4 h-4" /> },
-    { id: 'prompts', label: 'System Prompts', icon: <FaRobot className="w-4 h-4" /> },
-    { id: 'feedback', label: 'Feedback', icon: <FaClipboardList className="w-4 h-4" /> },
-    { id: 'memory', label: 'Conversation Memory', icon: <FaMemory className="w-4 h-4" /> },
-    { id: 'performance', label: 'Performance', icon: <FaChartLine className="w-4 h-4" /> },
+    { id: 'dashboard', label: 'Dashboard', icon: <FaUserCircle className="w-4 h-4" />, path: '/admin' },
+    { id: 'knowledge', label: 'Knowledge Base', icon: <FaDatabase className="w-4 h-4" />, path: '/rag' },
+    { id: 'prompts', label: 'System Prompts', icon: <FaRobot className="w-4 h-4" />, path: '/system-prompts' },
+    { id: 'feedback', label: 'Feedback', icon: <FaClipboardList className="w-4 h-4" />, path: '/admin/feedback' },
+    { id: 'memory', label: 'Conversation Memory', icon: <FaMemory className="w-4 h-4" />, path: '/admin/memory' },
+    { id: 'performance', label: 'Performance', icon: <FaChartLine className="w-4 h-4" />, path: '/performance' },
+    { id: 'logs', label: 'System Logs', icon: <FaFileAlt className="w-4 h-4" />, path: '/admin/logs' },
   ];
 
   useEffect(() => {
@@ -84,16 +86,18 @@ export default function AdminPage() {
 
   // Determine active tab based on pathname
   useEffect(() => {
-    if (pathname.includes('/admin/knowledge')) {
+    if (pathname.includes('/rag')) {
       setActiveTab('knowledge');
-    } else if (pathname.includes('/admin/prompts')) {
+    } else if (pathname.includes('/system-prompts')) {
       setActiveTab('prompts');
     } else if (pathname.includes('/admin/feedback')) {
       setActiveTab('feedback');
     } else if (pathname.includes('/admin/memory')) {
       setActiveTab('memory');
-    } else if (pathname.includes('/admin/performance')) {
+    } else if (pathname.includes('/performance')) {
       setActiveTab('performance');
+    } else if (pathname.includes('/admin/logs')) {
+      setActiveTab('logs');
     } else {
       setActiveTab('dashboard');
     }
@@ -121,23 +125,6 @@ export default function AdminPage() {
     }
   };
 
-  // Handle tab change
-  const handleTabChange = (tabId: string) => {
-    if (tabId === 'knowledge') {
-      router.push('/admin/knowledge');
-    } else if (tabId === 'prompts') {
-      router.push('/admin/prompts');
-    } else if (tabId === 'feedback') {
-      router.push('/admin/feedback');
-    } else if (tabId === 'memory') {
-      router.push('/admin/memory');
-    } else if (tabId === 'performance') {
-      router.push('/admin/performance');
-    } else {
-      setActiveTab(tabId);
-    }
-  };
-
   if (loading) return <div className="flex justify-center p-8">Loading admin data...</div>;
   if (error) return <div className="text-red-500 p-8">Error: {error}</div>;
 
@@ -149,18 +136,33 @@ export default function AdminPage() {
       <div className="mb-6 overflow-x-auto">
         <div className="flex space-x-1 border-b border-gray-200 pb-1">
           {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              className={`px-4 py-2 rounded-t-lg flex items-center space-x-2 ${
-                activeTab === tab.id
-                  ? 'bg-white text-blue-600 border-b-2 border-blue-500 font-medium'
-                  : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-            </button>
+            tab.id === 'dashboard' ? (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 rounded-t-lg flex items-center space-x-2 ${
+                  activeTab === tab.id
+                    ? 'bg-white text-blue-600 border-b-2 border-blue-500 font-medium'
+                    : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                }`}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            ) : (
+              <Link
+                key={tab.id}
+                href={tab.path}
+                className={`px-4 py-2 rounded-t-lg flex items-center space-x-2 ${
+                  activeTab === tab.id
+                    ? 'bg-white text-blue-600 border-b-2 border-blue-500 font-medium'
+                    : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                }`}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </Link>
+            )
           ))}
         </div>
       </div>
@@ -272,7 +274,7 @@ export default function AdminPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.messageCount}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(user.lastActive).toLocaleString()}
+                          {user.lastActive ? new Date(user.lastActive).toLocaleString() : 'Never'}
                         </td>
                       </tr>
                     ))}

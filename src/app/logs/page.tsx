@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { Message } from '@prisma/client';
+import { useState, useEffect, Suspense, useCallback, useMemo } from 'react';
 import { useUser } from '../contexts/UserContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import browserLogger from '@/lib/utils/browser-logger';
+import Link from 'next/link';
+import { FaCog, FaSearch, FaTrash, FaDownload, FaFilter, FaSync } from 'react-icons/fa';
 
 // Loading component for suspense
 function LogsPageLoading() {
@@ -26,11 +27,11 @@ function LogsPageContent() {
   const [activeTab, setActiveTab] = useState<'messages' | 'system'>('messages');
   
   // Messages tab state
-  const [messages, setMessages] = useState<(Message & { conversation: { userId: string | null } })[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [serverLogs, setServerLogs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Filter states for messages tab
+  // Filter states
   const [filterUser, setFilterUser] = useState<string | null>(null);
   const [filterLiked, setFilterLiked] = useState<boolean | null>(null);
   const [filterDateFrom, setFilterDateFrom] = useState<string>('');
@@ -38,14 +39,12 @@ function LogsPageContent() {
   const [filterConversation, setFilterConversation] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   
-  // For user dropdown
+  // For dropdown options
   const [users, setUsers] = useState<{ id: string, name: string }[]>([]);
-  // For conversation dropdown
   const [conversations, setConversations] = useState<{ id: string, createdAt: string }[]>([]);
   
   // System logs tab state
   const [clientLogs, setClientLogs] = useState<string[]>([]);
-  const [systemServerLogs, setSystemServerLogs] = useState<string[]>([]);
   const [systemActiveTab, setSystemActiveTab] = useState<'client' | 'server'>('client');
   const [systemFilter, setSystemFilter] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
@@ -66,41 +65,43 @@ function LogsPageContent() {
   }, [searchParams]);
   
   // Update URL when tab changes
-  const handleTabChange = (tab: 'messages' | 'system') => {
+  const handleTabChange = useCallback((tab: 'messages' | 'system') => {
     setActiveTab(tab);
     router.push(`/logs?tab=${tab}`);
-  };
+  }, [router]);
   
-  // Messages tab data fetching
-  useEffect(() => {
+  // Memoize query params to prevent unnecessary re-fetches
+  const queryParams = useMemo(() => {
+    return new URLSearchParams({
+      ...(filterUser ? { userId: filterUser } : {}),
+      ...(filterLiked !== null ? { liked: filterLiked.toString() } : {}),
+      ...(filterDateFrom ? { dateFrom: filterDateFrom } : {}),
+      ...(filterDateTo ? { dateTo: filterDateTo } : {}),
+      ...(filterConversation ? { conversationId: filterConversation } : {}),
+      ...(searchTerm ? { search: searchTerm } : {}),
+    });
+  }, [filterUser, filterLiked, filterDateFrom, filterDateTo, filterConversation, searchTerm]);
+  
+  // Data fetching
+  const fetchAllData = useCallback(async () => {
     if (activeTab !== 'messages') return;
     
-    async function fetchAllData() {
-      try {
-        setLoading(true);
+    try {
+      setLoading(true);
 
-        // Build query params
-        const queryParams = new URLSearchParams({
-          ...(filterUser ? { userId: filterUser } : {}),
-          ...(filterLiked !== null ? { liked: filterLiked.toString() } : {}),
-          ...(filterDateFrom ? { dateFrom: filterDateFrom } : {}),
-          ...(filterDateTo ? { dateTo: filterDateTo } : {}),
-          ...(filterConversation ? { conversationId: filterConversation } : {}),
-          ...(searchTerm ? { search: searchTerm } : {}),
-        });
+      const logsResponse = await fetch(`/api/logs?${queryParams.toString()}`);
+      if (!logsResponse.ok) {
+        console.error(`Failed to fetch logs: ${logsResponse.status} ${logsResponse.statusText}`);
+        setMessages([]);
+        setServerLogs([]);
+      } else {
+        const data = await logsResponse.json();
+        setMessages(data.messages || []);
+        setServerLogs(data.logs || []);
+      }
 
-        const logsResponse = await fetch(`/api/logs?${queryParams.toString()}`);
-        if (!logsResponse.ok) {
-          console.error(`Failed to fetch logs: ${logsResponse.status} ${logsResponse.statusText}`);
-          setMessages([]);
-          setServerLogs([]);
-        } else {
-          const data = await logsResponse.json();
-          setMessages(data.messages || []);
-          setServerLogs(data.logs || []);
-        }
-
-        // get users
+      // Fetch users and conversations only if they haven't been loaded yet
+      if (users.length === 0) {
         const usersRes = await fetch('/api/users');
         if (usersRes.ok) {
           const userData = await usersRes.json();
@@ -109,8 +110,9 @@ function LogsPageContent() {
           console.error(`Failed to fetch users: ${usersRes.status} ${usersRes.statusText}`);
           setUsers([]);
         }
+      }
 
-        // get conversations
+      if (conversations.length === 0) {
         const convoRes = await fetch('/api/conversations');
         if (convoRes.ok) {
           const convoData = await convoRes.json();
@@ -119,22 +121,24 @@ function LogsPageContent() {
           console.error(`Failed to fetch conversations: ${convoRes.status} ${convoRes.statusText}`);
           setConversations([]);
         }
-      } catch (err) {
-        console.error('Error fetching messages/logs:', err);
-        setMessages([]);
-        setServerLogs([]);
-      } finally {
-        setLoading(false);
       }
+    } catch (err) {
+      console.error('Error fetching messages/logs:', err);
+      setMessages([]);
+      setServerLogs([]);
+    } finally {
+      setLoading(false);
     }
-
-    fetchAllData();
-  }, [filterUser, filterLiked, filterDateFrom, filterDateTo, filterConversation, searchTerm, activeTab]);
+  }, [activeTab, queryParams, users.length, conversations.length]);
+  
+  useEffect(() => {
+    if (activeTab === 'messages') {
+      fetchAllData();
+    }
+  }, [activeTab, fetchAllData]);
   
   // System logs tab data fetching
-  useEffect(() => {
-    if (activeTab !== 'system') return;
-    
+  const fetchClientLogs = useCallback(() => {
     try {
       const logsString = localStorage.getItem('app_client_logs') || '[]';
       const logs = JSON.parse(logsString);
@@ -142,40 +146,46 @@ function LogsPageContent() {
     } catch (err) {
       console.error('Failed to load client logs:', err);
     }
-  }, [refreshKey, activeTab]);
+  }, []);
+  
+  const fetchServerLogs = useCallback(async () => {
+    try {
+      const response = await fetch('/api/logs');
+      if (response.ok) {
+        const data = await response.json();
+        setServerLogs(data.logs || []);
+      } else {
+        console.error('Failed to fetch server logs:', response.status);
+      }
+    } catch (err) {
+      console.error('Error fetching server logs:', err);
+    }
+  }, []);
   
   useEffect(() => {
-    if (activeTab !== 'system' || systemActiveTab !== 'server') return;
+    if (activeTab !== 'system') return;
     
-    const fetchServerLogs = async () => {
-      try {
-        const response = await fetch('/api/logs');
-        if (response.ok) {
-          const data = await response.json();
-          setSystemServerLogs(data.logs || []);
-        } else {
-          console.error('Failed to fetch server logs:', response.status);
-        }
-      } catch (err) {
-        console.error('Error fetching server logs:', err);
-      }
-    };
+    fetchClientLogs();
     
-    fetchServerLogs();
-  }, [refreshKey, systemActiveTab, activeTab]);
+    if (systemActiveTab === 'server') {
+      fetchServerLogs();
+    }
+  }, [activeTab, systemActiveTab, refreshKey, fetchClientLogs, fetchServerLogs]);
   
   // Filter logs based on search term
-  const filteredSystemLogs = (systemActiveTab === 'client' ? clientLogs : systemServerLogs)
-    .filter(log => !systemFilter || log.toLowerCase().includes(systemFilter.toLowerCase()));
+  const filteredSystemLogs = useMemo(() => {
+    const logs = systemActiveTab === 'client' ? clientLogs : serverLogs;
+    return logs.filter(log => !systemFilter || log.toLowerCase().includes(systemFilter.toLowerCase()));
+  }, [systemActiveTab, clientLogs, serverLogs, systemFilter]);
   
-  // Download logs
-  const handleDownload = () => {
+  // Log actions
+  const handleDownload = useCallback(() => {
     browserLogger.info('LogsViewer', 'Downloading logs', { type: systemActiveTab });
     if (systemActiveTab === 'client') {
       browserLogger.downloadLogs();
     } else {
       // Create a download for server logs
-      const blob = new Blob([systemServerLogs.join('\n')], { type: 'text/plain' });
+      const blob = new Blob([serverLogs.join('\n')], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       
       const a = document.createElement('a');
@@ -186,10 +196,9 @@ function LogsPageContent() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
-  };
+  }, [systemActiveTab, serverLogs]);
   
-  // Clear logs
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     if (systemActiveTab === 'client') {
       browserLogger.info('LogsViewer', 'Clearing client logs');
       browserLogger.clearLogs();
@@ -201,13 +210,12 @@ function LogsPageContent() {
         .then(() => setRefreshKey(prevKey => prevKey + 1))
         .catch(err => console.error('Failed to clear server logs:', err));
     }
-  };
+  }, [systemActiveTab]);
   
-  // Refresh logs
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     browserLogger.info('LogsViewer', 'Refreshing logs', { type: systemActiveTab });
     setRefreshKey(prevKey => prevKey + 1);
-  };
+  }, [systemActiveTab]);
   
   if (loading && activeTab === 'messages') {
     return <div className="flex justify-center p-8">Loading messages and logs...</div>;
@@ -215,7 +223,20 @@ function LogsPageContent() {
   
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Logs</h1>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Developer Logs & Diagnostics</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            View message history and system logs for debugging purposes.
+          </p>
+        </div>
+        <Link 
+          href="/admin/logs" 
+          className="px-3 py-2 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded flex items-center gap-1 hover:bg-blue-200 dark:hover:bg-blue-800/50"
+        >
+          <FaCog className="w-3 h-3" /> Admin Logs
+        </Link>
+      </div>
       
       {/* Tabs */}
       <div className="mb-6 border-b">
@@ -236,255 +257,329 @@ function LogsPageContent() {
       </div>
       
       {/* Content based on active tab */}
-      {activeTab === 'messages' && (
-        <div>
-          {/* Filter controls */}
-          <div className="bg-gray-100 p-4 mb-6 rounded-lg">
-            <h2 className="text-lg font-semibold mb-3">Filters</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* User */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">User</label>
-                <select 
-                  className="w-full p-2 border rounded"
-                  value={filterUser || ''}
-                  onChange={(e) => setFilterUser(e.target.value || null)}
-                >
-                  <option value="">All Users</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>{u.name || u.id}</option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Feedback */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Feedback</label>
-                <select 
-                  className="w-full p-2 border rounded"
-                  value={filterLiked === null ? '' : filterLiked.toString()}
-                  onChange={(e) => {
-                    if (e.target.value === '') setFilterLiked(null);
-                    else setFilterLiked(e.target.value === 'true');
-                  }}
-                >
-                  <option value="">All Messages</option>
-                  <option value="true">Liked</option>
-                  <option value="false">Disliked</option>
-                </select>
-              </div>
-              
-              {/* Conversation */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Conversation</label>
-                <select 
-                  className="w-full p-2 border rounded"
-                  value={filterConversation || ''}
-                  onChange={(e) => setFilterConversation(e.target.value || null)}
-                >
-                  <option value="">All Conversations</option>
-                  {conversations.map((convo) => (
-                    <option key={convo.id} value={convo.id}>
-                      {new Date(convo.createdAt).toLocaleString()} - {convo.id.slice(0, 8)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Date From */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-                <input 
-                  type="date" 
-                  className="w-full p-2 border rounded"
-                  value={filterDateFrom}
-                  onChange={(e) => setFilterDateFrom(e.target.value)}
-                />
-              </div>
-              
-              {/* Date To */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-                <input 
-                  type="date" 
-                  className="w-full p-2 border rounded"
-                  value={filterDateTo}
-                  onChange={(e) => setFilterDateTo(e.target.value)}
-                />
-              </div>
-              
-              {/* Search */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                <input 
-                  type="text" 
-                  className="w-full p-2 border rounded"
-                  placeholder="Search message content..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-          
-          {/* Messages list */}
-          <div className="bg-white shadow-md rounded-lg overflow-hidden mb-8">
-            {messages.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">No messages found with the current filters.</div>
-            ) : (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Feedback</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {messages.map((message) => (
-                    <tr key={message.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(message.createdAt).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          message.role === 'assistant'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-green-100 text-green-800'
-                        }`}>
-                          {message.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <div className="max-h-24 overflow-y-auto">
-                          {message.content}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {message.conversation.userId || 'Anonymous'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className="text-gray-500">Not rated</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* Server log lines (optional) */}
-          <div className="bg-white shadow-md rounded-lg overflow-hidden">
-            <h2 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
-              Server Log Lines
-            </h2>
-            {serverLogs.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">No server logs found.</div>
-            ) : (
-              <div className="p-4 max-h-60 overflow-y-auto">
-                {serverLogs.map((line, i) => (
-                  <div key={i} className="font-mono text-xs mb-1 whitespace-pre-wrap">
-                    {line}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+      {activeTab === 'messages' ? (
+        <MessageLogsTab 
+          messages={messages} 
+          users={users}
+          conversations={conversations}
+          filterUser={filterUser}
+          setFilterUser={setFilterUser}
+          filterLiked={filterLiked}
+          setFilterLiked={setFilterLiked}
+          filterDateFrom={filterDateFrom}
+          setFilterDateFrom={setFilterDateFrom}
+          filterDateTo={filterDateTo}
+          setFilterDateTo={setFilterDateTo}
+          filterConversation={filterConversation}
+          setFilterConversation={setFilterConversation}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          onSubmit={fetchAllData}
+        />
+      ) : (
+        <SystemLogsTab
+          systemActiveTab={systemActiveTab}
+          setSystemActiveTab={setSystemActiveTab}
+          systemFilter={systemFilter}
+          setSystemFilter={setSystemFilter}
+          filteredSystemLogs={filteredSystemLogs}
+          handleDownload={handleDownload}
+          handleClear={handleClear}
+          handleRefresh={handleRefresh}
+        />
       )}
-      
-      {activeTab === 'system' && (
-        <div>
-          <div className="flex justify-between mb-4">
-            <div className="flex">
-              <button
-                onClick={() => setSystemActiveTab('client')}
-                className={`px-4 py-2 rounded-l ${
-                  systemActiveTab === 'client' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-gray-200 hover:bg-gray-300'
-                }`}
-              >
-                Client Logs
-              </button>
-              <button
-                onClick={() => setSystemActiveTab('server')}
-                className={`px-4 py-2 rounded-r ${
-                  systemActiveTab === 'server' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-gray-200 hover:bg-gray-300'
-                }`}
-              >
-                Server Logs
-              </button>
-            </div>
-            
-            <div className="flex space-x-2">
-              <button
-                onClick={handleRefresh}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-              >
-                Refresh
-              </button>
-              <button
-                onClick={handleDownload}
-                className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
-              >
-                Download
-              </button>
-              <button
-                onClick={handleClear}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-          
-          <div className="mb-4">
+    </div>
+  );
+}
+
+// MessageLogsTab prop types
+interface MessageLogsTabProps {
+  messages: any[];
+  users: { id: string; name: string }[];
+  conversations: { id: string; createdAt: string }[];
+  filterUser: string | null;
+  setFilterUser: (value: string | null) => void;
+  filterLiked: boolean | null;
+  setFilterLiked: (value: boolean | null) => void;
+  filterDateFrom: string;
+  setFilterDateFrom: (value: string) => void;
+  filterDateTo: string;
+  setFilterDateTo: (value: string) => void;
+  filterConversation: string | null;
+  setFilterConversation: (value: string | null) => void;
+  searchTerm: string;
+  setSearchTerm: (value: string) => void;
+  onSubmit: () => void;
+}
+
+// SystemLogsTab prop types
+interface SystemLogsTabProps {
+  systemActiveTab: 'client' | 'server';
+  setSystemActiveTab: (tab: 'client' | 'server') => void;
+  systemFilter: string;
+  setSystemFilter: (value: string) => void;
+  filteredSystemLogs: string[];
+  handleDownload: () => void;
+  handleClear: () => void;
+  handleRefresh: () => void;
+}
+
+function MessageLogsTab({ 
+  messages, 
+  users,
+  conversations,
+  filterUser,
+  setFilterUser,
+  filterLiked,
+  setFilterLiked,
+  filterDateFrom,
+  setFilterDateFrom,
+  filterDateTo,
+  setFilterDateTo,
+  filterConversation,
+  setFilterConversation,
+  searchTerm,
+  setSearchTerm,
+  onSubmit
+}: MessageLogsTabProps) {
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit();
+  };
+
+  return (
+    <div>
+      {/* Filter Form */}
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-4 mb-6">
+        <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Search input */}
+          <div className="relative">
             <input
               type="text"
-              value={systemFilter}
-              onChange={e => setSystemFilter(e.target.value)}
-              placeholder="Filter logs..."
-              className="w-full p-2 border rounded"
+              placeholder="Search messages..."
+              className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <FaSearch />
+            </div>
+          </div>
+          
+          {/* User filter */}
+          <div>
+            <select
+              value={filterUser || ''}
+              onChange={(e) => setFilterUser(e.target.value || null)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+            >
+              <option value="">All Users</option>
+              {users.map(user => (
+                <option key={user.id} value={user.id}>{user.name}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Conversation filter */}
+          <div>
+            <select
+              value={filterConversation || ''}
+              onChange={(e) => setFilterConversation(e.target.value || null)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+            >
+              <option value="">All Conversations</option>
+              {conversations.map(convo => (
+                <option key={convo.id} value={convo.id}>
+                  {new Date(convo.createdAt).toLocaleString()}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Date range filters */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From Date:</label>
+            <input
+              type="date"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
             />
           </div>
           
-          <div className="bg-gray-800 text-gray-200 p-4 rounded h-[70vh] overflow-auto font-mono text-sm">
-            {filteredSystemLogs.length > 0 ? (
-              <pre className="whitespace-pre-wrap">
-                {filteredSystemLogs.map((log, index) => (
-                  <div 
-                    key={index}
-                    className={`py-1 ${
-                      log.includes('[ERROR]') 
-                        ? 'text-red-400' 
-                        : log.includes('[WARN]') 
-                          ? 'text-yellow-400' 
-                          : log.includes('[INFO]') 
-                            ? 'text-blue-400' 
-                            : ''
-                    }`}
-                  >
-                    {log}
-                  </div>
-                ))}
-              </pre>
-            ) : (
-              <div className="text-center text-gray-400 mt-10">
-                {systemFilter ? 'No logs match the filter criteria' : 'No logs available'}
-              </div>
-            )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To Date:</label>
+            <input
+              type="date"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+            />
           </div>
           
-          <div className="mt-4 text-sm text-gray-500">
-            <p>Total logs: {filteredSystemLogs.length} (showing {Math.min(filteredSystemLogs.length, 1000)} most recent)</p>
+          {/* Liked filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Feedback:</label>
+            <select
+              value={filterLiked === null ? '' : filterLiked.toString()}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFilterLiked(val === '' ? null : val === 'true');
+              }}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+            >
+              <option value="">All Messages</option>
+              <option value="true">Liked</option>
+              <option value="false">Not Liked</option>
+            </select>
+          </div>
+          
+          <div className="mt-auto">
+            <button
+              type="submit"
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1"
+            >
+              <FaFilter className="w-3 h-3" /> Apply Filters
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      {/* Messages Table */}
+      {messages.length === 0 ? (
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-8 text-center text-gray-500 dark:text-gray-400">
+          No messages found.
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
+              <thead className="bg-gray-50 dark:bg-slate-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Timestamp</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Conversation</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Content</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Role</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                {messages.map((message, index) => (
+                  <tr key={index} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(message.createdAt).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {message.conversation?.userId || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {message.conversationId}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-md truncate">
+                      {message.content}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <span 
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          message.role === 'user' 
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' 
+                            : 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+                        }`}
+                      >
+                        {message.role}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function SystemLogsTab({
+  systemActiveTab,
+  setSystemActiveTab,
+  systemFilter,
+  setSystemFilter,
+  filteredSystemLogs,
+  handleDownload,
+  handleClear,
+  handleRefresh
+}: SystemLogsTabProps) {
+  return (
+    <div>
+      <div className="mb-6">
+        {/* System logs inner tabs */}
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex">
+            <button
+              className={`py-2 px-4 ${systemActiveTab === 'client' ? 'bg-gray-200 dark:bg-slate-700 font-medium rounded-t' : 'bg-gray-100 dark:bg-slate-800'}`}
+              onClick={() => setSystemActiveTab('client')}
+            >
+              Client Logs
+            </button>
+            <button
+              className={`py-2 px-4 ${systemActiveTab === 'server' ? 'bg-gray-200 dark:bg-slate-700 font-medium rounded-t' : 'bg-gray-100 dark:bg-slate-800'}`}
+              onClick={() => setSystemActiveTab('server')}
+            >
+              Server Logs
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleRefresh}
+              className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded flex items-center gap-1 hover:bg-blue-200 dark:hover:bg-blue-800/50"
+            >
+              <FaSync className="w-3 h-3" /> Refresh
+            </button>
+            <button
+              onClick={handleDownload}
+              className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded flex items-center gap-1 hover:bg-green-200 dark:hover:bg-green-800/50"
+              disabled={filteredSystemLogs.length === 0}
+            >
+              <FaDownload className="w-3 h-3" /> Download
+            </button>
+            <button
+              onClick={handleClear}
+              className="px-3 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded flex items-center gap-1 hover:bg-red-200 dark:hover:bg-red-800/50"
+              disabled={filteredSystemLogs.length === 0}
+            >
+              <FaTrash className="w-3 h-3" /> Clear
+            </button>
+          </div>
+        </div>
+        
+        {/* Filter */}
+        <div className="mb-4 relative">
+          <input
+            type="text"
+            placeholder="Filter logs..."
+            className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+            value={systemFilter}
+            onChange={(e) => setSystemFilter(e.target.value)}
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <FaSearch />
+          </div>
+        </div>
+        
+        {/* Log Display */}
+        <div className="bg-gray-900 text-gray-100 rounded-lg p-4 font-mono text-sm h-96 overflow-y-auto">
+          {filteredSystemLogs.length > 0 ? (
+            <pre className="whitespace-pre-wrap break-all">
+              {filteredSystemLogs.join('\n')}
+            </pre>
+          ) : (
+            <div className="flex justify-center items-center h-full text-gray-500">
+              No logs found. {systemFilter ? 'Try changing the filter.' : ''}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

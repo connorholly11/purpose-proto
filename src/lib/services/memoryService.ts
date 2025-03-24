@@ -1,5 +1,6 @@
 import { PrismaClient, Message, Prisma } from '@prisma/client';
 import { OpenAIEmbeddings } from '@langchain/openai';
+import { Message as MessageType } from '@/types';
 
 const prisma = new PrismaClient();
 const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
@@ -164,11 +165,16 @@ export async function getMessagesSinceLastSummary(conversationId: string): Promi
 
 // Check if summarization is needed (based on time or message count)
 export async function shouldSummarize(
-  conversationId: string, 
+  messages: MessageType[], 
   timeSinceLastSummary = 60 * 60 * 1000, // 1 hour in milliseconds (reduced from 2 hours)
   messageCountThreshold = 5 // 5 messages (reduced from 10)
 ): Promise<boolean> {
   try {
+    if (messages.length === 0) return false;
+    
+    // Get the conversation ID from the first message
+    const conversationId = messages[0].conversationId;
+    
     // Get the conversation with raw query
     const conversation = await prisma.$queryRaw<{id: string, lastSummarizedAt: Date | null}[]>`
       SELECT "id", "lastSummarizedAt"
@@ -187,8 +193,8 @@ export async function shouldSummarize(
     if (timeSinceLastSummaryMs >= timeSinceLastSummary) return true;
     
     // Check message count since last summary
-    const messages = await getMessagesSinceLastSummary(conversationId);
-    return messages.length >= messageCountThreshold;
+    const messagesSinceLastSummary = await getMessagesSinceLastSummary(conversationId);
+    return messagesSinceLastSummary.length >= messageCountThreshold;
   } catch (error) {
     console.error('Error checking if should summarize:', error);
     return false;

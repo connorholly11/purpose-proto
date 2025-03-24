@@ -20,7 +20,10 @@ if (!fs.existsSync(LOG_DIR)) {
 
 // GET: Return logs from the server
 export async function GET(req: NextRequest) {
-  logger.info('API', 'Getting server logs (and possibly message logs)');
+  logger.info('API', 'Getting logs', { 
+    path: req.nextUrl.pathname,
+    queryParams: Object.fromEntries(req.nextUrl.searchParams.entries()),
+  });
 
   const prisma = getPrismaClient();
 
@@ -31,9 +34,11 @@ export async function GET(req: NextRequest) {
   const dateTo = req.nextUrl.searchParams.get('dateTo') || null;
   const searchTerm = req.nextUrl.searchParams.get('search') || null;
   const likedStr = req.nextUrl.searchParams.get('liked') || null; // e.g. 'true' / 'false'
+  const levelFilter = req.nextUrl.searchParams.get('level') || null;
+  const serviceFilter = req.nextUrl.searchParams.get('service') || null;
+  const isAdmin = req.nextUrl.pathname.includes('/admin');
 
-  // If you want to unify "logs" to also return DB messages:
-  // We'll gather messages as well
+  // Get messages if requested
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let messages: any[] = [];
   try {
@@ -67,9 +72,7 @@ export async function GET(req: NextRequest) {
       whereClause.content = { contains: searchTerm, mode: 'insensitive' };
     }
 
-    // If likedFilter is implemented, you'd join with messageFeedback table
-    // or store "liked" in the message table. For now, skip or do custom logic.
-
+    // Only fetch messages if not specifically filtered for logs only
     messages = await prisma.message.findMany({
       where: whereClause,
       include: {
@@ -98,11 +101,94 @@ export async function GET(req: NextRequest) {
     }
 
     const logContent = fs.readFileSync(LOG_FILE, 'utf-8');
-    const logs = logContent.split('\n').filter(Boolean);
-    const recentLogs = logs.slice(-1000);
-
+    
+    // Parse logs based on format and apply filters
+    const logLines = logContent.split('\n').filter(Boolean);
+    
+    // Format and filter logs
+    let logs = logLines;
+    
+    // Apply filters for admin view
+    if (searchTerm) {
+      logs = logs.filter(log => log.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    
+    if (levelFilter && levelFilter !== 'all') {
+      logs = logs.filter(log => {
+        const levelMatch = log.match(/\[(INFO|ERROR|WARN|DEBUG)\]/i);
+        if (levelMatch) {
+          return levelMatch[1].toLowerCase() === levelFilter.toLowerCase();
+        }
+        return false;
+      });
+    }
+    
+    if (serviceFilter && serviceFilter !== 'all') {
+      logs = logs.filter(log => {
+        const serviceMatch = log.match(/\[([^\]]+)\]/g);
+        if (serviceMatch && serviceMatch.length >= 2) {
+          // The service name is typically the second bracketed term
+          return serviceMatch[1].toLowerCase().includes(serviceFilter.toLowerCase());
+        }
+        return false;
+      });
+    }
+    
+    // For admin view, parse logs into structured format
+    if (isAdmin) {
+      // Transform logs into structured format for admin view
+      const parsedLogs = logs.slice(-1000).map(log => {
+        // Extract timestamp, level, service, message, and details
+        const timestampMatch = log.match(/^\[(.*?)\]/);
+        const levelMatch = log.match(/\[(INFO|ERROR|WARN|DEBUG)\]/i);
+        const serviceMatch = log.match(/\[([^\]]+)\]/g);
+        
+        let timestamp = '';
+        let level = 'info';
+        let service = '';
+        let message = log;
+        let details = {};
+        
+        if (timestampMatch) timestamp = timestampMatch[1];
+        
+        if (levelMatch) {
+          level = levelMatch[1].toLowerCase();
+          message = message.replace(levelMatch[0], '');
+        }
+        
+        if (serviceMatch && serviceMatch.length >= 2) {
+          service = serviceMatch[1].replace('[', '').replace(']', '');
+          message = message.replace(serviceMatch[0], '').replace(serviceMatch[1], '');
+        }
+        
+        // Extract JSON details if available
+        const detailsMatch = message.match(/{.*}/);
+        if (detailsMatch) {
+          try {
+            details = JSON.parse(detailsMatch[0]);
+            message = message.replace(detailsMatch[0], '');
+          } catch {
+            // Ignore parsing errors
+          }
+        }
+        
+        message = message.trim();
+        
+        return {
+          timestamp,
+          level,
+          service,
+          message,
+          details
+        };
+      });
+      
+      return NextResponse.json({ logs: parsedLogs, messages });
+    }
+    
+    // For developer view, just return the raw logs
     return NextResponse.json({
-      logs: recentLogs,
+      logs: logs.slice(-1000),
       messages,
     });
   } catch (error) {

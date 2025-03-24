@@ -2,16 +2,24 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Message as MessageType } from '@/types';
+import { FaUser, FaRobot, FaInfoCircle, FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
 
 interface MessageProps {
   message: MessageType;
+  showAvatar?: boolean;
   onLike?: () => void;
   onDislike?: () => void;
 }
 
-const Message: React.FC<MessageProps> = ({ message, onLike, onDislike }) => {
+const Message: React.FC<MessageProps> = ({ 
+  message, 
+  showAvatar = false, 
+  onLike, 
+  onDislike 
+}) => {
   const isUser = message.role === 'user';
-  const [feedbackState, setFeedbackState] = useState<'like' | 'dislike' | null>(null);
+  const isSystem = message.role === 'system';
+  const [feedbackState, setFeedbackState] = useState<'like' | 'dislike' | null>(message.feedback || null);
   const [isDelivered, setIsDelivered] = useState(false);
   const [showImpact, setShowImpact] = useState(true);
   const [showSentEffect, setShowSentEffect] = useState(isUser);
@@ -48,18 +56,18 @@ const Message: React.FC<MessageProps> = ({ message, onLike, onDislike }) => {
   
   // Fetch feedback status when component mounts
   useEffect(() => {
-    if (message.id && !message.id.startsWith('temp')) {
+    if (message.id && !message.id.startsWith('temp') && !isSystem) {
       fetchFeedbackStatus();
     }
-  }, [message.id]);
+  }, [message.id, isSystem]);
   
   const fetchFeedbackStatus = async () => {
     try {
-      const response = await fetch(`/api/message/${message.id}/feedback`);
+      const response = await fetch(`/api/messages/${message.id}/feedback`);
       if (response.ok) {
         const data = await response.json();
         if (data.feedback) {
-          setFeedbackState(data.feedback.type === 'LIKE' ? 'like' : 'dislike');
+          setFeedbackState(data.feedback);
         }
       }
     } catch (error) {
@@ -68,140 +76,113 @@ const Message: React.FC<MessageProps> = ({ message, onLike, onDislike }) => {
   };
   
   const handleLike = () => {
-    if (feedbackState === 'like') {
-      // Already liked, so do nothing or toggle off
-      return;
-    }
-    
+    if (feedbackState === 'like') return;
     setFeedbackState('like');
     onLike?.();
   };
   
   const handleDislike = () => {
-    if (feedbackState === 'dislike') {
-      // Already disliked, so do nothing or toggle off
-      return;
-    }
-    
+    if (feedbackState === 'dislike') return;
     setFeedbackState('dislike');
     onDislike?.();
   };
 
-  // Format timestamp if available
-  const formatTime = (timestamp?: Date) => {
-    if (!timestamp) return '';
-    return timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  // Show appropriate avatar based on role
+  const renderAvatar = () => {
+    if (!showAvatar) return null;
+    
+    if (isUser) {
+      return (
+        <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-300 mr-2">
+          <FaUser size={14} />
+        </div>
+      );
+    } else if (isSystem) {
+      return (
+        <div className="h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-300 mr-2">
+          <FaInfoCircle size={14} />
+        </div>
+      );
+    } else {
+      return (
+        <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-800 flex items-center justify-center text-purple-600 dark:text-purple-300 mr-2">
+          <FaRobot size={14} />
+        </div>
+      );
+    }
   };
 
-  // Get message time
-  const messageTime = formatTime(message.createdAt);
-  
-  // Handle long messages on mobile
-  const formatContent = (content: string) => {
-    const words = content.split(' ');
-    // Ensure no word is too long for mobile screens
-    const formattedWords = words.map(word => {
-      if (word.length > 30) {
-        return word.match(/.{1,30}/g)?.join(' ') || word;
-      }
-      return word;
-    });
-    return formattedWords.join(' ');
+  // Format timestamp properly
+  const formatTimestamp = (timestamp?: string) => {
+    if (!timestamp) return '';
+    
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
   
   return (
-    <div className={`flex w-full my-1.5 sm:my-2 ${isUser ? 'justify-end' : 'justify-start'} relative group`}>
-      {/* Message sent ping effect (for user messages) */}
-      {isUser && showSentEffect && (
-        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 message-sent-ping"></div>
-      )}
+    <div 
+      ref={messageRef}
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'} ${isSystem ? 'my-2' : 'my-4'} transition-opacity duration-300 ease-in-out opacity-100`}
+    >
+      {!isUser && renderAvatar()}
       
-      <div
-        ref={messageRef}
-        style={{
-          backgroundColor: isUser 
-            ? 'var(--primary-blue)' 
-            : 'var(--imessage-gray)',
-          color: isUser 
-            ? 'var(--imessage-text-white)' 
-            : 'var(--imessage-text-black)'
-        }}
-        className={`
-          relative max-w-[80%] sm:max-w-[75%] px-3 sm:px-4 py-2 sm:py-3 mb-1 message-bubble
-          ${isUser 
-            ? 'rounded-t-2xl rounded-l-2xl animate-[message-out_0.3s_ease]' 
-            : 'rounded-t-2xl rounded-r-2xl animate-[message-in_0.3s_ease]'
-          }
-          ${showImpact ? 'bubble-impact' : ''}
-        `}
+      <div 
+        className={`relative max-w-[85%] sm:max-w-[75%] md:max-w-[70%] ${
+          isSystem 
+            ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800/30 w-full text-center text-xs'
+            : isUser
+              ? 'bg-blue-100 dark:bg-blue-800 text-blue-900 dark:text-blue-100 px-4 py-3 rounded-2xl rounded-tr-none shadow-sm'
+              : 'bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-gray-100 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm'
+        } ${
+          message.isLoading ? 'animate-pulse' : ''
+        } ${
+          showImpact ? isUser ? 'animate-message-impact-right' : 'animate-message-impact-left' : ''
+        }`}
       >
-        <p className="text-[14px] sm:text-[15px] font-normal whitespace-pre-wrap leading-[1.4] sm:leading-[1.5] break-words">
-          {formatContent(message.content)}
-        </p>
-        
-        {/* Time and delivered indicator */}
-        <div className={`flex items-center justify-end mt-1 ${isUser ? 'text-blue-100 opacity-80' : 'text-slate-500 opacity-70'}`}>
-          {isUser && isDelivered && (
-            <span className="mr-1 text-[8px] sm:text-[9px] animate-delivered">Delivered</span>
-          )}
-          <span className="text-[9px] sm:text-[10px]">{messageTime}</span>
-        </div>
-        
-        {/* Tail for the chat bubble with animation */}
-        <div 
-          style={{
-            backgroundColor: isUser 
-              ? 'var(--primary-blue)' 
-              : 'var(--imessage-gray)'
-          }}
-          className={`
-            absolute bottom-0 w-3 h-3 sm:w-4 sm:h-4 
-            ${isUser 
-              ? 'right-0 translate-x-2 sm:translate-x-3 -translate-y-1' 
-              : 'left-0 -translate-x-2 sm:-translate-x-3 -translate-y-1'
-            } 
-            rounded-full animate-[bubble-tail-pop_0.3s_ease_0.15s_both]
-          `}
-        />
-        
-        {/* Read receipt (blue dot for user messages) */}
-        {isUser && isDelivered && (
-          <div className="absolute -bottom-3 right-3 sm:right-4 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full animate-delivered"></div>
-        )}
-        
-        {/* Feedback buttons (hidden in iMessage-style but can be toggled) */}
-        {!isUser && (onLike || onDislike) && (
-          <div className="absolute -bottom-6 right-2 flex space-x-1 sm:space-x-2 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
-            {onLike && (
-              <button 
-                onClick={handleLike}
-                className={`${
-                  feedbackState === 'like' 
-                    ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/30' 
-                    : 'text-slate-500 hover:text-blue-500 bg-slate-100/80 dark:bg-slate-800/80'
-                } transition-colors p-1 rounded-full shadow-sm text-xs sm:text-sm`}
-                aria-label="Like message"
-              >
-                👍
-              </button>
-            )}
+        {message.isLoading ? (
+          <div className="flex space-x-1 justify-center items-center py-1">
+            <div className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-600 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+            <div className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+          </div>
+        ) : (
+          <div className="whitespace-pre-wrap break-words text-sm">
+            {message.content}
             
-            {onDislike && (
-              <button 
-                onClick={handleDislike}
-                className={`${
-                  feedbackState === 'dislike' 
-                    ? 'text-red-500 bg-red-50 dark:bg-red-900/30' 
-                    : 'text-slate-500 hover:text-red-500 bg-slate-100/80 dark:bg-slate-800/80'
-                } transition-colors p-1 rounded-full shadow-sm text-xs sm:text-sm`}
-                aria-label="Dislike message"
-              >
-                👎
-              </button>
+            {!isSystem && (
+              <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 flex justify-between items-center">
+                <span>{formatTimestamp(message.timestamp)}</span>
+                
+                {isUser && isDelivered && (
+                  <span>Delivered</span>
+                )}
+                
+                {!isUser && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={handleLike}
+                      className={`opacity-60 hover:opacity-100 ${feedbackState === 'like' ? 'text-green-500 opacity-100' : ''}`}
+                      aria-label="Like message"
+                    >
+                      <FaThumbsUp size={12} />
+                    </button>
+                    <button
+                      onClick={handleDislike}
+                      className={`opacity-60 hover:opacity-100 ${feedbackState === 'dislike' ? 'text-red-500 opacity-100' : ''}`}
+                      aria-label="Dislike message"
+                    >
+                      <FaThumbsDown size={12} />
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
       </div>
+      
+      {isUser && renderAvatar()}
     </div>
   );
 };

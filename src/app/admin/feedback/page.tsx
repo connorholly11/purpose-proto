@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { FaTrash, FaFilter } from 'react-icons/fa';
 
 interface Feedback {
   id: string;
@@ -46,14 +47,20 @@ export default function FeedbackAdminPage() {
     fetchFeedback();
   }, []);
   
-  // Filter feedback by category
-  useEffect(() => {
+  // Use memoized filtering for better performance
+  useMemo(() => {
     if (selectedCategory === 'all') {
       setFilteredFeedback(feedback);
     } else {
       setFilteredFeedback(feedback.filter(item => item.category === selectedCategory));
     }
   }, [selectedCategory, feedback]);
+  
+  // Get unique categories for filter options
+  const categories = useMemo(() => {
+    const uniqueCategories = Array.from(new Set(feedback.map(item => item.category)));
+    return ['all', ...uniqueCategories];
+  }, [feedback]);
   
   // Delete feedback
   const handleDeleteFeedback = async (id: string) => {
@@ -77,89 +84,68 @@ export default function FeedbackAdminPage() {
     }
   };
   
-  // Get the categories from feedback
-  const categories = ['all', ...new Set(feedback.map(item => item.category))];
-  
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">User Feedback</h1>
       
       {error && <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">{error}</div>}
       
-      {/* Category filter */}
+      {/* Filters */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Category:</label>
-        <div className="flex flex-wrap gap-2">
-          {categories.map(category => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-3 py-1 rounded-full text-sm ${
-                selectedCategory === category
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              {category.charAt(0).toUpperCase() + category.slice(1)}
-            </button>
-          ))}
+        <div className="flex items-center space-x-2">
+          <FaFilter className="text-gray-500" />
+          <span className="text-gray-700">Filter by category:</span>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          >
+            {categories.map(category => (
+              <option key={category} value={category}>
+                {category === 'all' ? 'All Categories' : category}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
       
-      {/* Feedback list */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        {loading ? (
-          <div className="p-6 text-center">Loading feedback...</div>
-        ) : filteredFeedback.length === 0 ? (
-          <div className="p-6 text-center">No feedback found</div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {filteredFeedback.map(item => (
-              <div key={item.id} className="p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800 mr-2">
-                      {item.category}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {new Date(item.createdAt).toLocaleDateString()} {new Date(item.createdAt).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteFeedback(item.id)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    Delete
-                  </button>
-                </div>
-                
-                <div className="mb-2">
-                  <p className="text-gray-800 whitespace-pre-wrap">{item.content}</p>
-                </div>
-                
-                {item.userId && (
-                  <div className="text-sm text-gray-500">
-                    From: {item.user?.name || item.userId}
-                  </div>
-                )}
-                
-                {item.screenshot && (
-                  <div className="mt-2">
-                    <a 
-                      href={item.screenshot} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:text-indigo-800"
-                    >
-                      View Screenshot
-                    </a>
-                  </div>
-                )}
+      {/* Feedback List */}
+      {loading ? (
+        <div className="text-center p-4">Loading feedback...</div>
+      ) : filteredFeedback.length === 0 ? (
+        <div className="text-center p-4">No feedback found.</div>
+      ) : (
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {filteredFeedback.map(item => (
+            <div key={item.id} className="bg-white p-4 rounded-lg shadow">
+              <div className="flex justify-between items-start">
+                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                  item.category === 'positive' ? 'bg-green-100 text-green-800'
+                  : item.category === 'neutral' ? 'bg-blue-100 text-blue-800'
+                  : item.category === 'negative' ? 'bg-red-100 text-red-800'
+                  : ''
+                }`}>
+                  {item.category.charAt(0).toUpperCase() + item.category.slice(1)}
+                </span>
+                <button
+                  onClick={() => handleDeleteFeedback(item.id)}
+                  className="text-red-500 hover:text-red-700"
+                  title="Delete feedback"
+                >
+                  <FaTrash className="h-4 w-4" />
+                </button>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <div className="mt-2">
+                <p className="text-sm text-gray-500">{item.content}</p>
+              </div>
+              <div className="mt-4 text-sm text-gray-500">
+                <p>From: {item.user?.name || 'Anonymous'}</p>
+                <p>{new Date(item.createdAt).toLocaleString()}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 } 

@@ -1,26 +1,23 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { FaMicrophone, FaStop } from 'react-icons/fa';
 
 interface AudioRecorderProps {
   onTranscription: (text: string) => void;
-  onAIResponse: (text: string, audio: string) => void;
-  conversationId?: string;
-  className?: string;
+  onRecordingStateChange?: (isRecording: boolean) => void;
+  disabled?: boolean;
 }
 
 const AudioRecorder: React.FC<AudioRecorderProps> = ({
   onTranscription,
-  onAIResponse,
-  conversationId,
-  className = ''
+  onRecordingStateChange,
+  disabled = false
 }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [showSendButton, setShowSendButton] = useState(false);
-  const [lastClickTime, setLastClickTime] = useState(0);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -46,23 +43,15 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
     };
   }, [isRecording]);
   
-  // Prevent accidental recording activation
+  // Notify parent component of recording state changes
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && !isRecording) {
-        e.stopPropagation();
-      }
-    };
-    
-    document.addEventListener('keydown', handleKeyDown, true);
-    
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown, true);
-    };
-  }, [isRecording]);
+    onRecordingStateChange?.(isRecording);
+  }, [isRecording, onRecordingStateChange]);
   
   // Start recording
   const startRecording = async () => {
+    if (disabled) return;
+    
     try {
       setError(null);
       setRecordingDuration(0);
@@ -85,23 +74,19 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
       // Start recording
       mediaRecorder.start();
       setIsRecording(true);
-      
-      // After 2 seconds, show the send button
-      setTimeout(() => {
-        if (mediaRecorderRef.current?.state === 'recording') {
-          setShowSendButton(true);
-        }
-      }, 2000);
     } catch (err) {
       console.error('Error accessing microphone:', err);
       setError('Could not access microphone. Please ensure you have granted permission.');
     }
   };
   
-  // Handle microphone button click
-  const handleMicrophoneClick = () => {
-    setLastClickTime(Date.now());
-    startRecording();
+  // Toggle recording
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
   };
   
   // Stop recording
@@ -110,132 +95,96 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
       mediaRecorderRef.current.stop();
       
       // Stop all audio tracks
-      const stream = mediaRecorderRef.current.stream;
-      stream.getTracks().forEach(track => track.stop());
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       
+      // Reset state
       setIsRecording(false);
-      setIsProcessing(true);
-      setShowSendButton(false);
     }
   };
-
-  // Process the recording after stopping
+  
+  // Process the recording
   const processRecording = async () => {
-    if (audioChunksRef.current.length === 0) {
-      setIsProcessing(false);
-      return;
-    }
-    
     try {
-      // Use audio/webm format instead of wav which might not be supported
+      setIsProcessing(true);
+      
+      // Create audio blob
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
       
-      // Create FormData and append file with the correct field name
+      // Create form data
       const formData = new FormData();
-      formData.append('file', audioBlob, 'recording.webm');
+      formData.append('file', audioBlob);
       
-      if (conversationId) {
-        formData.append('conversationId', conversationId);
-      }
-      
-      // Send to transcription API
+      // Send to server for transcription
       const response = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData,
       });
       
       if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}`);
+        throw new Error(`Transcription failed: ${response.status}`);
       }
       
       const data = await response.json();
       
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      
-      if (data.transcript) {
-        onTranscription(data.transcript);
+      if (data.text) {
+        // Pass transcription up to parent component
+        onTranscription(data.text);
       }
     } catch (err) {
-      console.error('Error processing audio:', err);
-      setError('Failed to process audio. Please try again.');
+      console.error('Error processing recording:', err);
+      setError('Failed to process recording. Please try again.');
     } finally {
       setIsProcessing(false);
-      setShowSendButton(false);
     }
   };
   
-  // Format duration as MM:SS
+  // Format time as MM:SS
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
   
-  // Animated sound wave component for recording state
-  const SoundWave = () => (
-    <div className="flex items-center space-x-1">
-      {[...Array(4)].map((_, i) => (
-        <div 
-          key={i}
-          className="w-0.5 bg-red-500 rounded-full animate-pulse"
-          style={{ 
-            height: `${6 + Math.random() * 8}px`,
-            animationDelay: `${i * 150}ms`, 
-            animationDuration: '0.8s' 
-          }}
-        ></div>
-      ))}
-    </div>
-  );
-
   return (
-    <div className={`relative ${className}`}>
-      {isProcessing ? (
-        <div className="p-2 rounded-full bg-blue-50/80 dark:bg-slate-800/80 text-[var(--primary-blue)]">
-          <span className="animate-spin inline-block">⏳</span>
+    <div className="relative">
+      <button
+        onClick={toggleRecording}
+        disabled={isProcessing || disabled}
+        aria-label={isRecording ? "Stop recording" : "Start recording"}
+        className={`flex items-center justify-center rounded-full p-2 transition-all 
+          ${isRecording 
+            ? 'bg-red-500 text-white animate-pulse' 
+            : disabled 
+              ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400' 
+              : 'bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600'
+          }
+        `}
+      >
+        {isRecording ? (
+          <FaStop size={14} />
+        ) : (
+          <FaMicrophone size={14} />
+        )}
+      </button>
+      
+      {isRecording && (
+        <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white dark:bg-slate-800 shadow-md rounded-lg px-3 py-1 text-xs">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+            <span>{formatDuration(recordingDuration)}</span>
+          </div>
         </div>
-      ) : isRecording ? (
-        <button
-          onClick={stopRecording}
-          className="enhanced-button p-2 rounded-full bg-red-500/90 text-white hover:bg-red-600/90"
-          aria-label="Stop recording"
-        >
-          ⏹️
-        </button>
-      ) : showSendButton ? (
-        <button
-          onClick={processRecording}
-          disabled={isProcessing}
-          className="enhanced-button p-2 rounded-full primary-btn"
-          aria-label="Send transcribed message"
-        >
-          Send
-        </button>
-      ) : (
-        <button
-          onClick={handleMicrophoneClick}
-          className="enhanced-button p-2 rounded-full text-[var(--primary-blue)] bg-blue-50/80 dark:bg-slate-800/80 hover:bg-blue-100/80 dark:hover:bg-slate-700/80"
-          aria-label="Start recording"
-          type="button"
-        >
-          🎤
-        </button>
       )}
-
+      
       {error && (
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-red-100 text-red-500 text-xs px-2 py-1 rounded shadow-sm">
+        <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 text-xs px-2 py-1 rounded-lg whitespace-nowrap">
           {error}
         </div>
       )}
       
-      {isRecording && (
-        <div className="absolute left-10 -top-6 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded-lg shadow-sm">
-          <div className="flex items-center space-x-1">
-            <span className="animate-pulse">⚫</span>
-            <span className="text-xs text-red-600 dark:text-red-400 font-medium">Recording...</span>
-          </div>
+      {isProcessing && (
+        <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs px-2 py-1 rounded-lg whitespace-nowrap">
+          Processing...
         </div>
       )}
     </div>

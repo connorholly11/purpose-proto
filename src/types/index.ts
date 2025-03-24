@@ -17,9 +17,13 @@ export interface Conversation {
 export interface Message {
   id: string;
   conversationId: string;
-  role: 'user' | 'assistant' | 'function_call';
+  role: 'user' | 'assistant' | 'system' | 'function_call';
   content: string;
-  createdAt: Date;
+  timestamp?: string;
+  createdAt?: Date;
+  isLoading?: boolean;
+  feedback?: 'like' | 'dislike' | null;
+  showAvatar?: boolean;
 }
 
 // API Request/Response Types
@@ -28,17 +32,7 @@ export interface TranscriptionRequest {
 }
 
 export interface TranscriptionResponse {
-  transcript: string;
-  error?: string;
-}
-
-export interface TTSRequest {
   text: string;
-  voice?: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
-}
-
-export interface TTSResponse {
-  audioContent?: string; // base64 encoded audio
   error?: string;
 }
 
@@ -52,43 +46,6 @@ export interface RAGResponse {
   ragInfo?: {
     operationTime: number;
     matchCount: number;
-  };
-}
-
-export interface RealtimeSessionResponse {
-  client_secret: {
-    value: string;
-    expires_at: number;
-  };
-  session_id: string;
-  error?: string;
-}
-
-// WebRTC Related Types
-export interface RTCDataChannelEvent {
-  type: string;
-  data?: any;
-}
-
-export interface AudioTranscriptEvent {
-  type: 'audio.transcript';
-  transcript: string;
-  is_final: boolean;
-  message_id?: string;
-}
-
-export interface TextResponseEvent {
-  response: {
-    text: {
-      delta: string;
-      content: string;
-    };
-  };
-}
-
-export interface VoiceActivityEvent {
-  voice_activity: {
-    is_active: boolean;
   };
 }
 
@@ -143,7 +100,6 @@ export interface RAGAnalytics {
   successRate: number;
   operationsBySource: {
     chat: number;
-    realtime_voice: number;
   };
   topDocuments: {
     documentId: string;

@@ -1,10 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-// Remove icon imports
-// import { FaPaperPlane, FaMicrophone, FaRobot, FaUser, FaCog, FaChevronDown, FaMemory } from 'react-icons/fa';
+import { FaPaperPlane, FaMicrophone, FaUser } from 'react-icons/fa';
 import AudioRecorder from './AudioRecorder';
-import RealtimeVoice from './RealtimeVoice';
 import Message from './Message';
 import { Message as MessageType } from '@/types';
 import browserLogger from '@/lib/utils/browser-logger';
@@ -31,46 +29,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>(initialConversationId);
-  // Real-time voice feature is temporarily disabled
-  const [showRealtimeVoice, setShowRealtimeVoice] = useState(false);
-  const [realtimeTranscript, setRealtimeTranscript] = useState<string | null>(null);
-  const [aiAudio, setAiAudio] = useState<string | null>(null);
-  const [responseMode, setResponseMode] = useState<'text' | 'voice'>('text');
+  const [debugMessages, setDebugMessages] = useState<DebugMessage[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
 
   // Keep track of user conversations
   const [userConversations, setUserConversations] = useState<Record<string, string>>({});
-
-  // NEW: debug message state & show panel
-  const [debugMessages, setDebugMessages] = useState<DebugMessage[]>([]);
-  const [showDebug, setShowDebug] = useState(false);
-
   const [systemPrompts, setSystemPrompts] = useState<any[]>([]);
   const [activePrompt, setActivePrompt] = useState<any | null>(null);
   const [showPromptSelector, setShowPromptSelector] = useState(false);
-
-  // Sound effects
-  const sendSoundRef = useRef<HTMLAudioElement | null>(null);
-  const receiveSoundRef = useRef<HTMLAudioElement | null>(null);
-
   const [showMemory, setShowMemory] = useState(false);
-
-  // Create sound effect elements
-  useEffect(() => {
-    // No-op function for sound initialization
-    return () => {};
-  }, []);
-  
-  // Play sound when sending a message - disabled
-  const playMessageSentSound = () => {
-    // Sound disabled
-  };
-  
-  // Play sound when receiving a message - disabled
-  const playMessageReceivedSound = () => {
-    // Sound disabled
-  };
 
   // Load user's conversation whenever the current user changes
   useEffect(() => {
@@ -182,1266 +151,506 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
-  // Load mode from localStorage on mount
-  useEffect(() => {
-    const savedMode = localStorage.getItem('responseMode');
-    if (savedMode === 'text' || savedMode === 'voice') {
-      setResponseMode(savedMode);
-    }
-  }, []);
-
-  // Save mode to localStorage when it changes
-  useEffect(() => {
-    localStorage.setItem('responseMode', responseMode);
-  }, [responseMode]);
-
-  // Force real-time voice to remain disabled
-  useEffect(() => {
-    if (showRealtimeVoice) {
-      // Force it back to false if somehow enabled
-      setShowRealtimeVoice(false);
-    }
-  }, [showRealtimeVoice]);
-
-  // Scroll to bottom whenever messages change
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  // Play AI audio if available
-  useEffect(() => {
-    if (aiAudio && audioRef.current) {
-      const audioSrc = `data:audio/mp3;base64,${aiAudio}`;
-      audioRef.current.src = audioSrc;
-      audioRef.current.play().catch(error => {
-        console.error('Error playing audio:', error);
-      });
-    }
-  }, [aiAudio]);
-
-  // Load system prompts (example feature)
+  // Fetch system prompts on mount
   useEffect(() => {
     const fetchSystemPrompts = async () => {
       try {
         const response = await fetch('/api/system-prompts');
         if (response.ok) {
           const data = await response.json();
-          setSystemPrompts(data.systemPrompts || []);
-
-          // Also fetch the active prompt
-          const activeResponse = await fetch('/api/system-prompts?activeOnly=true');
-          if (activeResponse.ok) {
-            const activeData = await activeResponse.json();
-            if (activeData.systemPrompt) {
-              setActivePrompt(activeData.systemPrompt);
-            }
+          setSystemPrompts(data.prompts || []);
+          // Set default prompt (if any)
+          const defaultPrompt = data.prompts?.find((p: any) => p.isDefault);
+          if (defaultPrompt) {
+            setActivePrompt(defaultPrompt);
           }
         }
       } catch (error) {
         console.error('Error fetching system prompts:', error);
       }
     };
+
     fetchSystemPrompts();
   }, []);
 
-  // ---------------------------------------
-  // create new conversation
-  // ---------------------------------------
   const createNewConversation = async () => {
     try {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-      if (currentUser?.id) {
-        headers['x-user-id'] = currentUser.id;
+      setDebugMessages(prev => [
+        ...prev,
+        { timestamp: new Date(), actionType: 'CREATE_CONVERSATION', details: `Creating new conversation` }
+      ]);
+      
+      if (!currentUser) {
+        console.error('Cannot create conversation: No user selected');
+        return;
       }
-
+      
       const response = await fetch('/api/conversations', {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': currentUser.id
+        },
+        body: JSON.stringify({
+          userId: currentUser.id
+        }),
       });
-      if (!response.ok) {
-        browserLogger.error('ChatInterface', 'Failed to create conversation', {
-          status: response.status
-        });
-        setDebugMessages(prev => [...prev, {
-          timestamp: new Date(),
-          actionType: 'ERROR',
-          details: `Failed to create conversation (status ${response.status})`
-        }]);
-        throw new Error('Failed to create conversation');
-      }
 
-      const data = await response.json();
-      
-      // Save this conversation ID for the current user
-      if (currentUser) {
+      if (response.ok) {
+        const data = await response.json();
+        setConversationId(data.id);
+        
+        // Also store this conversation ID for this user
         setUserConversations(prev => ({
           ...prev,
           [currentUser.id]: data.id
         }));
-      }
-      
-      setConversationId(data.id);
-      setMessages([]);
-
-      // debug logging
-      setDebugMessages(prev => [
-        ...prev,
-        { timestamp: new Date(), actionType: 'NEW_CONVERSATION', details: `Created conversation ${data.id}` }
-      ]);
-    } catch (error) {
-      browserLogger.error('ChatInterface', 'Error creating conversation', {
-        error: (error as Error).message,
-      });
-      console.error('Error creating conversation:', error);
-    }
-  };
-
-  // ---------------------------------------
-  // "New Chat" button handler
-  // ---------------------------------------
-  const handleNewChat = async () => {
-    if (isProcessing) return; // Don't allow new chats while processing
-    await createNewConversation();
-  };
-
-  // ---------------------------------------
-  // load conversation
-  // ---------------------------------------
-  const loadConversation = async (id: string) => {
-    try {
-      setDebugMessages(prev => [
-        ...prev,
-        { timestamp: new Date(), actionType: 'LOAD_CONVERSATION', details: `Loading conversation ${id}` }
-      ]);
-      
-      const headers: HeadersInit = {};
-      if (currentUser?.id) {
-        headers['x-user-id'] = currentUser.id;
-      }
-      
-      const response = await fetch(`/api/conversations/${id}`, { 
-        method: 'GET',
-        headers
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to load conversation: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Make sure we display ALL messages in the UI
-      setMessages(data.messages || []);
-      
-      // Save this conversation ID for the current user
-      if (currentUser) {
-        setUserConversations(prev => ({
-          ...prev,
-          [currentUser.id]: id
-        }));
-      }
-    } catch (error) {
-      console.error('Error loading conversation:', error);
-      setDebugMessages(prev => [
-        ...prev,
-        { timestamp: new Date(), actionType: 'ERROR', details: `Error loading conversation: ${(error as Error).message}` }
-      ]);
-    }
-  };
-
-  // scroll to bottom helper
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // handle user message submission (typed)
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    // Check if we're already recording audio - if so, don't proceed
-    const isRecordingAudio = document.querySelector('[aria-label="Stop recording"]');
-    if (isRecordingAudio) {
-      return;
-    }
-
-    // Play send sound effect
-    playMessageSentSound();
-
-    const userMessage = input.trim();
-    setInput('');
-    setIsProcessing(true);
-
-    const newUserMessage: MessageType = {
-      id: `temp-${Date.now()}`,
-      conversationId: conversationId || '',
-      role: 'user',
-      content: userMessage,
-      createdAt: new Date(),
-    };
-    setMessages(prev => [...prev, newUserMessage]);
-
-    // debug
-    setDebugMessages(prev => [
-      ...prev,
-      { timestamp: new Date(), actionType: 'USER_MESSAGE', details: userMessage }
-    ]);
-
-    try {
-      // 1) RAG call
-      setDebugMessages(prev => [
-        ...prev,
-        { timestamp: new Date(), actionType: 'RAG_START', details: `Calling /api/rag with query: "${userMessage.substring(0, 50)}${userMessage.length > 50 ? '...' : ''}"` }
-      ]);
-
-      const ragResponse = await fetch('/api/rag', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': currentUser?.id || ''
-        },
-        body: JSON.stringify({
-          query: userMessage,
-          topK: 5,
-          source: 'chat',
-          conversationId: conversationId || ''
-        }),
-      });
-      if (!ragResponse.ok) {
-        throw new Error(`RAG processing failed: ${ragResponse.status}`);
-      }
-      const ragResult = await ragResponse.json();
-
-      // Log the RAG results
-      const matchesCount = ragResult.matches?.length || 0;
-      setDebugMessages(prev => [
-        ...prev,
-        { timestamp: new Date(), actionType: 'RAG_MATCHES', details: `Retrieved ${matchesCount} matches from knowledge base` }
-      ]);
-
-      // Log details about each match if available
-      if (ragResult.matches && ragResult.matches.length > 0) {
-        ragResult.matches.forEach((match: any, index: number) => {
-          setDebugMessages(prev => [
-            ...prev,
-            { 
-              timestamp: new Date(), 
-              actionType: 'RAG_MATCH_DETAIL', 
-              details: `Match #${index + 1}\nScore: ${match.score.toFixed(4)}\nSource: ${match.source || 'Unknown'}\nContent: ${match.text.substring(0, 100)}...` 
-            }
-          ]);
-        });
-      } else {
+        
+        // Clear messages
+        setMessages([]);
+        
         setDebugMessages(prev => [
           ...prev,
           { 
             timestamp: new Date(), 
-            actionType: 'RAG_NO_MATCHES', 
-            details: `No matches found in knowledge base. This may be expected for general questions.` 
+            actionType: 'CONVERSATION_CREATED', 
+            details: `New conversation created: ${data.id}` 
           }
         ]);
-      }
-
-      setDebugMessages(prev => [
-        ...prev,
-        { 
-          timestamp: new Date(), 
-          actionType: 'RAG_CONTEXT_SIZE', 
-          details: `Total context length: ${ragResult.context?.length || 0} characters` 
-        }
-      ]);
-
-      // 2) /api/completion
-      setDebugMessages(prev => [
-        ...prev,
-        { timestamp: new Date(), actionType: 'COMPLETION_START', details: 'Calling /api/completion with RAG context...' }
-      ]);
-
-      // Pass through conversation context
-      const previousMessages = messages.slice(-6); // Get last 6 messages for context
-      const contextMessages = previousMessages.map(msg => ({
-        role: msg.role, 
-        content: msg.content
-      }));
-      
-      // Add the current user message
-      contextMessages.push({ role: 'user', content: userMessage });
-
-      const completionResponse = await fetch('/api/completion', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messages: contextMessages,
-          context: ragResult.context,
-          conversationId: conversationId || ''
-        }),
-      });
-      if (!completionResponse.ok) {
-        throw new Error(`Completion failed: ${completionResponse.status}`);
-      }
-      const { answer } = await completionResponse.json();
-
-      // Play receive sound effect
-      playMessageReceivedSound();
-
-      setDebugMessages(prev => [
-        ...prev,
-        { timestamp: new Date(), actionType: 'COMPLETION_DONE', details: `Got answer (${answer.length} chars): ${answer.substring(0, 50)}...` }
-      ]);
-
-      // add AI message
-      const newAiMessage: MessageType = {
-        id: `temp-response-${Date.now()}`,
-        conversationId: conversationId || '',
-        role: 'assistant',
-        content: answer,
-        createdAt: new Date(),
-      };
-      setMessages(prev => [...prev, newAiMessage]);
-
-      // Store this conversation in the knowledge base so we remember it
-      try {
-        setDebugMessages(prev => [
-          ...prev,
-          { timestamp: new Date(), actionType: 'STORE_MEMORY', details: 'Storing conversation in knowledge base...' }
-        ]);
-        
-        // In a real implementation, we would store this in the knowledge base
-        // For now, we'll just log it to the debug console
-        if (currentUser?.id) {
-          const memoryResponse = await fetch('/api/knowledge', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-user-id': currentUser.id
-            },
-            body: JSON.stringify({
-              title: `Conversation on ${new Date().toLocaleDateString()}`,
-              content: `User: ${userMessage}\n\nAI: ${answer}`,
-              type: 'conversation'
-            })
-          });
-          
-          if (memoryResponse.ok) {
-            setDebugMessages(prev => [
-              ...prev,
-              { timestamp: new Date(), actionType: 'MEMORY_STORED', details: 'Successfully stored conversation in knowledge base' }
-            ]);
-          }
-        }
-      } catch (memoryError) {
-        console.error('Error storing conversation memory:', memoryError);
-        setDebugMessages(prev => [
-          ...prev,
-          { timestamp: new Date(), actionType: 'MEMORY_ERROR', details: `Failed to store memory: ${(memoryError as Error).message}` }
-        ]);
-      }
-
-      // optionally generate TTS
-      if (responseMode === 'voice') {
-        setDebugMessages(prev => [
-          ...prev,
-          { timestamp: new Date(), actionType: 'TTS_START', details: 'Requesting TTS from /api/tts' }
-        ]);
-
-        // Text-to-speech is disabled
-        // await generateSpeech(answer);
+      } else {
+        console.error('Failed to create new conversation');
       }
     } catch (error) {
-      console.error('Error processing message:', error);
-      setDebugMessages(prev => [
-        ...prev,
-        { timestamp: new Date(), actionType: 'ERROR', details: `Message process error: ${(error as Error).message}` }
-      ]);
-    } finally {
-      setIsProcessing(false);
+      console.error('Error creating conversation:', error);
     }
   };
 
-  // optionally generate speech (TTS)
-  const generateSpeech = async (text: string) => {
-    // Text-to-speech functionality is disabled
-    return;
-    
-    /* 
+  const handleNewChat = async () => {
+    await createNewConversation();
+  };
+
+  const loadConversation = async (id: string) => {
     try {
-      const ttsResponse = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      });
-      if (!ttsResponse.ok) {
-        console.error(`TTS API error: ${ttsResponse.status}`);
+      if (!currentUser) {
+        console.error('Cannot load conversation: No user selected');
         return;
       }
-      const { audioContent } = await ttsResponse.json();
-      if (audioContent) {
-        setAiAudio(audioContent);
-        setDebugMessages(prev => [
-          ...prev,
-          { timestamp: new Date(), actionType: 'TTS_DONE', details: 'Audio returned successfully' }
-        ]);
-      }
-    } catch (error) {
-      console.error('Error generating speech:', error);
+      
       setDebugMessages(prev => [
         ...prev,
-        { timestamp: new Date(), actionType: 'ERROR', details: `TTS error: ${(error as Error).message}` }
+        { timestamp: new Date(), actionType: 'LOAD_CONVERSATION', details: `Loading conversation: ${id}` }
       ]);
-    }
-    */
-  };
-
-  // handle transcription from short audio recordings
-  const handleTranscription = (transcript: string) => {
-    setInput(transcript);
-    // We don't auto-submit the form, just set the input value
-    setDebugMessages(prev => [
-      ...prev,
-      { timestamp: new Date(), actionType: 'AUDIO_TRANSCRIBE', details: `Transcribed: ${transcript}` }
-    ]);
-  };
-
-  // handle AI response from short audio recorder
-  const handleAudioAIResponse = (answer: string, audioContent: string) => {
-    if (!conversationId) return;
-
-    const newUserMessage: MessageType = {
-      id: `temp-${Date.now()}`,
-      conversationId,
-      role: 'user',
-      content: input,
-      createdAt: new Date(),
-    };
-    const newAiMessage: MessageType = {
-      id: `temp-response-${Date.now()}`,
-      conversationId,
-      role: 'assistant',
-      content: answer,
-      createdAt: new Date(),
-    };
-    setMessages(prev => [...prev, newUserMessage, newAiMessage]);
-    // Text-to-speech is disabled, so we don't set audio content
-    // setAiAudio(audioContent);
-    setInput('');
-
-    // debug
-    setDebugMessages(prev => [
-      ...prev,
-      { timestamp: new Date(), actionType: 'AUDIO_AI_RESPONSE', details: `Answer: ${answer}` }
-    ]);
-  };
-
-  // partial transcripts from Realtime
-  const handlePartialTranscript = (transcript: string) => {
-    setRealtimeTranscript(transcript);
-  };
-
-  // NEW: handle final transcript from Realtime voice
-  const handleRealtimeUserMessage = async (transcript: string) => {
-    if (!transcript || !transcript.trim() || isProcessing) return;
-    
-    setIsProcessing(true);
-    
-    try {
-      // Play send sound
-      playMessageSentSound();
       
-      // Create a temporary user message
-      const userTempId = `temp-user-${Date.now()}`;
-      const userMessage: MessageType = {
-        id: userTempId,
-        conversationId: conversationId || '',
-        role: 'user',
-        content: transcript,
-        createdAt: new Date(),
-      };
-      
-      // Add user message to state
-      setMessages(prevMessages => [...prevMessages, userMessage]);
-      
-      // Log for debugging
-      console.log(`Processing realtime voice transcript: "${transcript}"`);
-      setDebugMessages(prev => [
-        ...prev,
-        { 
-          timestamp: new Date(), 
-          actionType: 'REALTIME_VOICE', 
-          details: `Processing: "${transcript.substring(0, 50)}${transcript.length > 50 ? '...' : ''}"` 
+      const response = await fetch(`/api/messages?conversationId=${id}`, {
+        headers: {
+          'x-user-id': currentUser.id
         }
-      ]);
-      
-      // Process with the same API as regular messages
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-      if (currentUser?.id) {
-        headers['x-user-id'] = currentUser.id;
-      }
-      
-      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ content: transcript }),
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to process voice transcript');
-      }
-      
-      const data = await response.json();
-      
-      // Update messages with real IDs
-      setMessages(prevMessages => 
-        prevMessages.map(msg => 
-          msg.id === userTempId ? { ...msg, id: data.userMessage.id } : msg
-        )
-      );
-      
-      // Add AI response
-      const aiMessage: MessageType = {
-        id: data.aiMessage.id,
-        conversationId: conversationId || '',
-        role: 'assistant',
-        content: data.aiMessage.content,
-        createdAt: new Date(data.aiMessage.createdAt),
-      };
-      
-      // Play receive sound
-      playMessageReceivedSound();
-      
-      // Add AI message to state
-      setMessages(prevMessages => [...prevMessages, aiMessage]);
-      
-      // Get audio if in voice mode
-      if (responseMode === 'voice') {
-        try {
-          // Text-to-speech is disabled
-          /*
-          const ttsResponse = await fetch(`/api/tts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: data.aiMessage.content }),
-          });
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data.messages)) {
+          setMessages(data.messages);
+          setTimeout(scrollToBottom, 100);
           
-          if (ttsResponse.ok) {
-            const audioData = await ttsResponse.json();
-            if (audioData.audioContent) {
-              setAiAudio(audioData.audioContent);
+          setDebugMessages(prev => [
+            ...prev,
+            { 
+              timestamp: new Date(), 
+              actionType: 'CONVERSATION_LOADED', 
+              details: `Loaded ${data.messages.length} messages from conversation: ${id}` 
             }
-          }
-          */
-        } catch (ttsError) {
-          console.error('Error generating TTS for voice response:', ttsError);
+          ]);
         }
+      } else {
+        console.error('Failed to load conversation messages');
       }
     } catch (error) {
-      console.error('Error processing realtime voice message:', error);
-      setDebugMessages(prev => [
-        ...prev,
-        { 
-          timestamp: new Date(), 
-          actionType: 'ERROR', 
-          details: `Realtime voice error: ${(error as Error).message}` 
-        }
-      ]);
-    } finally {
-      setIsProcessing(false);
-      setRealtimeTranscript(null); // Clear any transcript
+      console.error('Error loading conversation:', error);
     }
   };
 
-  // handle message likes
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim() && !isProcessing) {
+      await handleSendMessage();
+    }
+  };
+
+  const handleTranscription = (transcript: string) => {
+    if (transcript.trim()) {
+      handleUserMessage(transcript);
+    }
+  };
+
   const handleLikeMessage = async (messageId: string) => {
     try {
-      await fetch(`/api/message/${messageId}/feedback`, {
+      await fetch(`/api/messages/${messageId}/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ feedback: 'like' }),
       });
     } catch (error) {
-      console.error('Error liking message:', error);
+      console.error('Error giving feedback:', error);
     }
   };
 
-  // handle message dislikes
   const handleDislikeMessage = async (messageId: string) => {
     try {
-      await fetch(`/api/message/${messageId}/feedback`, {
+      await fetch(`/api/messages/${messageId}/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ feedback: 'dislike' }),
       });
     } catch (error) {
-      console.error('Error disliking message:', error);
+      console.error('Error giving feedback:', error);
     }
   };
 
-  // toggle voice/text mode
-  const toggleResponseMode = () => {
-    setResponseMode(prev => (prev === 'text' ? 'voice' : 'text'));
-  };
-
-  // set system prompt
   const setSystemPrompt = async (promptId: string) => {
     try {
-      const response = await fetch(`/api/system-prompts/${promptId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'active' }),
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setActivePrompt(data.systemPrompt);
-        setShowPromptSelector(false);
-        
-        // Add debug message
-        setDebugMessages(prev => [
-          ...prev,
-          { timestamp: new Date(), actionType: 'SYSTEM_PROMPT', details: `Set system prompt to ${data.systemPrompt.name}` }
-        ]);
-        
-        // If there's an existing conversation, create a new one to apply the new system prompt
-        if (conversationId) {
-          await createNewConversation();
-        }
+      const selectedPrompt = systemPrompts.find(p => p.id === promptId);
+      if (!selectedPrompt) return;
+      
+      setActivePrompt(selectedPrompt);
+      setShowPromptSelector(false);
+      
+      // Optionally notify backend of prompt change
+      if (conversationId) {
+        await fetch(`/api/conversations/${conversationId}/system-prompt`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ promptId }),
+        });
       }
+      
+      // Show a system message about the prompt change
+      const systemMessage: MessageType = {
+        id: `system-${Date.now()}`,
+        role: 'system',
+        content: `Changed AI personality to: ${selectedPrompt.name}`,
+        conversationId: conversationId || '',
+        timestamp: new Date().toISOString(),
+      };
+      
+      setMessages(prev => [...prev, systemMessage]);
     } catch (error) {
       console.error('Error setting system prompt:', error);
     }
   };
 
-  // useEffect to reload conversation when navigating between tabs
-  useEffect(() => {
-    if (conversationId) {
-      loadConversation(conversationId);
-    }
-  }, [conversationId]);
-
   const handleUserMessage = async (message: string) => {
-    if (!message.trim() || isProcessing) return;
+    if (!message.trim() || isProcessing || !conversationId) return;
     
     setIsProcessing(true);
     
-    // Play send sound
-    playMessageSentSound();
-    
-    // Create a temporary message
-    const tempId = `temp-${Date.now()}`;
-    const userMessage: MessageType = {
-      id: tempId,
-      conversationId: conversationId || '',
-      role: 'user',
-      content: message,
-      createdAt: new Date(),
-    };
-    
-    // Add user message to state
-    setMessages(prevMessages => [...prevMessages, userMessage]);
-    
     try {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-      if (currentUser?.id) {
-        headers['x-user-id'] = currentUser.id;
-      }
-      
-      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ content: message }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
-      
-      const data = await response.json();
-      
-      // Update messages with real IDs
-      setMessages(prevMessages => 
-        prevMessages.map(msg => 
-          msg.id === tempId ? { ...msg, id: data.userMessage.id } : msg
-        )
-      );
-      
-      // Add AI response
-      const aiMessage: MessageType = {
-        id: data.aiMessage.id,
-        conversationId: conversationId || '',
-        role: 'assistant',
-        content: data.aiMessage.content,
-        createdAt: new Date(data.aiMessage.createdAt),
-      };
-      
-      // Play receive sound
-      playMessageReceivedSound();
-      
-      // Add AI message to state
-      setMessages(prevMessages => [...prevMessages, aiMessage]);
-      
-      // Get audio if in voice mode
-      if (responseMode === 'voice') {
-        const ttsResponse = await fetch(`/api/tts`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: data.aiMessage.content }),
-        });
-        
-        if (ttsResponse.ok) {
-          const audioData = await ttsResponse.json();
-          if (audioData.audioContent) {
-            setAiAudio(audioData.audioContent);
-          }
-        }
-      }
-      
-      // Add debug message
       setDebugMessages(prev => [
         ...prev,
-        { 
-          timestamp: new Date(), 
-          actionType: 'SENT_MESSAGE', 
-          details: `Sent: "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"` 
-        }
+        { timestamp: new Date(), actionType: 'USER_MESSAGE', details: `User sent: ${message.substring(0, 50)}...` }
       ]);
       
+      // Add user message to the UI immediately
+      const userMessage: MessageType = {
+        id: `temp-${Date.now()}`,
+        role: 'user',
+        content: message,
+        conversationId,
+        timestamp: new Date().toISOString(),
+      };
+      
+      setMessages(prev => [...prev, userMessage]);
+      setInput(''); // Clear input
+      setTimeout(scrollToBottom, 50);
+      
+      // Create placeholder for AI response
+      const placeholderMessage: MessageType = {
+        id: `placeholder-${Date.now()}`,
+        role: 'assistant',
+        content: '...',
+        conversationId,
+        timestamp: new Date().toISOString(),
+        isLoading: true,
+      };
+      
+      setMessages(prev => [...prev, placeholderMessage]);
+      setTimeout(scrollToBottom, 50);
+      
+      // Send the message to the API
+      const response = await sendMessageToAPI(message, conversationId);
+      
+      // Check if summarization is needed
+      if (shouldSummarize(messages)) {
+        // Show a system message about summarization
+        const summaryNotice: MessageType = {
+          id: `summary-notice-${Date.now()}`,
+          role: 'system',
+          content: 'Summarizing conversation to maintain context...',
+          conversationId,
+          timestamp: new Date().toISOString(),
+        };
+        
+        setMessages(prev => [...prev, summaryNotice]);
+        setTimeout(scrollToBottom, 50);
+        
+        try {
+          // Request summarization
+          const summaryResponse = await fetch(`/api/conversations/${conversationId}/summarize`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-user-id': currentUser?.id || ''
+            },
+          });
+          
+          if (summaryResponse.ok) {
+            const summaryResult = await summaryResponse.json();
+            // Optionally show summary result
+            setDebugMessages(prev => [
+              ...prev,
+              { 
+                timestamp: new Date(), 
+                actionType: 'SUMMARIZATION', 
+                details: `Conversation summarized: ${summaryResult.success ? 'success' : 'failed'}` 
+              }
+            ]);
+          }
+        } catch (summaryError) {
+          console.error('Error during summarization:', summaryError);
+        }
+      }
+      
+      // Remove placeholder and add real AI response
+      if (response && response.message) {
+        setMessages(prev => 
+          prev.filter(m => m.id !== placeholderMessage.id).concat([
+            {
+              ...response.message,
+              feedback: null,
+            }
+          ])
+        );
+      } else {
+        // If something went wrong, replace the placeholder with an error message
+        setMessages(prev => 
+          prev.map(m => 
+            m.id === placeholderMessage.id 
+              ? {
+                  ...m,
+                  content: "I'm sorry, I couldn't process your request. Please try again.",
+                  isLoading: false,
+                } 
+              : m
+          )
+        );
+      }
+      
+      setTimeout(scrollToBottom, 50);
     } catch (error) {
       console.error('Error sending message:', error);
-      // Add error to debug
-      setDebugMessages(prev => [
-        ...prev,
-        { 
-          timestamp: new Date(), 
-          actionType: 'ERROR', 
-          details: `Error sending message: ${(error as Error).message}` 
-        }
-      ]);
+      
+      // Update placeholder with error message
+      setMessages(prev => 
+        prev.map(m => 
+          m.isLoading 
+            ? {
+                ...m,
+                content: "I'm sorry, I encountered an error. Please try again.",
+                isLoading: false,
+              } 
+            : m
+        )
+      );
     } finally {
       setIsProcessing(false);
-      setInput('');
+      setTimeout(scrollToBottom, 50);
     }
   };
 
-  // Add a function to handle prompt selector toggle
   const togglePromptSelector = () => {
     setShowPromptSelector(!showPromptSelector);
   };
 
-  // Process and send message
   const handleSendMessage = async (textContent: string = input) => {
-    if (!textContent.trim() && !realtimeTranscript) return;
-    
-    // Check if we're already recording audio - if so, don't proceed
-    const isRecordingAudio = document.querySelector('[aria-label="Stop recording"]');
-    if (isRecordingAudio) {
-      return;
-    }
-    
-    // Clear input field and reset transcript
-    setInput('');
-    setRealtimeTranscript(null);
-    
-    const content = textContent.trim() || realtimeTranscript || '';
-    
-    if (!currentUser) {
-      setDebugMessages(prev => [
-        ...prev,
-        { timestamp: new Date(), actionType: 'ERROR', details: 'No user selected' }
-      ]);
-      return;
-    }
-    
-    // Add user message to chat
-    const userMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content,
-      createdAt: new Date().toISOString()
-    };
-    
-    setMessages(prev => [...prev, userMessage as any]);
-    playMessageSentSound();
-    
-    // Start processing animation
-    setIsProcessing(true);
-    
-    try {
-      // Check if conversation should be summarized
-      if (conversationId) {
-        try {
-          const shouldCreateSummary = await shouldSummarize(conversationId);
-          
-          if (shouldCreateSummary) {
-            setDebugMessages(prev => [
-              ...prev,
-              { timestamp: new Date(), actionType: 'MEMORY_SUMMARIZE', details: 'Creating conversation summary' }
-            ]);
-            
-            // Create a memory summary in the background
-            fetch(`/api/conversations/${conversationId}/memory`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ type: 'short_term' })
-            }).catch(err => {
-              console.error('Failed to create memory summary:', err);
-            });
-          }
-        } catch (err) {
-          console.error('Error checking if conversation should be summarized:', err);
-        }
-      }
-
-      // Create or get conversation ID
-      if (!conversationId) {
-        try {
-          // Create a new conversation
-          const createResponse = await fetch('/api/conversations', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-user-id': currentUser.id
-            },
-            body: JSON.stringify({
-              systemPromptId: activePrompt?.id
-            })
-          });
-          
-          if (!createResponse.ok) {
-            throw new Error(`Failed to create conversation: ${createResponse.statusText}`);
-          }
-          
-          const data = await createResponse.json();
-          const newConversationId = data.id;
-          
-          // Update state with new conversation ID
-          setConversationId(newConversationId);
-          
-          // Store this conversation for this user
-          setUserConversations(prev => ({
-            ...prev,
-            [currentUser.id]: newConversationId
-          }));
-          
-          // Add debug message
-          setDebugMessages(prev => [
-            ...prev,
-            { 
-              timestamp: new Date(), 
-              actionType: 'CONVERSATION_CREATED', 
-              details: `Created new conversation: ${newConversationId}` 
-            }
-          ]);
-          
-          // Send the message using this new conversation ID
-          await sendMessageToAPI(content, newConversationId);
-          return;
-        } catch (error) {
-          console.error('Error creating conversation:', error);
-          setDebugMessages(prev => [
-            ...prev,
-            { 
-              timestamp: new Date(), 
-              actionType: 'ERROR', 
-              details: `Error creating conversation: ${(error as Error).message}` 
-            }
-          ]);
-          return;
-        }
-      }
-      
-      // If we already have a conversation ID, use it to send the message
-      await sendMessageToAPI(content, conversationId);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      // Add error to debug
-      setDebugMessages(prev => [
-        ...prev,
-        { 
-          timestamp: new Date(), 
-          actionType: 'ERROR', 
-          details: `Error sending message: ${(error as Error).message}` 
-        }
-      ]);
-    } finally {
-      setIsProcessing(false);
-    }
+    await handleUserMessage(textContent);
   };
 
-  // Helper function to send message to API
   const sendMessageToAPI = async (content: string, convId: string) => {
-    if (!convId) {
-      setDebugMessages(prev => [
-        ...prev,
-        { timestamp: new Date(), actionType: 'ERROR', details: 'Cannot send message without conversation ID' }
-      ]);
-      return 'Error: No conversation ID. Please reload the page and try again.';
-    }
-    
-    if (!content) {
-      return 'I need a message to respond to.';
+    if (!currentUser) {
+      console.error('Cannot send message: No user selected');
+      return null;
     }
     
     try {
-      const apiMessages = [
-        ...messages.slice(-8), // Include recent context (last 8 messages)
-        { 
-          role: 'user', 
-          content: content 
-        }
-      ];
-      
       setDebugMessages(prev => [
         ...prev,
-        { 
-          timestamp: new Date(), 
-          actionType: 'API_CALL', 
-          details: `Calling /api/completion with ${apiMessages.length} messages` 
-        }
+        { timestamp: new Date(), actionType: 'API_REQUEST', details: `Sending message to API` }
       ]);
       
-      // Get RAG results to augment response
-      let ragContext = '';
-      try {
-        // Call RAG service to find relevant content
-        const ragResponse = await fetch('/api/rag', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            query: content,
-            conversationId: convId
-          })
-        });
-        
-        if (ragResponse.ok) {
-          const ragData = await ragResponse.json();
-          // Only use RAG context if we found relevant content
-          if (ragData.results && ragData.results.length > 0) {
-            // Format RAG results as context
-            ragContext = ragData.results.map((result: any, i: number) => 
-              `[${i+1}] ${result.content}`
-            ).join('\n\n');
-            
-            setDebugMessages(prev => [
-              ...prev,
-              { 
-                timestamp: new Date(), 
-                actionType: 'RAG_CONTEXT', 
-                details: `Got ${ragData.results.length} RAG results (${ragContext.length} chars)` 
-              }
-            ]);
-          } else {
-            setDebugMessages(prev => [
-              ...prev,
-              { 
-                timestamp: new Date(), 
-                actionType: 'RAG_NO_RESULTS', 
-                details: 'No relevant RAG results found' 
-              }
-            ]);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to get RAG results:', err);
-        setDebugMessages(prev => [
-          ...prev,
-          { 
-            timestamp: new Date(), 
-            actionType: 'RAG_ERROR', 
-            details: `Error getting RAG results: ${(err as Error).message}` 
-          }
-        ]);
-        // Continue without RAG context
-      }
-      
-      // Make API call to get AI response
-      const response = await fetch('/api/completion', {
+      const response = await fetch('/api/messages', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-user-id': currentUser.id
         },
         body: JSON.stringify({
-          messages: apiMessages,
-          context: ragContext,
+          content,
           conversationId: convId,
-          userId: currentUser?.id
-        })
+          systemPromptId: activePrompt?.id,
+        }),
       });
       
-      // Handle API response
       if (response.ok) {
         const data = await response.json();
+        
         setDebugMessages(prev => [
           ...prev,
           { 
             timestamp: new Date(), 
             actionType: 'API_RESPONSE', 
-            details: `Got response (${data.answer.length} chars)` 
+            details: `Received AI response: ${data.message?.content?.substring(0, 50)}...` 
           }
         ]);
-        return data.answer;
+        
+        return data;
       } else {
-        // Handle error response
-        const errorResponse = await response.json();
-        console.error('API error:', errorResponse);
-        setDebugMessages(prev => [
-          ...prev,
-          { 
-            timestamp: new Date(), 
-            actionType: 'API_ERROR', 
-            details: `Error ${response.status}: ${errorResponse.error || 'Unknown error'}` 
-          }
-        ]);
-        return `I'm having trouble responding right now. (Error: ${errorResponse.error || response.status})`;
+        const errorText = await response.text();
+        console.error('API error:', response.status, errorText);
+        return null;
       }
-    } catch (err) {
-      console.error('Failed to get AI response:', err);
-      setDebugMessages(prev => [
-        ...prev,
-        { 
-          timestamp: new Date(), 
-          actionType: 'API_EXCEPTION', 
-          details: `Exception: ${(err as Error).message}` 
-        }
-      ]);
-      return "I'm having trouble connecting to my brain right now. Please try again in a moment.";
+    } catch (error) {
+      console.error('Error in API request:', error);
+      return null;
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-[var(--imessage-bg)] rounded-[18px] overflow-hidden">
-      {/* Top header with improved styling */}
-      <div className="imessage-header flex justify-between items-center px-3 sm:px-5 py-3 z-10 sticky top-0">
-        <div className="flex items-center">
-          <button 
-            onClick={handleNewChat}
-            className="text-[var(--primary-blue)] font-medium text-sm px-2 sm:px-3 py-1.5 sm:py-2 rounded-full hover:bg-blue-50/70 dark:hover:bg-slate-800/70 transition-all flex items-center enhanced-button ripple"
-          >
-            <span className="mr-1 text-lg">+</span> 
-            <span className="hidden sm:inline">New Message</span>
-          </button>
-        </div>
-        <h1 className="text-base font-semibold text-slate-700 dark:text-slate-200">Messages</h1>
-        <div className="flex space-x-1 sm:space-x-2">
-          <UserSelector />
-          <button
-            onClick={() => setShowMemory(!showMemory)}
-            className={`p-1.5 sm:p-2 rounded-full enhanced-button ripple ${
-              showMemory
-                ? 'bg-[var(--primary-blue)] text-white'
-                : 'text-[var(--primary-blue)] hover:bg-blue-50/70 dark:hover:bg-slate-800/70'
-            } transition-all`}
-            title="Conversation Memory"
-            aria-label="View conversation memory"
-          >
-            Memory
-          </button>
-          {/* Text-to-voice button for AI responses - removed */}
-          <button 
-            onClick={() => setShowDebug(!showDebug)}
-            className={`p-1.5 sm:p-2 rounded-full enhanced-button ripple ${
-              showDebug 
-                ? 'bg-[var(--primary-blue)] text-white' 
-                : 'text-[var(--primary-blue)] hover:bg-blue-50/70 dark:hover:bg-slate-800/70'
-            } transition-all`}
-            title="Debug panel"
-            aria-label="Show debug panel"
-          >
-            Debug
-          </button>
-        </div>
-      </div>
-
-      {/* Main chat container with improved styling */}
-      <div className="flex flex-1 overflow-hidden max-h-[calc(100vh-130px)]">
-        <div className="flex-1 overflow-hidden relative">
-          <div className="h-full overflow-y-auto px-3 sm:px-5 py-3 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent" ref={messagesEndRef}>
-            {/* User info at the top (like iMessage) */}
-            <div className="flex flex-col items-center justify-center pt-3 sm:pt-5 pb-4 sm:pb-6">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full avatar-container flex items-center justify-center text-white text-xl font-semibold mb-2 sm:mb-3">
-                AI
-              </div>
-              <h2 className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-200">
-                {activePrompt ? activePrompt.name : 'AI Assistant'}
-              </h2>
-              
-              <div className="flex flex-col items-center w-full max-w-sm space-y-1 mt-2">
-                <div className="flex items-center">
-                  <button
-                    onClick={togglePromptSelector}
-                    className="flex items-center space-x-1 text-xs text-slate-500 hover:text-[var(--primary-blue)] transition-all px-2 sm:px-3 py-1 sm:py-1.5 rounded-full hover:bg-blue-50/80 dark:hover:bg-slate-800/80 enhanced-button"
-                  >
-                    <span>Change Prompt</span>
-                  </button>
-                  
-                  {showPromptSelector && (
-                    <div className="absolute mt-36 sm:mt-48 w-48 sm:w-56 floating-panel z-50">
-                      <div className="p-2">
-                        <h3 className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 px-2">Select System Prompt</h3>
-                        <div className="max-h-36 sm:max-h-48 overflow-y-auto scrollbar-thin">
-                          {systemPrompts.length > 0 ? (
-                            systemPrompts.map(prompt => (
-                              <button
-                                key={prompt.id}
-                                onClick={() => setSystemPrompt(prompt.id)}
-                                className={`w-full text-left px-3 py-2 text-xs sm:text-sm rounded-md ripple ${
-                                  activePrompt?.id === prompt.id
-                                    ? 'bg-blue-50/90 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300'
-                                    : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
-                                }`}
-                              >
-                                {prompt.name}
-                              </button>
-                            ))
-                          ) : (
-                            <div className="px-3 py-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                              No prompts available
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Add button to view the full system prompt content */}
-                {activePrompt && (
-                  <CollapsiblePrompt prompt={activePrompt} />
-                )}
-              </div>
-              
-              <div className="text-xs text-[var(--primary-blue)] mt-2 sm:mt-3 flex items-center">
-                <span className="w-2 h-2 rounded-full bg-green-500 mr-1 animate-pulse"></span>
-                Active Now
-              </div>
-            </div>
-            
-            {/* iMessage style date separator */}
-            <div className="flex justify-center my-3 sm:my-4">
-              <div className="bg-[var(--neutral-gray)]/50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs px-3 sm:px-4 py-1 rounded-full backdrop-blur-sm">
-                {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
-              </div>
-            </div>
-
-            {messages.map((msg, index) => (
-              <Message
-                key={msg.id || `temp-${index}`}
-                message={msg}
-                onLike={msg.id && !msg.id.startsWith('temp') ? () => handleLikeMessage(msg.id) : undefined}
-                onDislike={msg.id && !msg.id.startsWith('temp') ? () => handleDislikeMessage(msg.id) : undefined}
-              />
-            ))}
-            
-            {/* Refined typing indicator */}
-            {isProcessing && (
-              <div className="flex justify-start my-1">
-                <div className="typing-indicator">
-                  <div className="typing-dot"></div>
-                  <div className="typing-dot"></div>
-                  <div className="typing-dot"></div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {showDebug && <DebugPanel debugMessages={debugMessages} onClose={() => setShowDebug(false)} />}
-        {showMemory && conversationId && (
-          <div className="w-80 border-l border-gray-200 dark:border-gray-700 overflow-y-auto bg-white dark:bg-gray-900">
-            <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-              <h2 className="text-sm font-medium">Conversation Memory</h2>
-              <button 
-                onClick={() => setShowMemory(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                &times;
-              </button>
-            </div>
-            <div className="p-2">
-              <MemoryManager conversationId={conversationId} />
-            </div>
+    <div className="flex flex-col h-full flex-1">
+      <div className="relative flex-1 overflow-y-auto scrollbar-thin px-2 sm:px-4 pt-2 pb-20">
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full text-center px-4 py-10">
+            <div className="text-5xl mb-4">💬</div>
+            <h2 className="text-xl font-semibold mb-2">Welcome to AI Companion</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-md">
+              Start a conversation with your AI assistant. Ask questions, get help, or just chat!
+            </p>
           </div>
         )}
+
+        {messages.map((message, index) => (
+          <Message 
+            key={message.id} 
+            message={message}
+            showAvatar={index === 0 || messages[index - 1]?.role !== message.role}
+            onLike={() => handleLikeMessage(message.id)}
+            onDislike={() => handleDislikeMessage(message.id)}
+          />
+        ))}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Audio player for TTS */}
-      <audio ref={audioRef} className="hidden" />
-
-      {/* Input area with refined styling */}
-      <div className="input-container">
-        <form 
-          onSubmit={(e) => {
-            e.preventDefault();
-            // Add a small delay to prevent the form submission from interfering with audio controls
-            setTimeout(() => {
-              if (!isProcessing && input.trim()) {
-                handleSubmit(e);
-              }
-            }, 50);
-          }} 
-          className="flex items-center space-x-2 sm:space-x-3"
-        >
+      {/* Input area sticky at the bottom */}
+      <div className="sticky bottom-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-t border-gray-200 dark:border-slate-700/50 pt-2 pb-4 px-2 sm:px-4">
+        <form onSubmit={handleSubmit} className="flex items-end gap-2 relative">
           <div className="relative flex-1">
-            <input
-              type="text"
+            <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Message"
-              className="input-field w-full focus:outline-none focus:ring-2 focus:ring-[var(--primary-blue-light)] focus:border-transparent text-sm sm:text-base"
-              disabled={isProcessing || showRealtimeVoice}
-            />
-          </div>
-          
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            <AudioRecorder
-              onTranscription={handleTranscription}
-              onAIResponse={handleAudioAIResponse}
-              conversationId={conversationId}
-              className="enhanced-button p-2 rounded-full text-[var(--primary-blue)] bg-blue-50/80 dark:bg-slate-800/80 hover:bg-blue-100/80 dark:hover:bg-slate-700/80"
-            />
-            
-            <button
-              type="button" 
-              onClick={() => {
-                if (!isProcessing && input.trim()) {
-                  handleSendMessage();
+              placeholder="Type a message..."
+              className="w-full rounded-2xl border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 pr-12 resize-none leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-gray-100 shadow-sm transition-all duration-200"
+              style={{ minHeight: '3rem', maxHeight: '8rem' }}
+              rows={1}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e);
                 }
               }}
-              disabled={isProcessing || !input.trim()}
-              className={`enhanced-button p-2 rounded-full ${
-                input.trim()
-                  ? 'primary-btn'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isProcessing}
+              className={`absolute right-3 bottom-2.5 text-white p-1.5 rounded-full transition-all ${
+                !input.trim() || isProcessing 
+                  ? 'bg-gray-400 dark:bg-gray-600' 
+                  : 'bg-blue-500 hover:bg-blue-600'
               }`}
-              aria-label="Send message"
             >
-              Send
+              <FaPaperPlane size={14} />
             </button>
           </div>
+          
+          <AudioRecorder
+            onTranscription={handleTranscription}
+            onRecordingStateChange={setIsRecording}
+            disabled={isProcessing}
+          />
         </form>
+
+        {/* Debug panel toggle */}
+        <div className="mt-2 flex justify-center">
+          <button 
+            onClick={() => setShowDebug(!showDebug)} 
+            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            {showDebug ? 'Hide Debug' : 'Show Debug'}
+          </button>
+          {activePrompt && (
+            <button
+              onClick={togglePromptSelector}
+              className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 ml-4"
+            >
+              {showPromptSelector ? 'Hide Prompts' : `Prompt: ${activePrompt.name}`}
+            </button>
+          )}
+        </div>
       </div>
-      
-      {/* Do not show real-time voice UI by default */}
-      {showRealtimeVoice && (
-        <RealtimeVoice 
-          onPartialTranscript={handlePartialTranscript} 
-          onCompletedTranscript={handleRealtimeUserMessage}
-          onPartialResponse={() => {}}
-          onCompletedResponse={(text) => {
-            if (text && text.trim()) {
-              handleAudioAIResponse(text, '');
-            }
-          }}
+
+      {/* Prompt selector */}
+      {showPromptSelector && (
+        <div className="fixed inset-x-0 bottom-20 bg-white dark:bg-slate-800 shadow-lg rounded-t-lg p-4 z-10 transition-all duration-300">
+          <h3 className="text-lg font-semibold mb-2">Select AI Personality</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {systemPrompts.map(prompt => (
+              <button
+                key={prompt.id}
+                onClick={() => setSystemPrompt(prompt.id)}
+                className={`p-2 rounded text-left text-sm ${
+                  activePrompt?.id === prompt.id 
+                    ? 'bg-blue-100 dark:bg-blue-900 border-blue-500 border' 
+                    : 'bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600'
+                }`}
+              >
+                <div className="font-medium">{prompt.name}</div>
+                <div className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2">
+                  {prompt.description}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Debug panel */}
+      {showDebug && (
+        <DebugPanel messages={debugMessages} />
+      )}
+
+      {/* Memory manager */}
+      {showMemory && conversationId && (
+        <MemoryManager
           conversationId={conversationId}
+          onClose={() => setShowMemory(false)}
         />
       )}
     </div>
