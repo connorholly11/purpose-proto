@@ -9,6 +9,7 @@ interface UserContextType {
   isLoading: boolean;
   users: User[];
   refreshUsers: () => Promise<void>;
+  deleteUser: (userId: string) => Promise<boolean>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -76,8 +77,43 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     await fetchUsers();
   };
 
+  const deleteUser = async (userId: string): Promise<boolean> => {
+    try {
+      // Don't allow deleting the current user
+      if (currentUser?.id === userId) {
+        throw new Error('Cannot delete the current user');
+      }
+
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        // Get the detailed error message from the response
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete user');
+      }
+
+      // Remove the user from the local state
+      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      // Re-throw the error so the component can handle it
+      throw error;
+    }
+  };
+
   return (
-    <UserContext.Provider value={{ currentUser, setCurrentUser, isLoading, users, refreshUsers }}>
+    <UserContext.Provider value={{ 
+      currentUser, 
+      setCurrentUser, 
+      isLoading, 
+      users, 
+      refreshUsers,
+      deleteUser
+    }}>
       {children}
     </UserContext.Provider>
   );

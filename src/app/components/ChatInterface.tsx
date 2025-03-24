@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { FaPaperPlane, FaMicrophone, FaRobot, FaUser, FaCog } from 'react-icons/fa';
+import { FaPaperPlane, FaMicrophone, FaRobot, FaUser, FaCog, FaChevronDown } from 'react-icons/fa';
 import AudioRecorder from './AudioRecorder';
 import RealtimeVoice from './RealtimeVoice';
 import Message from './Message';
@@ -10,6 +10,7 @@ import browserLogger from '@/lib/utils/browser-logger';
 import { useUser } from '@/app/contexts/UserContext';
 import DebugPanel from './DebugPanel';
 import UserSelector from './UserSelector';
+import CollapsiblePrompt from './CollapsiblePrompt';
 
 interface ChatInterfaceProps {
   initialConversationId?: string;
@@ -27,6 +28,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>(initialConversationId);
+  // Real-time voice feature is temporarily disabled
   const [showRealtimeVoice, setShowRealtimeVoice] = useState(false);
   const [realtimeTranscript, setRealtimeTranscript] = useState<string | null>(null);
   const [aiAudio, setAiAudio] = useState<string | null>(null);
@@ -104,6 +106,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
   useEffect(() => {
     localStorage.setItem('responseMode', responseMode);
   }, [responseMode]);
+
+  // Force real-time voice to remain disabled
+  useEffect(() => {
+    if (showRealtimeVoice) {
+      // Force it back to false if somehow enabled
+      setShowRealtimeVoice(false);
+    }
+  }, [showRealtimeVoice]);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -408,8 +418,113 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
 
   // NEW: handle final transcript from Realtime voice
   const handleRealtimeUserMessage = async (transcript: string) => {
-    // Could optionally dispatch or treat similarly to typed messages
-    console.log('Real-time voice feature is currently disabled or incomplete');
+    if (!transcript || !transcript.trim() || isProcessing) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      // Play send sound
+      playMessageSentSound();
+      
+      // Create a temporary user message
+      const userTempId = `temp-user-${Date.now()}`;
+      const userMessage: MessageType = {
+        id: userTempId,
+        conversationId: conversationId || '',
+        role: 'user',
+        content: transcript,
+        createdAt: new Date(),
+      };
+      
+      // Add user message to state
+      setMessages(prevMessages => [...prevMessages, userMessage]);
+      
+      // Log for debugging
+      console.log(`Processing realtime voice transcript: "${transcript}"`);
+      setDebugMessages(prev => [
+        ...prev,
+        { 
+          timestamp: new Date(), 
+          actionType: 'REALTIME_VOICE', 
+          details: `Processing: "${transcript.substring(0, 50)}${transcript.length > 50 ? '...' : ''}"` 
+        }
+      ]);
+      
+      // Process with the same API as regular messages
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (currentUser?.id) {
+        headers['x-user-id'] = currentUser.id;
+      }
+      
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ content: transcript }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to process voice transcript');
+      }
+      
+      const data = await response.json();
+      
+      // Update messages with real IDs
+      setMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === userTempId ? { ...msg, id: data.userMessage.id } : msg
+        )
+      );
+      
+      // Add AI response
+      const aiMessage: MessageType = {
+        id: data.aiMessage.id,
+        conversationId: conversationId || '',
+        role: 'assistant',
+        content: data.aiMessage.content,
+        createdAt: new Date(data.aiMessage.createdAt),
+      };
+      
+      // Play receive sound
+      playMessageReceivedSound();
+      
+      // Add AI message to state
+      setMessages(prevMessages => [...prevMessages, aiMessage]);
+      
+      // Get audio if in voice mode
+      if (responseMode === 'voice') {
+        try {
+          const ttsResponse = await fetch(`/api/tts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: data.aiMessage.content }),
+          });
+          
+          if (ttsResponse.ok) {
+            const audioData = await ttsResponse.json();
+            if (audioData.audioContent) {
+              setAiAudio(audioData.audioContent);
+            }
+          }
+        } catch (ttsError) {
+          console.error('Error generating TTS for voice response:', ttsError);
+        }
+      }
+    } catch (error) {
+      console.error('Error processing realtime voice message:', error);
+      setDebugMessages(prev => [
+        ...prev,
+        { 
+          timestamp: new Date(), 
+          actionType: 'ERROR', 
+          details: `Realtime voice error: ${(error as Error).message}` 
+        }
+      ]);
+    } finally {
+      setIsProcessing(false);
+      setRealtimeTranscript(null); // Clear any transcript
+    }
   };
 
   // handle message likes
@@ -585,11 +700,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
     }
   };
 
+  // Add a function to handle prompt selector toggle
+  const togglePromptSelector = () => {
+    setShowPromptSelector(!showPromptSelector);
+  };
+
   return (
     <div className="flex flex-col h-full bg-[var(--imessage-bg)]">
-      {/* Header with improved iMessage style */}
-      <div className="flex items-center justify-between p-3 imessage-header border-b border-[var(--imessage-border)] shadow-sm">
-        <div className="flex items-center space-x-2">
+      {/* Top header with iMessage style */}
+      <div className="flex justify-between items-center px-4 py-2 bg-[var(--imessage-bg)] border-b border-[var(--imessage-border)]">
+        <div className="flex items-center">
           <button 
             onClick={handleNewChat}
             className="text-[var(--imessage-blue)] font-medium text-sm px-2 py-1.5 rounded-full hover:bg-blue-50 dark:hover:bg-gray-800 transition flex items-center"
@@ -598,29 +718,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
             <span className="hidden sm:inline">New Message</span>
           </button>
         </div>
-        <div className="text-center flex-1">
-          <h1 className="text-base font-semibold text-gray-800 dark:text-gray-200">Messages</h1>
-          <p className="text-xs text-gray-500">AI Assistant</p>
-        </div>
-        <div className="flex items-center space-x-2">
+        <h1 className="text-base font-semibold text-gray-800 dark:text-gray-200">Messages</h1>
+        <div className="flex space-x-2">
           <UserSelector />
-          <button
-            onClick={() => setShowRealtimeVoice(prev => !prev)}
-            className={`p-2 rounded-full ${
-              showRealtimeVoice 
-                ? 'bg-[var(--imessage-blue)] text-white' 
-                : 'text-[var(--imessage-blue)] hover:bg-blue-50 dark:hover:bg-gray-800'
-            } transition`}
-            title="Voice chat"
-            aria-label="Voice chat"
-          >
-            <FaMicrophone size={14} />
-          </button>
           <button
             onClick={toggleResponseMode}
             className={`p-2 rounded-full ${
-              responseMode === 'voice' 
-                ? 'bg-[var(--imessage-blue)] text-white' 
+              responseMode === 'voice'
+                ? 'bg-[var(--imessage-blue)] text-white'
                 : 'text-[var(--imessage-blue)] hover:bg-blue-50 dark:hover:bg-gray-800'
             } transition`}
             title={responseMode === 'voice' ? 'Voice responses enabled' : 'Text-only responses'}
@@ -652,9 +757,57 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
               <div className="w-16 h-16 rounded-full bg-[var(--imessage-blue)] flex items-center justify-center text-white text-xl font-semibold mb-2 shadow-md">
                 AI
               </div>
-              <h2 className="text-base font-semibold dark:text-white">AI Assistant</h2>
-              <p className="text-xs text-gray-500 mt-1">iMessage</p>
-              <div className="text-xs text-[var(--imessage-blue)] mt-2 flex items-center">
+              <h2 className="text-base font-semibold dark:text-white">
+                {activePrompt ? activePrompt.name : 'AI Assistant'}
+              </h2>
+              
+              <div className="flex flex-col items-center w-full max-w-sm space-y-1 mt-2">
+                <div className="flex items-center">
+                  <button
+                    onClick={togglePromptSelector}
+                    className="flex items-center space-x-1 text-xs text-gray-500 hover:text-[var(--imessage-blue)] transition px-2 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <span>Change Prompt</span>
+                    <FaChevronDown size={8} />
+                  </button>
+                  
+                  {showPromptSelector && (
+                    <div className="absolute mt-48 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                      <div className="p-2">
+                        <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 px-2">Select System Prompt</h3>
+                        <div className="max-h-48 overflow-y-auto">
+                          {systemPrompts.length > 0 ? (
+                            systemPrompts.map(prompt => (
+                              <button
+                                key={prompt.id}
+                                onClick={() => setSystemPrompt(prompt.id)}
+                                className={`w-full text-left px-3 py-2 text-sm rounded-md ${
+                                  activePrompt?.id === prompt.id
+                                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-200'
+                                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                                }`}
+                              >
+                                {prompt.name}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                              No prompts available
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Add button to view the full system prompt content */}
+                {activePrompt && (
+                  <CollapsiblePrompt prompt={activePrompt} />
+                )}
+              </div>
+              
+              <div className="text-xs text-[var(--imessage-blue)] mt-3 flex items-center">
                 <span className="w-2 h-2 rounded-full bg-green-500 mr-1 animate-pulse"></span>
                 Active Now
               </div>
@@ -697,7 +850,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
 
       {/* Input area with iMessage style */}
       <div className="border-t border-[var(--imessage-border)] p-3 bg-[var(--imessage-bg)]">
-        {showRealtimeVoice ? (
+        {/* Always show the regular input form, hide the real-time voice implementation */}
+        {/* {showRealtimeVoice ? (
           <div className="rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-[var(--imessage-border)] p-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Voice Chat</h3>
@@ -709,17 +863,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
               </button>
             </div>
             <RealtimeVoice
-              onPartialTranscript={handlePartialTranscript}
-              onCompletedTranscript={handleRealtimeUserMessage}
-              onPartialResponse={(text) => {}} 
+              onPartialTranscript={(transcript) => {
+                setRealtimeTranscript(transcript);
+                handlePartialTranscript(transcript);
+              }}
+              onCompletedTranscript={(transcript) => {
+                // Clear the transcript and process the message
+                setRealtimeTranscript(null);
+                handleRealtimeUserMessage(transcript);
+              }}
+              onPartialResponse={(text) => {
+                // Handle partial response if needed
+              }} 
               onCompletedResponse={(text) => {
-                // Extract audio content if needed
-                handleAudioAIResponse(text, '');
+                // Handle the final response from the real-time voice processing
+                if (text && text.trim()) {
+                  handleAudioAIResponse(text, '');
+                }
               }}
               conversationId={conversationId}
             />
           </div>
-        ) : (
+        ) : ( */}
           <form 
             onSubmit={handleSubmit} 
             className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-sm border border-[var(--imessage-border)]"
@@ -752,7 +917,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ initialConversationId }) 
               <FaPaperPlane size={18} />
             </button>
           </form>
-        )}
+        {/* )} */}
       </div>
     </div>
   );

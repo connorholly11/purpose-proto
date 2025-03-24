@@ -103,11 +103,12 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
     }
     
     try {
-      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+      // Use audio/webm format instead of wav which might not be supported
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
       
-      // Create FormData and append file
+      // Create FormData and append file with the correct field name
       const formData = new FormData();
-      formData.append('audioFile', audioBlob, 'recording.wav');
+      formData.append('file', audioBlob, 'recording.webm');
       
       if (conversationId) {
         formData.append('conversationId', conversationId);

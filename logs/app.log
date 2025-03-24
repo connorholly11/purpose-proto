@@ -9056,3 +9056,1314 @@
   "duration": 1060,
   "answerLength": 179
 }
+[2025-03-23T02:52:28.998Z] [INFO] [OpenAI] Transcribing audio {
+  "requestId": "transcribe-1742698348998",
+  "bufferSize": 25438
+}
+[2025-03-23T02:52:28.999Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-23T02:52:29.000Z] [DEBUG] [OpenAI] Writing audio to temporary file {
+  "requestId": "transcribe-1742698348998",
+  "tempFilePath": "/var/folders/v1/bb0s1r1d2_n7rq8bzlxr29b40000gn/T/audio-1742698349000.webm"
+}
+[2025-03-23T02:52:29.000Z] [DEBUG] [OpenAI] Calling transcription API {
+  "requestId": "transcribe-1742698348998",
+  "model": "whisper-1"
+}
+[2025-03-23T02:52:29.991Z] [INFO] [OpenAI] Audio transcription complete {
+  "requestId": "transcribe-1742698348998",
+  "duration": 991,
+  "transcriptionLength": 26
+}
+[2025-03-23T02:57:48.455Z] [INFO] [API] RAG service request received {
+  "requestId": "api-rag-1742698668455"
+}
+[2025-03-23T02:57:48.456Z] [DEBUG] [API] RAG service request details {
+  "requestId": "api-rag-1742698668455",
+  "query": "hey there",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "46a92751-cd57-4a1a-a19f-5f4ad22a0e9f"
+}
+[2025-03-23T02:57:48.456Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742698668456",
+  "textLength": 9,
+  "textPreview": "hey there"
+}
+[2025-03-23T02:57:48.456Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-23T02:57:48.456Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742698668456",
+  "model": "text-embedding-3-small"
+}
+[2025-03-23T02:57:48.789Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742698668456",
+  "duration": 333,
+  "dimensions": 1536
+}
+[2025-03-23T02:57:48.790Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-23T02:57:48.790Z] [DEBUG] [Pinecone] Querying Pinecone {
+  "topK": 5,
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
+  "hasAdditionalContext": false,
+  "hasFilter": true
+}
+[2025-03-23T02:57:49.286Z] [DEBUG] [Pinecone] Fetching user knowledge items {
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-23T02:57:49.527Z] [INFO] [Pinecone] Processing user knowledge items {
+  "count": 1,
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-23T02:57:49.527Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742698669527",
+  "textLength": 42,
+  "textPreview": "My name is Connor and I live in California"
+}
+[2025-03-23T02:57:49.528Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742698669527",
+  "model": "text-embedding-3-small"
+}
+[2025-03-23T02:57:50.295Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742698669527",
+  "duration": 767,
+  "dimensions": 1536
+}
+[2025-03-23T02:57:50.296Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "52fbce1a-396c-46b4-a669-749258773633",
+  "similarity": 0.29225084092388126,
+  "title": "Test Knowledge"
+}
+[2025-03-23T02:57:50.296Z] [DEBUG] [Pinecone] Upserting knowledge items to Pinecone {
+  "count": 1
+}
+[2025-03-23T02:57:50.296Z] [INFO] [Pinecone] Upserting documents {
+  "count": 1
+}
+[2025-03-23T02:57:50.296Z] [DEBUG] [Pinecone] Generating embedding for document 1/1 {
+  "textLength": 42,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-23T02:57:50.296Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742698670296",
+  "textLength": 42,
+  "textPreview": "My name is Connor and I live in California"
+}
+[2025-03-23T02:57:50.297Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742698670296",
+  "model": "text-embedding-3-small"
+}
+[2025-03-23T02:57:50.297Z] [INFO] [Pinecone] Query results combined {
+  "pineconeMatches": 5,
+  "knowledgeMatches": 0,
+  "totalMatches": 5
+}
+[2025-03-23T02:57:50.297Z] [INFO] [API] RAG service request completed {
+  "requestId": "api-rag-1742698668455",
+  "duration": 1841,
+  "matchCount": 5
+}
+[2025-03-23T02:57:50.428Z] [INFO] [API] Completion request received {
+  "requestId": "api-completion-1742698670428"
+}
+[2025-03-23T02:57:50.428Z] [DEBUG] [API] Completion request details {
+  "requestId": "api-completion-1742698670428",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 218,
+  "conversationId": "46a92751-cd57-4a1a-a19f-5f4ad22a0e9f"
+}
+[2025-03-23T02:57:50.428Z] [DEBUG] [API] Calling getCompletion {
+  "requestId": "api-completion-1742698670428"
+}
+[2025-03-23T02:57:50.429Z] [INFO] [OpenAI] Getting completion {
+  "requestId": "completion-1742698670429",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 218
+}
+[2025-03-23T02:57:50.429Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-23T02:57:50.592Z] [DEBUG] [OpenAI] Retrieved active system prompt {
+  "requestId": "completion-1742698670429",
+  "hasSystemPrompt": true,
+  "promptName": "nice"
+}
+[2025-03-23T02:57:50.593Z] [DEBUG] [OpenAI] Adding context to system message {
+  "requestId": "completion-1742698670429",
+  "contextLength": 218
+}
+[2025-03-23T02:57:50.593Z] [DEBUG] [OpenAI] Calling chat completions API {
+  "requestId": "completion-1742698670429",
+  "model": "gpt-4o",
+  "messageCount": 2
+}
+[2025-03-23T02:57:50.837Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742698670296",
+  "duration": 540,
+  "dimensions": 1536
+}
+[2025-03-23T02:57:50.837Z] [INFO] [Pinecone] Upserting 1 vectors to Pinecone 
+[2025-03-23T02:57:50.971Z] [INFO] [Pinecone] Document upsert complete 
+[2025-03-23T02:57:51.366Z] [INFO] [OpenAI] Completion generated successfully {
+  "requestId": "completion-1742698670429",
+  "duration": 773,
+  "promptTokens": 72,
+  "completionTokens": 47,
+  "totalTokens": 119,
+  "responseLength": 197
+}
+[2025-03-23T02:57:51.366Z] [DEBUG] [API] Logging messages to database {
+  "requestId": "api-completion-1742698670428",
+  "conversationId": "46a92751-cd57-4a1a-a19f-5f4ad22a0e9f",
+  "userMessageLength": 260,
+  "assistantMessageLength": 197
+}
+[2025-03-23T02:57:51.552Z] [INFO] [API] Messages logged to database {
+  "requestId": "api-completion-1742698670428",
+  "conversationId": "46a92751-cd57-4a1a-a19f-5f4ad22a0e9f"
+}
+[2025-03-23T02:57:51.553Z] [INFO] [API] Completion request completed {
+  "requestId": "api-completion-1742698670428",
+  "duration": 938,
+  "answerLength": 197
+}
+[2025-03-23T02:57:51.758Z] [INFO] [OpenAI] Generating speech {
+  "requestId": "tts-1742698671758",
+  "textLength": 197,
+  "voice": "alloy"
+}
+[2025-03-23T02:57:51.758Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-23T02:57:51.758Z] [DEBUG] [OpenAI] Calling speech API {
+  "requestId": "tts-1742698671758",
+  "model": "tts-1",
+  "voice": "alloy"
+}
+[2025-03-23T02:57:54.852Z] [INFO] [OpenAI] Speech generated successfully {
+  "requestId": "tts-1742698671758",
+  "duration": 3094,
+  "bufferSize": 245760
+}
+[2025-03-23T03:06:57.311Z] [INFO] [API] RAG service request received {
+  "requestId": "api-rag-1742699217311"
+}
+[2025-03-23T03:06:57.311Z] [DEBUG] [API] RAG service request details {
+  "requestId": "api-rag-1742699217311",
+  "query": "do you know my name",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "a2789edc-8258-4e5d-8cf1-585f87e27505"
+}
+[2025-03-23T03:06:57.311Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742699217311",
+  "textLength": 19,
+  "textPreview": "do you know my name"
+}
+[2025-03-23T03:06:57.312Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-23T03:06:57.312Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742699217311",
+  "model": "text-embedding-3-small"
+}
+[2025-03-23T03:06:58.125Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742699217311",
+  "duration": 813,
+  "dimensions": 1536
+}
+[2025-03-23T03:06:58.126Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-23T03:06:58.127Z] [DEBUG] [Pinecone] Querying Pinecone {
+  "topK": 5,
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
+  "hasAdditionalContext": false,
+  "hasFilter": true
+}
+[2025-03-23T03:06:58.658Z] [DEBUG] [Pinecone] Fetching user knowledge items {
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-23T03:06:58.837Z] [INFO] [Pinecone] Processing user knowledge items {
+  "count": 1,
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-23T03:06:58.837Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742699218837",
+  "textLength": 42,
+  "textPreview": "My name is Connor and I live in California"
+}
+[2025-03-23T03:06:58.837Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742699218837",
+  "model": "text-embedding-3-small"
+}
+[2025-03-23T03:06:59.198Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742699218837",
+  "duration": 361,
+  "dimensions": 1536
+}
+[2025-03-23T03:06:59.198Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "52fbce1a-396c-46b4-a669-749258773633",
+  "similarity": 0.3741036978406944,
+  "title": "Test Knowledge"
+}
+[2025-03-23T03:06:59.199Z] [DEBUG] [Pinecone] Upserting knowledge items to Pinecone {
+  "count": 1
+}
+[2025-03-23T03:06:59.199Z] [INFO] [Pinecone] Upserting documents {
+  "count": 1
+}
+[2025-03-23T03:06:59.199Z] [DEBUG] [Pinecone] Generating embedding for document 1/1 {
+  "textLength": 42,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-23T03:06:59.199Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742699219199",
+  "textLength": 42,
+  "textPreview": "My name is Connor and I live in California"
+}
+[2025-03-23T03:06:59.199Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742699219199",
+  "model": "text-embedding-3-small"
+}
+[2025-03-23T03:06:59.199Z] [INFO] [Pinecone] Query results combined {
+  "pineconeMatches": 5,
+  "knowledgeMatches": 0,
+  "totalMatches": 5
+}
+[2025-03-23T03:06:59.199Z] [INFO] [API] RAG service request completed {
+  "requestId": "api-rag-1742699217311",
+  "duration": 1888,
+  "matchCount": 5
+}
+[2025-03-23T03:06:59.348Z] [INFO] [API] Completion request received {
+  "requestId": "api-completion-1742699219348"
+}
+[2025-03-23T03:06:59.349Z] [DEBUG] [API] Completion request details {
+  "requestId": "api-completion-1742699219348",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 218,
+  "conversationId": "a2789edc-8258-4e5d-8cf1-585f87e27505"
+}
+[2025-03-23T03:06:59.349Z] [DEBUG] [API] Calling getCompletion {
+  "requestId": "api-completion-1742699219348"
+}
+[2025-03-23T03:06:59.349Z] [INFO] [OpenAI] Getting completion {
+  "requestId": "completion-1742699219349",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 218
+}
+[2025-03-23T03:06:59.349Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-23T03:06:59.484Z] [DEBUG] [OpenAI] Retrieved active system prompt {
+  "requestId": "completion-1742699219349",
+  "hasSystemPrompt": true,
+  "promptName": "nice"
+}
+[2025-03-23T03:06:59.484Z] [DEBUG] [OpenAI] Adding context to system message {
+  "requestId": "completion-1742699219349",
+  "contextLength": 218
+}
+[2025-03-23T03:06:59.484Z] [DEBUG] [OpenAI] Calling chat completions API {
+  "requestId": "completion-1742699219349",
+  "model": "gpt-4o",
+  "messageCount": 2
+}
+[2025-03-23T03:06:59.794Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742699219199",
+  "duration": 595,
+  "dimensions": 1536
+}
+[2025-03-23T03:06:59.794Z] [INFO] [Pinecone] Upserting 1 vectors to Pinecone 
+[2025-03-23T03:06:59.931Z] [INFO] [Pinecone] Document upsert complete 
+[2025-03-23T03:07:00.601Z] [INFO] [OpenAI] Completion generated successfully {
+  "requestId": "completion-1742699219349",
+  "duration": 1117,
+  "promptTokens": 75,
+  "completionTokens": 53,
+  "totalTokens": 128,
+  "responseLength": 254
+}
+[2025-03-23T03:07:00.601Z] [DEBUG] [API] Logging messages to database {
+  "requestId": "api-completion-1742699219348",
+  "conversationId": "a2789edc-8258-4e5d-8cf1-585f87e27505",
+  "userMessageLength": 260,
+  "assistantMessageLength": 254
+}
+[2025-03-23T03:07:00.784Z] [INFO] [API] Messages logged to database {
+  "requestId": "api-completion-1742699219348",
+  "conversationId": "a2789edc-8258-4e5d-8cf1-585f87e27505"
+}
+[2025-03-23T03:07:00.784Z] [INFO] [API] Completion request completed {
+  "requestId": "api-completion-1742699219348",
+  "duration": 1252,
+  "answerLength": 254
+}
+[2025-03-23T03:07:08.036Z] [INFO] [API] RAG service request received {
+  "requestId": "api-rag-1742699228036"
+}
+[2025-03-23T03:07:08.036Z] [DEBUG] [API] RAG service request details {
+  "requestId": "api-rag-1742699228036",
+  "query": "do you know my name",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "0f89b864-c2e4-430d-885c-f9e775b4162e"
+}
+[2025-03-23T03:07:08.036Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742699228036",
+  "textLength": 19,
+  "textPreview": "do you know my name"
+}
+[2025-03-23T03:07:08.036Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742699228036",
+  "model": "text-embedding-3-small"
+}
+[2025-03-23T03:07:08.808Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742699228036",
+  "duration": 772,
+  "dimensions": 1536
+}
+[2025-03-23T03:07:08.808Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-23T03:07:08.809Z] [DEBUG] [Pinecone] Querying Pinecone {
+  "topK": 5,
+  "userId": "739cf529-f9af-4bd0-8d2f-daa43f9f8661",
+  "hasAdditionalContext": false,
+  "hasFilter": true
+}
+[2025-03-23T03:07:09.134Z] [DEBUG] [Pinecone] Fetching user knowledge items {
+  "userId": "739cf529-f9af-4bd0-8d2f-daa43f9f8661"
+}
+[2025-03-23T03:07:09.304Z] [INFO] [Pinecone] Processing user knowledge items {
+  "count": 2,
+  "userId": "739cf529-f9af-4bd0-8d2f-daa43f9f8661"
+}
+[2025-03-23T03:07:09.304Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742699229304",
+  "textLength": 18,
+  "textPreview": "my name is connor\n"
+}
+[2025-03-23T03:07:09.304Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742699229304",
+  "model": "text-embedding-3-small"
+}
+[2025-03-23T03:07:09.560Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742699229304",
+  "duration": 256,
+  "dimensions": 1536
+}
+[2025-03-23T03:07:09.561Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "95ff401d-2308-48a6-9d66-187a8ce71a58",
+  "similarity": 0.4807209668742267,
+  "title": "name"
+}
+[2025-03-23T03:07:09.561Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742699229561",
+  "textLength": 4,
+  "textPreview": "test"
+}
+[2025-03-23T03:07:09.561Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742699229561",
+  "model": "text-embedding-3-small"
+}
+[2025-03-23T03:07:10.083Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742699229561",
+  "duration": 522,
+  "dimensions": 1536
+}
+[2025-03-23T03:07:10.084Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "b385ad78-e78e-4a78-a556-81cc52660e77",
+  "similarity": 0.1696005564574638,
+  "title": "test"
+}
+[2025-03-23T03:07:10.084Z] [DEBUG] [Pinecone] Upserting knowledge items to Pinecone {
+  "count": 2
+}
+[2025-03-23T03:07:10.084Z] [INFO] [Pinecone] Upserting documents {
+  "count": 2
+}
+[2025-03-23T03:07:10.084Z] [DEBUG] [Pinecone] Generating embedding for document 1/2 {
+  "textLength": 18,
+  "source": "user_knowledge",
+  "userId": "739cf529-f9af-4bd0-8d2f-daa43f9f8661"
+}
+[2025-03-23T03:07:10.084Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742699230084",
+  "textLength": 18,
+  "textPreview": "my name is connor\n"
+}
+[2025-03-23T03:07:10.084Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742699230084",
+  "model": "text-embedding-3-small"
+}
+[2025-03-23T03:07:10.084Z] [INFO] [Pinecone] Query results combined {
+  "pineconeMatches": 5,
+  "knowledgeMatches": 0,
+  "totalMatches": 5
+}
+[2025-03-23T03:07:10.084Z] [INFO] [API] RAG service request completed {
+  "requestId": "api-rag-1742699228036",
+  "duration": 2048,
+  "matchCount": 5
+}
+[2025-03-23T03:07:10.093Z] [INFO] [API] Completion request received {
+  "requestId": "api-completion-1742699230093"
+}
+[2025-03-23T03:07:10.093Z] [DEBUG] [API] Completion request details {
+  "requestId": "api-completion-1742699230093",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 1018,
+  "conversationId": "0f89b864-c2e4-430d-885c-f9e775b4162e"
+}
+[2025-03-23T03:07:10.093Z] [DEBUG] [API] Calling getCompletion {
+  "requestId": "api-completion-1742699230093"
+}
+[2025-03-23T03:07:10.093Z] [INFO] [OpenAI] Getting completion {
+  "requestId": "completion-1742699230093",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 1018
+}
+[2025-03-23T03:07:10.223Z] [DEBUG] [OpenAI] Retrieved active system prompt {
+  "requestId": "completion-1742699230093",
+  "hasSystemPrompt": true,
+  "promptName": "nice"
+}
+[2025-03-23T03:07:10.224Z] [DEBUG] [OpenAI] Adding context to system message {
+  "requestId": "completion-1742699230093",
+  "contextLength": 1018
+}
+[2025-03-23T03:07:10.224Z] [DEBUG] [OpenAI] Calling chat completions API {
+  "requestId": "completion-1742699230093",
+  "model": "gpt-4o",
+  "messageCount": 2
+}
+[2025-03-23T03:07:10.391Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742699230084",
+  "duration": 307,
+  "dimensions": 1536
+}
+[2025-03-23T03:07:10.391Z] [DEBUG] [Pinecone] Generating embedding for document 2/2 {
+  "textLength": 4,
+  "source": "user_knowledge",
+  "userId": "739cf529-f9af-4bd0-8d2f-daa43f9f8661"
+}
+[2025-03-23T03:07:10.392Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742699230392",
+  "textLength": 4,
+  "textPreview": "test"
+}
+[2025-03-23T03:07:10.392Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742699230392",
+  "model": "text-embedding-3-small"
+}
+[2025-03-23T03:07:10.950Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742699230392",
+  "duration": 558,
+  "dimensions": 1536
+}
+[2025-03-23T03:07:10.950Z] [INFO] [Pinecone] Upserting 2 vectors to Pinecone 
+[2025-03-23T03:07:11.128Z] [INFO] [OpenAI] Completion generated successfully {
+  "requestId": "completion-1742699230093",
+  "duration": 904,
+  "promptTokens": 261,
+  "completionTokens": 41,
+  "totalTokens": 302,
+  "responseLength": 168
+}
+[2025-03-23T03:07:11.128Z] [DEBUG] [API] Logging messages to database {
+  "requestId": "api-completion-1742699230093",
+  "conversationId": "0f89b864-c2e4-430d-885c-f9e775b4162e",
+  "userMessageLength": 1060,
+  "assistantMessageLength": 168
+}
+[2025-03-23T03:07:11.161Z] [INFO] [Pinecone] Document upsert complete 
+[2025-03-23T03:07:11.277Z] [INFO] [API] Messages logged to database {
+  "requestId": "api-completion-1742699230093",
+  "conversationId": "0f89b864-c2e4-430d-885c-f9e775b4162e"
+}
+[2025-03-23T03:07:11.277Z] [INFO] [API] Completion request completed {
+  "requestId": "api-completion-1742699230093",
+  "duration": 1035,
+  "answerLength": 168
+}
+[2025-03-24T01:54:11.192Z] [INFO] [API] RAG service request received {
+  "requestId": "api-rag-1742781251192"
+}
+[2025-03-24T01:54:11.192Z] [DEBUG] [API] RAG service request details {
+  "requestId": "api-rag-1742781251192",
+  "query": "hey there can you remember new things about me? li",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "7e43f3f9-f56d-4b3e-84db-d4729c3e887f"
+}
+[2025-03-24T01:54:11.193Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781251193",
+  "textLength": 89,
+  "textPreview": "hey there can you remember new things about me? li..."
+}
+[2025-03-24T01:54:11.193Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-24T01:54:11.194Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781251193",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:54:12.418Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781251193",
+  "duration": 1224,
+  "dimensions": 1536
+}
+[2025-03-24T01:54:12.418Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-24T01:54:12.419Z] [DEBUG] [Pinecone] Querying Pinecone {
+  "topK": 5,
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
+  "hasAdditionalContext": false,
+  "hasFilter": true
+}
+[2025-03-24T01:54:13.187Z] [DEBUG] [Pinecone] Fetching user knowledge items {
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T01:54:13.440Z] [INFO] [Pinecone] Processing user knowledge items {
+  "count": 1,
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T01:54:13.441Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781253441",
+  "textLength": 42,
+  "textPreview": "My name is Connor and I live in California"
+}
+[2025-03-24T01:54:13.441Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781253441",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:54:14.210Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781253441",
+  "duration": 769,
+  "dimensions": 1536
+}
+[2025-03-24T01:54:14.211Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "52fbce1a-396c-46b4-a669-749258773633",
+  "similarity": 0.2440634553774783,
+  "title": "Test Knowledge"
+}
+[2025-03-24T01:54:14.211Z] [DEBUG] [Pinecone] Upserting knowledge items to Pinecone {
+  "count": 1
+}
+[2025-03-24T01:54:14.211Z] [INFO] [Pinecone] Upserting documents {
+  "count": 1
+}
+[2025-03-24T01:54:14.211Z] [DEBUG] [Pinecone] Generating embedding for document 1/1 {
+  "textLength": 42,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T01:54:14.211Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781254211",
+  "textLength": 42,
+  "textPreview": "My name is Connor and I live in California"
+}
+[2025-03-24T01:54:14.211Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781254211",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:54:14.211Z] [INFO] [Pinecone] Query results combined {
+  "pineconeMatches": 5,
+  "knowledgeMatches": 0,
+  "totalMatches": 5
+}
+[2025-03-24T01:54:14.211Z] [INFO] [API] RAG service request completed {
+  "requestId": "api-rag-1742781251192",
+  "duration": 3019,
+  "matchCount": 5
+}
+[2025-03-24T01:54:14.379Z] [INFO] [API] Completion request received {
+  "requestId": "api-completion-1742781254379"
+}
+[2025-03-24T01:54:14.379Z] [DEBUG] [API] Completion request details {
+  "requestId": "api-completion-1742781254379",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 218,
+  "conversationId": "7e43f3f9-f56d-4b3e-84db-d4729c3e887f"
+}
+[2025-03-24T01:54:14.379Z] [DEBUG] [API] Calling getCompletion {
+  "requestId": "api-completion-1742781254379"
+}
+[2025-03-24T01:54:14.379Z] [INFO] [OpenAI] Getting completion {
+  "requestId": "completion-1742781254379",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 218
+}
+[2025-03-24T01:54:14.379Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-24T01:54:14.483Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781254211",
+  "duration": 272,
+  "dimensions": 1536
+}
+[2025-03-24T01:54:14.483Z] [INFO] [Pinecone] Upserting 1 vectors to Pinecone 
+[2025-03-24T01:54:14.555Z] [DEBUG] [OpenAI] Retrieved active system prompt {
+  "requestId": "completion-1742781254379",
+  "hasSystemPrompt": true,
+  "promptName": "nice"
+}
+[2025-03-24T01:54:14.556Z] [DEBUG] [OpenAI] Adding context to system message {
+  "requestId": "completion-1742781254379",
+  "contextLength": 218
+}
+[2025-03-24T01:54:14.556Z] [DEBUG] [OpenAI] Calling chat completions API {
+  "requestId": "completion-1742781254379",
+  "model": "gpt-4o",
+  "messageCount": 2
+}
+[2025-03-24T01:54:14.891Z] [INFO] [Pinecone] Document upsert complete 
+[2025-03-24T01:54:16.665Z] [INFO] [OpenAI] Completion generated successfully {
+  "requestId": "completion-1742781254379",
+  "duration": 2109,
+  "promptTokens": 89,
+  "completionTokens": 86,
+  "totalTokens": 175,
+  "responseLength": 406
+}
+[2025-03-24T01:54:16.665Z] [DEBUG] [API] Logging messages to database {
+  "requestId": "api-completion-1742781254379",
+  "conversationId": "7e43f3f9-f56d-4b3e-84db-d4729c3e887f",
+  "userMessageLength": 260,
+  "assistantMessageLength": 406
+}
+[2025-03-24T01:54:16.862Z] [INFO] [API] Messages logged to database {
+  "requestId": "api-completion-1742781254379",
+  "conversationId": "7e43f3f9-f56d-4b3e-84db-d4729c3e887f"
+}
+[2025-03-24T01:54:16.863Z] [INFO] [API] Completion request completed {
+  "requestId": "api-completion-1742781254379",
+  "duration": 2286,
+  "answerLength": 406
+}
+[2025-03-24T01:54:40.222Z] [INFO] [API] Upserting knowledge item to Pinecone {
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
+  "itemId": "9f11361d-c878-4959-b610-015496a8f973",
+  "contentLength": 17
+}
+[2025-03-24T01:54:40.223Z] [INFO] [Pinecone] Upserting documents {
+  "count": 1
+}
+[2025-03-24T01:54:40.223Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-24T01:54:40.223Z] [DEBUG] [Pinecone] Generating embedding for document 1/1 {
+  "textLength": 17,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T01:54:40.223Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781280223",
+  "textLength": 17,
+  "textPreview": "I love basketball"
+}
+[2025-03-24T01:54:40.223Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-24T01:54:40.224Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781280223",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:54:40.897Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781280223",
+  "duration": 673,
+  "dimensions": 1536
+}
+[2025-03-24T01:54:40.898Z] [INFO] [Pinecone] Upserting 1 vectors to Pinecone 
+[2025-03-24T01:54:41.286Z] [INFO] [Pinecone] Document upsert complete 
+[2025-03-24T01:54:41.287Z] [INFO] [API] Knowledge item upserted to Pinecone 
+[2025-03-24T01:54:50.065Z] [INFO] [API] RAG service request received {
+  "requestId": "api-rag-1742781290065"
+}
+[2025-03-24T01:54:50.065Z] [DEBUG] [API] RAG service request details {
+  "requestId": "api-rag-1742781290065",
+  "query": "hey what do you konw about me",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "d26c070b-ebc9-40df-a09b-121e1849cd3d"
+}
+[2025-03-24T01:54:50.065Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781290065",
+  "textLength": 29,
+  "textPreview": "hey what do you konw about me"
+}
+[2025-03-24T01:54:50.065Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-24T01:54:50.065Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781290065",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:54:50.862Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781290065",
+  "duration": 797,
+  "dimensions": 1536
+}
+[2025-03-24T01:54:50.862Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-24T01:54:50.862Z] [DEBUG] [Pinecone] Querying Pinecone {
+  "topK": 5,
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
+  "hasAdditionalContext": false,
+  "hasFilter": true
+}
+[2025-03-24T01:54:51.224Z] [DEBUG] [Pinecone] Fetching user knowledge items {
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T01:54:51.402Z] [INFO] [Pinecone] Processing user knowledge items {
+  "count": 2,
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T01:54:51.403Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781291403",
+  "textLength": 17,
+  "textPreview": "I love basketball"
+}
+[2025-03-24T01:54:51.403Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781291403",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:54:51.922Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781291403",
+  "duration": 519,
+  "dimensions": 1536
+}
+[2025-03-24T01:54:51.923Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "9f11361d-c878-4959-b610-015496a8f973",
+  "similarity": 0.20346452119341468,
+  "title": "test"
+}
+[2025-03-24T01:54:51.923Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781291923",
+  "textLength": 42,
+  "textPreview": "My name is Connor and I live in California"
+}
+[2025-03-24T01:54:51.923Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781291923",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:54:52.284Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781291923",
+  "duration": 361,
+  "dimensions": 1536
+}
+[2025-03-24T01:54:52.284Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "52fbce1a-396c-46b4-a669-749258773633",
+  "similarity": 0.3300633936279314,
+  "title": "Test Knowledge"
+}
+[2025-03-24T01:54:52.284Z] [DEBUG] [Pinecone] Upserting knowledge items to Pinecone {
+  "count": 2
+}
+[2025-03-24T01:54:52.284Z] [INFO] [Pinecone] Upserting documents {
+  "count": 2
+}
+[2025-03-24T01:54:52.284Z] [DEBUG] [Pinecone] Generating embedding for document 1/2 {
+  "textLength": 17,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T01:54:52.284Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781292284",
+  "textLength": 17,
+  "textPreview": "I love basketball"
+}
+[2025-03-24T01:54:52.284Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781292284",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:54:52.284Z] [INFO] [Pinecone] Query results combined {
+  "pineconeMatches": 5,
+  "knowledgeMatches": 0,
+  "totalMatches": 5
+}
+[2025-03-24T01:54:52.284Z] [INFO] [API] RAG service request completed {
+  "requestId": "api-rag-1742781290065",
+  "duration": 2219,
+  "matchCount": 5
+}
+[2025-03-24T01:54:52.293Z] [INFO] [API] Completion request received {
+  "requestId": "api-completion-1742781292293"
+}
+[2025-03-24T01:54:52.294Z] [DEBUG] [API] Completion request details {
+  "requestId": "api-completion-1742781292293",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 218,
+  "conversationId": "d26c070b-ebc9-40df-a09b-121e1849cd3d"
+}
+[2025-03-24T01:54:52.294Z] [DEBUG] [API] Calling getCompletion {
+  "requestId": "api-completion-1742781292293"
+}
+[2025-03-24T01:54:52.294Z] [INFO] [OpenAI] Getting completion {
+  "requestId": "completion-1742781292294",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 218
+}
+[2025-03-24T01:54:52.482Z] [DEBUG] [OpenAI] Retrieved active system prompt {
+  "requestId": "completion-1742781292294",
+  "hasSystemPrompt": true,
+  "promptName": "nice"
+}
+[2025-03-24T01:54:52.482Z] [DEBUG] [OpenAI] Adding context to system message {
+  "requestId": "completion-1742781292294",
+  "contextLength": 218
+}
+[2025-03-24T01:54:52.483Z] [DEBUG] [OpenAI] Calling chat completions API {
+  "requestId": "completion-1742781292294",
+  "model": "gpt-4o",
+  "messageCount": 2
+}
+[2025-03-24T01:54:53.065Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781292284",
+  "duration": 781,
+  "dimensions": 1536
+}
+[2025-03-24T01:54:53.066Z] [DEBUG] [Pinecone] Generating embedding for document 2/2 {
+  "textLength": 42,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T01:54:53.066Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781293066",
+  "textLength": 42,
+  "textPreview": "My name is Connor and I live in California"
+}
+[2025-03-24T01:54:53.066Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781293066",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:54:53.475Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781293066",
+  "duration": 409,
+  "dimensions": 1536
+}
+[2025-03-24T01:54:53.476Z] [INFO] [Pinecone] Upserting 2 vectors to Pinecone 
+[2025-03-24T01:54:53.676Z] [INFO] [Pinecone] Document upsert complete 
+[2025-03-24T01:54:53.682Z] [INFO] [OpenAI] Completion generated successfully {
+  "requestId": "completion-1742781292294",
+  "duration": 1199,
+  "promptTokens": 78,
+  "completionTokens": 60,
+  "totalTokens": 138,
+  "responseLength": 278
+}
+[2025-03-24T01:54:53.682Z] [DEBUG] [API] Logging messages to database {
+  "requestId": "api-completion-1742781292293",
+  "conversationId": "d26c070b-ebc9-40df-a09b-121e1849cd3d",
+  "userMessageLength": 260,
+  "assistantMessageLength": 278
+}
+[2025-03-24T01:54:53.859Z] [INFO] [API] Messages logged to database {
+  "requestId": "api-completion-1742781292293",
+  "conversationId": "d26c070b-ebc9-40df-a09b-121e1849cd3d"
+}
+[2025-03-24T01:54:53.860Z] [INFO] [API] Completion request completed {
+  "requestId": "api-completion-1742781292293",
+  "duration": 1388,
+  "answerLength": 278
+}
+[2025-03-24T01:54:54.057Z] [INFO] [OpenAI] Generating speech {
+  "requestId": "tts-1742781294057",
+  "textLength": 278,
+  "voice": "alloy"
+}
+[2025-03-24T01:54:54.057Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-24T01:54:54.057Z] [DEBUG] [OpenAI] Calling speech API {
+  "requestId": "tts-1742781294057",
+  "model": "tts-1",
+  "voice": "alloy"
+}
+[2025-03-24T01:54:57.722Z] [INFO] [OpenAI] Speech generated successfully {
+  "requestId": "tts-1742781294057",
+  "duration": 3665,
+  "bufferSize": 323520
+}
+[2025-03-24T01:55:19.117Z] [INFO] [API] RAG service request received {
+  "requestId": "api-rag-1742781319117"
+}
+[2025-03-24T01:55:19.118Z] [DEBUG] [API] RAG service request details {
+  "requestId": "api-rag-1742781319117",
+  "query": "what do you know about me",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "729a770b-4857-4697-af3d-8fe5e06571b5"
+}
+[2025-03-24T01:55:19.119Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781319119",
+  "textLength": 25,
+  "textPreview": "what do you know about me"
+}
+[2025-03-24T01:55:19.119Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-24T01:55:19.119Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781319119",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:55:19.954Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781319119",
+  "duration": 835,
+  "dimensions": 1536
+}
+[2025-03-24T01:55:19.955Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-24T01:55:19.955Z] [DEBUG] [Pinecone] Querying Pinecone {
+  "topK": 5,
+  "userId": "739cf529-f9af-4bd0-8d2f-daa43f9f8661",
+  "hasAdditionalContext": false,
+  "hasFilter": true
+}
+[2025-03-24T01:55:20.400Z] [DEBUG] [Pinecone] Fetching user knowledge items {
+  "userId": "739cf529-f9af-4bd0-8d2f-daa43f9f8661"
+}
+[2025-03-24T01:55:20.717Z] [INFO] [Pinecone] Processing user knowledge items {
+  "count": 2,
+  "userId": "739cf529-f9af-4bd0-8d2f-daa43f9f8661"
+}
+[2025-03-24T01:55:20.717Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781320717",
+  "textLength": 18,
+  "textPreview": "my name is connor\n"
+}
+[2025-03-24T01:55:20.717Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781320717",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:55:21.062Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781320717",
+  "duration": 345,
+  "dimensions": 1536
+}
+[2025-03-24T01:55:21.063Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "95ff401d-2308-48a6-9d66-187a8ce71a58",
+  "similarity": 0.3659140306308676,
+  "title": "name"
+}
+[2025-03-24T01:55:21.064Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781321064",
+  "textLength": 4,
+  "textPreview": "test"
+}
+[2025-03-24T01:55:21.064Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781321064",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:55:24.907Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781321064",
+  "duration": 3843,
+  "dimensions": 1536
+}
+[2025-03-24T01:55:24.907Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "b385ad78-e78e-4a78-a556-81cc52660e77",
+  "similarity": 0.1986500791106323,
+  "title": "test"
+}
+[2025-03-24T01:55:24.907Z] [DEBUG] [Pinecone] Upserting knowledge items to Pinecone {
+  "count": 2
+}
+[2025-03-24T01:55:24.907Z] [INFO] [Pinecone] Upserting documents {
+  "count": 2
+}
+[2025-03-24T01:55:24.907Z] [DEBUG] [Pinecone] Generating embedding for document 1/2 {
+  "textLength": 18,
+  "source": "user_knowledge",
+  "userId": "739cf529-f9af-4bd0-8d2f-daa43f9f8661"
+}
+[2025-03-24T01:55:24.907Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781324907",
+  "textLength": 18,
+  "textPreview": "my name is connor\n"
+}
+[2025-03-24T01:55:24.907Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781324907",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:55:24.907Z] [INFO] [Pinecone] Query results combined {
+  "pineconeMatches": 5,
+  "knowledgeMatches": 0,
+  "totalMatches": 5
+}
+[2025-03-24T01:55:24.907Z] [INFO] [API] RAG service request completed {
+  "requestId": "api-rag-1742781319117",
+  "duration": 5788,
+  "matchCount": 5
+}
+[2025-03-24T01:55:24.922Z] [INFO] [API] Completion request received {
+  "requestId": "api-completion-1742781324922"
+}
+[2025-03-24T01:55:24.923Z] [DEBUG] [API] Completion request details {
+  "requestId": "api-completion-1742781324922",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 567,
+  "conversationId": "729a770b-4857-4697-af3d-8fe5e06571b5"
+}
+[2025-03-24T01:55:24.923Z] [DEBUG] [API] Calling getCompletion {
+  "requestId": "api-completion-1742781324922"
+}
+[2025-03-24T01:55:24.924Z] [INFO] [OpenAI] Getting completion {
+  "requestId": "completion-1742781324924",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 567
+}
+[2025-03-24T01:55:25.085Z] [DEBUG] [OpenAI] Retrieved active system prompt {
+  "requestId": "completion-1742781324924",
+  "hasSystemPrompt": true,
+  "promptName": "nice"
+}
+[2025-03-24T01:55:25.086Z] [DEBUG] [OpenAI] Adding context to system message {
+  "requestId": "completion-1742781324924",
+  "contextLength": 567
+}
+[2025-03-24T01:55:25.087Z] [DEBUG] [OpenAI] Calling chat completions API {
+  "requestId": "completion-1742781324924",
+  "model": "gpt-4o",
+  "messageCount": 2
+}
+[2025-03-24T01:55:25.599Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781324907",
+  "duration": 692,
+  "dimensions": 1536
+}
+[2025-03-24T01:55:25.599Z] [DEBUG] [Pinecone] Generating embedding for document 2/2 {
+  "textLength": 4,
+  "source": "user_knowledge",
+  "userId": "739cf529-f9af-4bd0-8d2f-daa43f9f8661"
+}
+[2025-03-24T01:55:25.599Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781325599",
+  "textLength": 4,
+  "textPreview": "test"
+}
+[2025-03-24T01:55:25.599Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781325599",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:55:26.117Z] [INFO] [OpenAI] Completion generated successfully {
+  "requestId": "completion-1742781324924",
+  "duration": 1030,
+  "promptTokens": 177,
+  "completionTokens": 44,
+  "totalTokens": 221,
+  "responseLength": 185
+}
+[2025-03-24T01:55:26.117Z] [DEBUG] [API] Logging messages to database {
+  "requestId": "api-completion-1742781324922",
+  "conversationId": "729a770b-4857-4697-af3d-8fe5e06571b5",
+  "userMessageLength": 609,
+  "assistantMessageLength": 185
+}
+[2025-03-24T01:55:26.269Z] [INFO] [API] Messages logged to database {
+  "requestId": "api-completion-1742781324922",
+  "conversationId": "729a770b-4857-4697-af3d-8fe5e06571b5"
+}
+[2025-03-24T01:55:26.269Z] [INFO] [API] Completion request completed {
+  "requestId": "api-completion-1742781324922",
+  "duration": 1194,
+  "answerLength": 185
+}
+[2025-03-24T01:55:26.271Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781325599",
+  "duration": 672,
+  "dimensions": 1536
+}
+[2025-03-24T01:55:26.271Z] [INFO] [Pinecone] Upserting 2 vectors to Pinecone 
+[2025-03-24T01:55:26.667Z] [INFO] [Pinecone] Document upsert complete 
+[2025-03-24T01:55:45.091Z] [INFO] [API] RAG service request received {
+  "requestId": "api-rag-1742781345090"
+}
+[2025-03-24T01:55:45.091Z] [DEBUG] [API] RAG service request details {
+  "requestId": "api-rag-1742781345090",
+  "query": "what do you know about me",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "5baf3045-cee5-4a48-966a-f3d148ca2e78"
+}
+[2025-03-24T01:55:45.092Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781345091",
+  "textLength": 25,
+  "textPreview": "what do you know about me"
+}
+[2025-03-24T01:55:45.092Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-24T01:55:45.092Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781345091",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:55:45.560Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781345091",
+  "duration": 468,
+  "dimensions": 1536
+}
+[2025-03-24T01:55:45.560Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-24T01:55:45.561Z] [DEBUG] [Pinecone] Querying Pinecone {
+  "topK": 5,
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
+  "hasAdditionalContext": false,
+  "hasFilter": true
+}
+[2025-03-24T01:55:45.901Z] [DEBUG] [Pinecone] Fetching user knowledge items {
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T01:55:46.053Z] [INFO] [Pinecone] Processing user knowledge items {
+  "count": 2,
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T01:55:46.053Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781346053",
+  "textLength": 17,
+  "textPreview": "I love basketball"
+}
+[2025-03-24T01:55:46.054Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781346053",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:55:46.420Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781346053",
+  "duration": 366,
+  "dimensions": 1536
+}
+[2025-03-24T01:55:46.421Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "9f11361d-c878-4959-b610-015496a8f973",
+  "similarity": 0.1896461766302622,
+  "title": "test"
+}
+[2025-03-24T01:55:46.421Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781346421",
+  "textLength": 42,
+  "textPreview": "My name is Connor and I live in California"
+}
+[2025-03-24T01:55:46.421Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781346421",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:55:46.670Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781346421",
+  "duration": 249,
+  "dimensions": 1536
+}
+[2025-03-24T01:55:46.670Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "52fbce1a-396c-46b4-a669-749258773633",
+  "similarity": 0.28303243296471675,
+  "title": "Test Knowledge"
+}
+[2025-03-24T01:55:46.671Z] [DEBUG] [Pinecone] Upserting knowledge items to Pinecone {
+  "count": 2
+}
+[2025-03-24T01:55:46.671Z] [INFO] [Pinecone] Upserting documents {
+  "count": 2
+}
+[2025-03-24T01:55:46.671Z] [DEBUG] [Pinecone] Generating embedding for document 1/2 {
+  "textLength": 17,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T01:55:46.671Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781346671",
+  "textLength": 17,
+  "textPreview": "I love basketball"
+}
+[2025-03-24T01:55:46.671Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781346671",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:55:46.671Z] [INFO] [Pinecone] Query results combined {
+  "pineconeMatches": 5,
+  "knowledgeMatches": 0,
+  "totalMatches": 5
+}
+[2025-03-24T01:55:46.671Z] [INFO] [API] RAG service request completed {
+  "requestId": "api-rag-1742781345090",
+  "duration": 1580,
+  "matchCount": 5
+}
+[2025-03-24T01:55:46.678Z] [INFO] [API] Completion request received {
+  "requestId": "api-completion-1742781346678"
+}
+[2025-03-24T01:55:46.679Z] [DEBUG] [API] Completion request details {
+  "requestId": "api-completion-1742781346678",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 218,
+  "conversationId": "5baf3045-cee5-4a48-966a-f3d148ca2e78"
+}
+[2025-03-24T01:55:46.679Z] [DEBUG] [API] Calling getCompletion {
+  "requestId": "api-completion-1742781346678"
+}
+[2025-03-24T01:55:46.679Z] [INFO] [OpenAI] Getting completion {
+  "requestId": "completion-1742781346679",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 218
+}
+[2025-03-24T01:55:46.850Z] [DEBUG] [OpenAI] Retrieved active system prompt {
+  "requestId": "completion-1742781346679",
+  "hasSystemPrompt": true,
+  "promptName": "nice"
+}
+[2025-03-24T01:55:46.850Z] [DEBUG] [OpenAI] Adding context to system message {
+  "requestId": "completion-1742781346679",
+  "contextLength": 218
+}
+[2025-03-24T01:55:46.850Z] [DEBUG] [OpenAI] Calling chat completions API {
+  "requestId": "completion-1742781346679",
+  "model": "gpt-4o",
+  "messageCount": 2
+}
+[2025-03-24T01:55:46.885Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781346671",
+  "duration": 214,
+  "dimensions": 1536
+}
+[2025-03-24T01:55:46.885Z] [DEBUG] [Pinecone] Generating embedding for document 2/2 {
+  "textLength": 42,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T01:55:46.885Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742781346885",
+  "textLength": 42,
+  "textPreview": "My name is Connor and I live in California"
+}
+[2025-03-24T01:55:46.886Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742781346885",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T01:55:47.182Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742781346885",
+  "duration": 296,
+  "dimensions": 1536
+}
+[2025-03-24T01:55:47.183Z] [INFO] [Pinecone] Upserting 2 vectors to Pinecone 
+[2025-03-24T01:55:47.394Z] [INFO] [Pinecone] Document upsert complete 
+[2025-03-24T01:55:48.629Z] [INFO] [OpenAI] Completion generated successfully {
+  "requestId": "completion-1742781346679",
+  "duration": 1779,
+  "promptTokens": 76,
+  "completionTokens": 79,
+  "totalTokens": 155,
+  "responseLength": 389
+}
+[2025-03-24T01:55:48.630Z] [DEBUG] [API] Logging messages to database {
+  "requestId": "api-completion-1742781346678",
+  "conversationId": "5baf3045-cee5-4a48-966a-f3d148ca2e78",
+  "userMessageLength": 260,
+  "assistantMessageLength": 389
+}
+[2025-03-24T01:55:48.911Z] [INFO] [API] Messages logged to database {
+  "requestId": "api-completion-1742781346678",
+  "conversationId": "5baf3045-cee5-4a48-966a-f3d148ca2e78"
+}
+[2025-03-24T01:55:48.911Z] [INFO] [API] Completion request completed {
+  "requestId": "api-completion-1742781346678",
+  "duration": 1951,
+  "answerLength": 389
+}
+[2025-03-24T01:55:48.921Z] [INFO] [OpenAI] Generating speech {
+  "requestId": "tts-1742781348921",
+  "textLength": 389,
+  "voice": "alloy"
+}
+[2025-03-24T01:55:48.921Z] [DEBUG] [OpenAI] Calling speech API {
+  "requestId": "tts-1742781348921",
+  "model": "tts-1",
+  "voice": "alloy"
+}
+[2025-03-24T01:55:52.753Z] [INFO] [OpenAI] Speech generated successfully {
+  "requestId": "tts-1742781348921",
+  "duration": 3832,
+  "bufferSize": 487680
+}
+[2025-03-24T01:56:32.256Z] [INFO] [API] Getting server logs (and possibly message logs) 
+[2025-03-24T01:56:32.257Z] [INFO] [API] Getting server logs (and possibly message logs) 
+[2025-03-24T01:56:32.582Z] [INFO] [API] Getting server logs (and possibly message logs) 
