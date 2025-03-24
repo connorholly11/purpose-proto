@@ -8,6 +8,11 @@ import {
 
 // Get performance metrics with optional filters
 export async function GET(request: NextRequest) {
+  // Added environment var check
+  if (!process.env.DATABASE_URL) {
+    console.error("Warning: No DATABASE_URL found in environment. This might cause 500 errors in production.");
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const feature = searchParams.get('feature');
@@ -34,9 +39,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ metrics });
   } catch (error) {
     console.error('Error fetching performance metrics:', error);
+    // Extended error details
+    console.error('Full error details:', error);
     return NextResponse.json(
       { error: 'Failed to fetch performance metrics' },
       { status: 500 }
     );
   }
-} 
+}

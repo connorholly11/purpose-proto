@@ -5,48 +5,51 @@ import {
   createMemorySummary,
   getMessagesSinceLastSummary
 } from '@/lib/services/memoryService';
-import logger from '@/lib/utils/logger';
 
 // GET - Retrieve conversation memory
 export async function GET(request: NextRequest) {
+  // Added environment var check
+  if (!process.env.DATABASE_URL) {
+    console.error("Warning: No DATABASE_URL found in environment. This might cause 500 errors in production.");
+  }
+
   try {
     // Parse the conversation ID from the URL
     const pathParts = request.nextUrl.pathname.split('/');
     const conversationId = pathParts[pathParts.indexOf('conversations') + 1];
-    
-    logger.info('Memory API', 'Fetching memory summaries', { conversationId });
 
     // Get summaries for the conversation
     const summaries = await getConversationSummaries(conversationId);
 
     return NextResponse.json({ summaries });
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    logger.error('Memory API', 'Error fetching memory', { error: errorMsg });
-    
-    // Return empty summaries instead of failing with 500
-    return NextResponse.json({ summaries: [] });
+    console.error('Error fetching memory:', error);
+    // Extended error details
+    console.error('Full error details:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch conversation memory' },
+      { status: 500 }
+    );
   }
 }
 
 // POST - Generate a new summary/memory
 export async function POST(request: NextRequest) {
+  // Added environment var check
+  if (!process.env.DATABASE_URL) {
+    console.error("Warning: No DATABASE_URL found in environment. This might cause 500 errors in production.");
+  }
+
   try {
     const pathParts = request.nextUrl.pathname.split('/');
     const conversationId = pathParts[pathParts.indexOf('conversations') + 1];
     
     const body = await request.json();
     const { type = 'short_term' } = body;
-    
-    logger.info('Memory API', 'Creating new memory summary', { 
-      conversationId, 
-      type 
-    });
 
     // Check if conversation exists
     const conversation = await getConversationById(conversationId);
     if (!conversation) {
-      logger.warn('Memory API', 'Conversation not found', { conversationId });
       return NextResponse.json(
         { error: 'Conversation not found' },
         { status: 404 }
@@ -57,7 +60,6 @@ export async function POST(request: NextRequest) {
     const messages = await getMessagesSinceLastSummary(conversationId);
 
     if (messages.length === 0) {
-      logger.info('Memory API', 'No new messages to summarize', { conversationId });
       return NextResponse.json(
         { error: 'No new messages to summarize' },
         { status: 400 }
@@ -66,20 +68,15 @@ export async function POST(request: NextRequest) {
 
     // Create a new memory summary
     const summary = await createMemorySummary(conversationId, messages, type);
-    
-    logger.info('Memory API', 'Memory summary created successfully', { 
-      conversationId, 
-      summaryId: summary?.id 
-    });
 
     return NextResponse.json({ summary });
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    logger.error('Memory API', 'Error creating memory', { error: errorMsg });
-    
+    console.error('Error creating memory:', error);
+    // Extended error details
+    console.error('Full error details:', error);
     return NextResponse.json(
       { error: 'Failed to create conversation memory' },
       { status: 500 }
     );
   }
-} 
+}

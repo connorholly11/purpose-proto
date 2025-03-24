@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPrismaClient } from '@/lib/services/prisma';
 
 export async function GET() {
+  // Added environment var check
+  if (!process.env.DATABASE_URL) {
+    console.error("Warning: No DATABASE_URL found in environment. This might cause 500 errors in production.");
+  }
+
   try {
     const prisma = getPrismaClient();
     
@@ -53,9 +58,11 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error fetching user activity:', error);
+    // Extended error details
+    console.error('Full error details:', error);
     return NextResponse.json(
       { error: 'Failed to fetch user activity' },
       { status: 500 }
     );
   }
-} 
+}

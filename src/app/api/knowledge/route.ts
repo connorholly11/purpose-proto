@@ -4,6 +4,11 @@ import { upsertDocuments } from '@/lib/services/pinecone';
 import logger from '@/lib/utils/logger';
 
 export async function GET(request: NextRequest) {
+  // Added environment var check
+  if (!process.env.DATABASE_URL) {
+    console.error("Warning: No DATABASE_URL found in environment. This might cause 500 errors in production.");
+  }
+
   try {
     // Get userId from query params or headers
     const searchParams = request.nextUrl.searchParams;
@@ -27,6 +32,8 @@ export async function GET(request: NextRequest) {
     logger.error('API', 'Error fetching knowledge items', {
       error: (error as Error).message
     });
+    // Extended error details
+    console.error('Full error details:', error);
     
     return NextResponse.json(
       { error: 'Failed to fetch knowledge items' },
@@ -36,6 +43,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Added environment var check
+  if (!process.env.DATABASE_URL) {
+    console.error("Warning: No DATABASE_URL found in environment. This might cause 500 errors in production.");
+  }
+
   try {
     // Get userId from body or headers
     const body = await request.json();
@@ -95,10 +107,12 @@ export async function POST(request: NextRequest) {
     logger.error('API', 'Error creating knowledge item', {
       error: (error as Error).message
     });
+    // Extended error details
+    console.error('Full error details:', error);
     
     return NextResponse.json(
       { error: 'Failed to create knowledge item' },
       { status: 500 }
     );
   }
-} 
+}

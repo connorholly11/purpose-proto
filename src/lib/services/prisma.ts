@@ -12,46 +12,12 @@ declare global {
 export function getPrismaClient(): PrismaClient {
   if (process.env.NODE_ENV === 'production') {
     if (!prismaInstance) {
-      logger.info('Prisma', 'Initializing production Prisma client');
-      prismaInstance = new PrismaClient({
-        log: ['error', 'warn'],
-        errorFormat: 'pretty',
-      });
-      
-      // Ensure the database connection works
-      const client = prismaInstance; // Create a stable reference
-      client.$connect()
-        .then(() => {
-          logger.info('Prisma', 'Connected to database successfully');
-          
-          // Ensure uuid-ossp extension exists (best effort)
-          return client.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"')
-            .catch(err => {
-              // Log but don't throw to prevent app crash - DB fix endpoint can handle this properly
-              logger.error('Prisma', 'Failed to create uuid-ossp extension', { error: err.message });
-            });
-        })
-        .catch(err => {
-          logger.error('Prisma', 'Failed to connect to database', { 
-            error: err.message,
-            hint: 'Check DATABASE_URL environment variable and database accessibility'
-          });
-        });
+      prismaInstance = new PrismaClient();
     }
     return prismaInstance;
   } else {
     if (!global._prismaClient) {
-      logger.info('Prisma', 'Initializing development Prisma client');
-      global._prismaClient = new PrismaClient({
-        log: ['query', 'error', 'warn'],
-        errorFormat: 'pretty',
-      });
-      
-      // Ensure uuid-ossp extension in development too
-      global._prismaClient.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"')
-        .catch(err => {
-          logger.warn('Prisma', 'Failed to create uuid-ossp extension in development', { error: err.message });
-        });
+      global._prismaClient = new PrismaClient();
     }
     return global._prismaClient;
   }
@@ -62,19 +28,11 @@ export function getPrismaClient(): PrismaClient {
 // --------------------------------
 export async function createUser(name?: string) {
   const prisma = getPrismaClient();
-  try {
-    return await prisma.user.create({
-      data: {
-        name,
-      },
-    });
-  } catch (error) {
-    logger.error('Prisma', 'Failed to create user', { 
-      error: error instanceof Error ? error.message : String(error),
-      name 
-    });
-    throw error;
-  }
+  return prisma.user.create({
+    data: {
+      name,
+    },
+  });
 }
 
 export async function getUserById(id: string) {

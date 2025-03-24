@@ -3,6 +3,11 @@ import { createFeedback, getAllFeedback } from '@/lib/services/feedbackService';
 
 // Get all feedback (admin only)
 export async function GET(request: NextRequest) {
+  // Added environment var check
+  if (!process.env.DATABASE_URL) {
+    console.error("Warning: No DATABASE_URL found in environment. This might cause 500 errors in production.");
+  }
+
   try {
     // In a real app, you would verify the user has admin rights here
     
@@ -19,6 +24,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ feedback });
   } catch (error) {
     console.error('Error fetching feedback:', error);
+    // Extended error details
+    console.error('Full error details:', error);
     return NextResponse.json(
       { error: 'Failed to fetch feedback' },
       { status: 500 }
@@ -28,6 +35,11 @@ export async function GET(request: NextRequest) {
 
 // Create a new feedback entry
 export async function POST(request: NextRequest) {
+  // Added environment var check
+  if (!process.env.DATABASE_URL) {
+    console.error("Warning: No DATABASE_URL found in environment. This might cause 500 errors in production.");
+  }
+
   try {
     const { category, content, userId, screenshot } = await request.json();
     
@@ -43,9 +55,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ feedback }, { status: 201 });
   } catch (error) {
     console.error('Error creating feedback:', error);
+    // Extended error details
+    console.error('Full error details:', error);
     return NextResponse.json(
       { error: 'Failed to create feedback' },
       { status: 500 }
     );
   }
-} 
+}

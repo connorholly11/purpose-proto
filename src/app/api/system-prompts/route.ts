@@ -4,14 +4,16 @@ import {
   getAllSystemPrompts,
   getActiveSystemPrompt
 } from '@/lib/services/promptService';
-import logger from '@/lib/utils/logger';
 
 export async function GET(request: NextRequest) {
+  // Added environment var check
+  if (!process.env.DATABASE_URL) {
+    console.error("Warning: No DATABASE_URL found in environment. This might cause 500 errors in production.");
+  }
+
   try {
     const params = request.nextUrl.searchParams;
     const activeOnly = params.get('activeOnly') === 'true';
-    
-    logger.info('SystemPrompts API', 'Fetching system prompts', { activeOnly });
 
     if (activeOnly) {
       const activePrompt = await getActiveSystemPrompt();
@@ -21,40 +23,32 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ systemPrompts });
     }
   } catch (error: unknown) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    logger.error('SystemPrompts API', 'Error fetching system prompts', { error: errorMsg });
-    
-    // Return empty results instead of failing with 500
-    return NextResponse.json({ 
-      systemPrompts: [], 
-      systemPrompt: null,
-      error: 'An error occurred fetching prompts. Please verify the database connection.'
-    });
+    console.error('Error fetching system prompts:', error);
+    // Extended error details
+    console.error('Full error details:', error);
+    return NextResponse.json({ error: 'Failed to fetch system prompts' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
+  // Added environment var check
+  if (!process.env.DATABASE_URL) {
+    console.error("Warning: No DATABASE_URL found in environment. This might cause 500 errors in production.");
+  }
+
   try {
     const { name, content, status } = await request.json();
-    
-    logger.info('SystemPrompts API', 'Creating system prompt', { name, status });
 
     if (!name || !content) {
-      logger.warn('SystemPrompts API', 'Missing required fields', { 
-        hasName: !!name, 
-        hasContent: !!content 
-      });
       return NextResponse.json({ error: 'Name and content are required' }, { status: 400 });
     }
 
     const systemPrompt = await createSystemPrompt(name, content, status);
-    logger.info('SystemPrompts API', 'System prompt created successfully', { id: systemPrompt.id });
     return NextResponse.json({ systemPrompt }, { status: 201 });
   } catch (error: unknown) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    logger.error('SystemPrompts API', 'Error creating system prompt', { error: errorMsg });
-    return NextResponse.json({ 
-      error: 'Failed to create system prompt. Please verify the database connection.'
-    }, { status: 500 });
+    console.error('Error creating system prompt:', error);
+    // Extended error details
+    console.error('Full error details:', error);
+    return NextResponse.json({ error: 'Failed to create system prompt' }, { status: 500 });
   }
 }

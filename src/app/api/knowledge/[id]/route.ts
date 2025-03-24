@@ -5,6 +5,11 @@ export async function GET(
   request: NextRequest,
   context: { params: { id: string } }
 ) {
+  // Added environment var check
+  if (!process.env.DATABASE_URL) {
+    console.error("Warning: No DATABASE_URL found in environment. This might cause 500 errors in production.");
+  }
+
   try {
     const id = context.params.id;
     
@@ -27,6 +32,8 @@ export async function GET(
     return NextResponse.json({ knowledgeItem });
   } catch (error) {
     console.error('Error fetching knowledge item:', error);
+    // Extended error details
+    console.error('Full error details:', error);
     return NextResponse.json(
       { error: 'Failed to fetch knowledge item' },
       { status: 500 }
@@ -38,6 +45,11 @@ export async function PUT(
   request: NextRequest,
   context: { params: { id: string } }
 ) {
+  // Added environment var check
+  if (!process.env.DATABASE_URL) {
+    console.error("Warning: No DATABASE_URL found in environment. This might cause 500 errors in production.");
+  }
+
   try {
     const id = context.params.id;
     
@@ -62,6 +74,8 @@ export async function PUT(
     return NextResponse.json({ knowledgeItem });
   } catch (error) {
     console.error('Error updating knowledge item:', error);
+    // Extended error details
+    console.error('Full error details:', error);
     return NextResponse.json(
       { error: 'Failed to update knowledge item' },
       { status: 500 }
@@ -73,6 +87,11 @@ export async function DELETE(
   request: NextRequest,
   context: { params: { id: string } }
 ) {
+  // Added environment var check
+  if (!process.env.DATABASE_URL) {
+    console.error("Warning: No DATABASE_URL found in environment. This might cause 500 errors in production.");
+  }
+
   try {
     const id = context.params.id;
     
@@ -88,9 +107,11 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting knowledge item:', error);
+    // Extended error details
+    console.error('Full error details:', error);
     return NextResponse.json(
       { error: 'Failed to delete knowledge item' },
       { status: 500 }
     );
   }
-} 
+}
