@@ -36085,3 +36085,1432 @@
   "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
   "count": 31
 }
+[2025-03-24T22:08:17.238Z] [INFO] [API] RAG service request received {
+  "requestId": "api-rag-1742854097238"
+}
+[2025-03-24T22:08:17.240Z] [DEBUG] [API] RAG service request details {
+  "requestId": "api-rag-1742854097238",
+  "query": "hey there",
+  "topK": 5,
+  "source": "chat",
+  "conversationId": "65eb8285-3e83-4bd5-95bf-9239ae917ee5"
+}
+[2025-03-24T22:08:17.241Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854097241",
+  "textLength": 9,
+  "textPreview": "hey there"
+}
+[2025-03-24T22:08:17.241Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-24T22:08:17.242Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854097241",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:18.442Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854097241",
+  "duration": 1200,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:18.448Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-24T22:08:18.469Z] [DEBUG] [Pinecone] Querying Pinecone {
+  "topK": 5,
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
+  "hasAdditionalContext": false,
+  "hasFilter": true,
+  "queryLength": 9,
+  "isIdentityQuery": false
+}
+[2025-03-24T22:08:20.009Z] [INFO] [Pinecone] Pinecone search results {
+  "matchesFound": 5,
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
+  "topScore": 0.537437856
+}
+[2025-03-24T22:08:20.010Z] [DEBUG] [Pinecone] Fetching user knowledge items {
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:20.455Z] [INFO] [Pinecone] Processing user knowledge items {
+  "count": 31,
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
+  "isIdentityQuery": false
+}
+[2025-03-24T22:08:20.459Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854100458",
+  "textLength": 322,
+  "textPreview": "User: hey whats up\n\nAI: Oh, look who's back again ..."
+}
+[2025-03-24T22:08:20.459Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854100458",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:21.109Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854100458",
+  "duration": 650,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:21.110Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "b8550cc1-debf-4a7d-a3d6-04fb4870bfdd",
+  "similarity": 0.3856687277320978,
+  "title": "Conversation on 3/24/2025",
+  "contentPreview": "User: hey whats up\n\nAI: Oh, look who's back again ..."
+}
+[2025-03-24T22:08:21.111Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854101110",
+  "textLength": 249,
+  "textPreview": "User: hey my name is connor\n\nAI: Hello, Connor! It..."
+}
+[2025-03-24T22:08:21.111Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854101110",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:21.513Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854101110",
+  "duration": 402,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:21.515Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "aebd8f01-3391-4c8c-b367-26a3a4921c65",
+  "similarity": 0.3866927849392092,
+  "title": "Conversation on 3/24/2025",
+  "contentPreview": "User: hey my name is connor\n\nAI: Hello, Connor! It..."
+}
+[2025-03-24T22:08:21.516Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854101516",
+  "textLength": 268,
+  "textPreview": "User: do you know my name\n\nAI: I don't have access..."
+}
+[2025-03-24T22:08:21.517Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854101516",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:22.452Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854101516",
+  "duration": 935,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:22.457Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "4b777551-6b6f-4de3-8417-519c8b370681",
+  "similarity": 0.34119136966336666,
+  "title": "Conversation on 3/24/2025",
+  "contentPreview": "User: do you know my name\n\nAI: I don't have access..."
+}
+[2025-03-24T22:08:22.458Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854102458",
+  "textLength": 250,
+  "textPreview": "User: do you know where im from\n\nAI: I don't have ..."
+}
+[2025-03-24T22:08:22.459Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854102458",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:23.361Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854102458",
+  "duration": 902,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:23.362Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "ccd378f9-9b9f-448b-9100-4de2f1bdde32",
+  "similarity": 0.2675186970365908,
+  "title": "Conversation on 3/24/2025",
+  "contentPreview": "User: do you know where im from\n\nAI: I don't have ..."
+}
+[2025-03-24T22:08:23.362Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854103362",
+  "textLength": 348,
+  "textPreview": "User: hey tell me what you know about me\n\nAI: Hell..."
+}
+[2025-03-24T22:08:23.363Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854103362",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:28.841Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854103362",
+  "duration": 5477,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:28.855Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "ddaa8f13-4ee4-4299-b010-d385ac007301",
+  "similarity": 0.34881017735799763,
+  "title": "Conversation on 3/24/2025",
+  "contentPreview": "User: hey tell me what you know about me\n\nAI: Hell..."
+}
+[2025-03-24T22:08:28.863Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854108863",
+  "textLength": 249,
+  "textPreview": "User: hey there do you remember me\n\nAI: Hello! At ..."
+}
+[2025-03-24T22:08:28.926Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854108863",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:29.612Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854108863",
+  "duration": 687,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:29.612Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "2a4692b0-d989-4ae7-8f65-59b8b7ddf67e",
+  "similarity": 0.4072965053244379,
+  "title": "Conversation on 3/24/2025",
+  "contentPreview": "User: hey there do you remember me\n\nAI: Hello! At ..."
+}
+[2025-03-24T22:08:29.613Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854109613",
+  "textLength": 345,
+  "textPreview": "User: what do you know about me\n\nAI: I know that y..."
+}
+[2025-03-24T22:08:29.613Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854109613",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:30.252Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854109613",
+  "duration": 639,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:30.253Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "93129da4-5dec-4c65-bed3-db2647f23c3d",
+  "similarity": 0.25767682892453136,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: what do you know about me\n\nAI: I know that y..."
+}
+[2025-03-24T22:08:30.253Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854110253",
+  "textLength": 353,
+  "textPreview": "User: hey there. what do you know about me\n\nAI: He..."
+}
+[2025-03-24T22:08:30.254Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854110253",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:30.913Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854110253",
+  "duration": 658,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:30.913Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "f83e2b0f-eadd-4e48-b459-8a50f90d1b7a",
+  "similarity": 0.4010282250336462,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hey there. what do you know about me\n\nAI: He..."
+}
+[2025-03-24T22:08:30.914Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854110914",
+  "textLength": 361,
+  "textPreview": "User: hey there. what do you know about me\n\nAI: He..."
+}
+[2025-03-24T22:08:30.915Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854110914",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:31.629Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854110914",
+  "duration": 714,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:31.629Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "28e87a41-029c-4eb3-ae0a-e73867487841",
+  "similarity": 0.39758999838824016,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hey there. what do you know about me\n\nAI: He..."
+}
+[2025-03-24T22:08:31.630Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854111630",
+  "textLength": 336,
+  "textPreview": "User: what do you know about me?\n\nAI: I don't have..."
+}
+[2025-03-24T22:08:31.630Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854111630",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:32.128Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854111630",
+  "duration": 498,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:32.129Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "53999dfe-61de-46a8-ab08-0633e4d7bb75",
+  "similarity": 0.2683149946079219,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: what do you know about me?\n\nAI: I don't have..."
+}
+[2025-03-24T22:08:32.129Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854112129",
+  "textLength": 249,
+  "textPreview": "User: hey there!\n\nAI: Hello again! 😊 How's your d..."
+}
+[2025-03-24T22:08:32.129Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854112129",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:32.520Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854112129",
+  "duration": 391,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:32.521Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "aab06f27-e630-4aa1-aeb8-90c34ef28c71",
+  "similarity": 0.480660413067687,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hey there!\n\nAI: Hello again! 😊 How's your d..."
+}
+[2025-03-24T22:08:32.523Z] [INFO] [Pinecone] Including knowledge item in results {
+  "itemId": "aab06f27-e630-4aa1-aeb8-90c34ef28c71",
+  "similarity": 0.480660413067687,
+  "title": "Conversation on 3/23/2025"
+}
+[2025-03-24T22:08:32.524Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854112524",
+  "textLength": 423,
+  "textPreview": "User: do you konw anything about me. do you rememb..."
+}
+[2025-03-24T22:08:32.524Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854112524",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:32.823Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854112524",
+  "duration": 299,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:32.824Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "6846749e-c60e-4e6b-887f-593548c14721",
+  "similarity": 0.3002369035361015,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: do you konw anything about me. do you rememb..."
+}
+[2025-03-24T22:08:32.824Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854112824",
+  "textLength": 210,
+  "textPreview": "User: hey there\n\nAI: Hello there! 😊 How are you d..."
+}
+[2025-03-24T22:08:32.824Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854112824",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:33.131Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854112824",
+  "duration": 307,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:33.132Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "9b9fe365-62fb-4dd0-80cc-31fad40da699",
+  "similarity": 0.5372953645960136,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hey there\n\nAI: Hello there! 😊 How are you d..."
+}
+[2025-03-24T22:08:33.132Z] [INFO] [Pinecone] Including knowledge item in results {
+  "itemId": "9b9fe365-62fb-4dd0-80cc-31fad40da699",
+  "similarity": 0.5372953645960136,
+  "title": "Conversation on 3/23/2025"
+}
+[2025-03-24T22:08:33.133Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854113133",
+  "textLength": 226,
+  "textPreview": "User: Thanks for watching!\n\nAI: You're so very wel..."
+}
+[2025-03-24T22:08:33.134Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854113133",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:33.869Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854113133",
+  "duration": 735,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:33.870Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "58528782-db4a-4095-8c66-c2b86dfb4c77",
+  "similarity": 0.3120420600924053,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: Thanks for watching!\n\nAI: You're so very wel..."
+}
+[2025-03-24T22:08:33.874Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854113874",
+  "textLength": 111,
+  "textPreview": "User: Testing, testing, testing, is this working?\n..."
+}
+[2025-03-24T22:08:33.878Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854113874",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:34.395Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854113874",
+  "duration": 517,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:34.396Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "24ce4458-2b3c-4e4f-8ddb-5d9ae550791a",
+  "similarity": 0.2937262020144771,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: Testing, testing, testing, is this working?\n..."
+}
+[2025-03-24T22:08:34.396Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854114396",
+  "textLength": 276,
+  "textPreview": "User: Thanks for watching!\n\nAI: You're so very wel..."
+}
+[2025-03-24T22:08:34.397Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854114396",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:35.463Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854114396",
+  "duration": 1066,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:35.464Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "4e622e6d-d181-46f0-97ee-d4befe08acd8",
+  "similarity": 0.3011923152579166,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: Thanks for watching!\n\nAI: You're so very wel..."
+}
+[2025-03-24T22:08:35.464Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854115464",
+  "textLength": 267,
+  "textPreview": "User: hi\n\nAI: Hello there! 😊 I'm absolutely delig..."
+}
+[2025-03-24T22:08:35.464Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854115464",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:35.985Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854115464",
+  "duration": 521,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:35.986Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "2cccee65-218a-47a1-8629-73fafe8c78ce",
+  "similarity": 0.41966368465553,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hi\n\nAI: Hello there! 😊 I'm absolutely delig..."
+}
+[2025-03-24T22:08:35.986Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854115986",
+  "textLength": 247,
+  "textPreview": "User: hi\n\nAI: Hi there! 😊 I'm absolutely thrilled..."
+}
+[2025-03-24T22:08:35.986Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854115986",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:36.432Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854115986",
+  "duration": 446,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:36.432Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "b584ada5-afbb-479c-97a0-eb8a87ea9ae8",
+  "similarity": 0.4312860540398797,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hi\n\nAI: Hi there! 😊 I'm absolutely thrilled..."
+}
+[2025-03-24T22:08:36.433Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854116433",
+  "textLength": 281,
+  "textPreview": "User: hi\n\nAI: Hello! 😊 How are you today? It's so..."
+}
+[2025-03-24T22:08:36.433Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854116433",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:36.879Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854116433",
+  "duration": 446,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:36.879Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "a796c59d-7ba6-4d29-899e-dfc2c0ce35b8",
+  "similarity": 0.3959927508150572,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hi\n\nAI: Hello! 😊 How are you today? It's so..."
+}
+[2025-03-24T22:08:36.880Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854116880",
+  "textLength": 260,
+  "textPreview": "User: hey there\n\nAI: Hello there! 😊 I hope you're..."
+}
+[2025-03-24T22:08:36.880Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854116880",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:37.296Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854116880",
+  "duration": 416,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:37.296Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "27044079-2ddd-4e57-a931-c44b68bd0114",
+  "similarity": 0.5297245513503809,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hey there\n\nAI: Hello there! 😊 I hope you're..."
+}
+[2025-03-24T22:08:37.297Z] [INFO] [Pinecone] Including knowledge item in results {
+  "itemId": "27044079-2ddd-4e57-a931-c44b68bd0114",
+  "similarity": 0.5297245513503809,
+  "title": "Conversation on 3/23/2025"
+}
+[2025-03-24T22:08:37.297Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854117297",
+  "textLength": 279,
+  "textPreview": "User: hey\n\nAI: Hi there! 😊 It's so lovely to hear..."
+}
+[2025-03-24T22:08:37.297Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854117297",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:37.688Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854117297",
+  "duration": 391,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:37.688Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "02dd10bc-89ee-481e-8ed3-d23cf3eabde3",
+  "similarity": 0.4731944455191022,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hey\n\nAI: Hi there! 😊 It's so lovely to hear..."
+}
+[2025-03-24T22:08:37.689Z] [INFO] [Pinecone] Including knowledge item in results {
+  "itemId": "02dd10bc-89ee-481e-8ed3-d23cf3eabde3",
+  "similarity": 0.4731944455191022,
+  "title": "Conversation on 3/23/2025"
+}
+[2025-03-24T22:08:37.690Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854117690",
+  "textLength": 216,
+  "textPreview": "User: hey\n\nAI: Hey there! 😊 How's everything goin..."
+}
+[2025-03-24T22:08:37.690Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854117690",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:38.097Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854117690",
+  "duration": 407,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:38.097Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "a4e2f9a8-8ba9-43b4-bfe2-6f785a28eb86",
+  "similarity": 0.4789996114204029,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hey\n\nAI: Hey there! 😊 How's everything goin..."
+}
+[2025-03-24T22:08:38.097Z] [INFO] [Pinecone] Including knowledge item in results {
+  "itemId": "a4e2f9a8-8ba9-43b4-bfe2-6f785a28eb86",
+  "similarity": 0.4789996114204029,
+  "title": "Conversation on 3/23/2025"
+}
+[2025-03-24T22:08:38.097Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854118097",
+  "textLength": 348,
+  "textPreview": "User: do you know anything about me\n\nAI: I don't h..."
+}
+[2025-03-24T22:08:38.097Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854118097",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:38.368Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854118097",
+  "duration": 271,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:38.368Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "8f318672-6a0a-476e-bc65-db41fe7a19e9",
+  "similarity": 0.2982111958903375,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: do you know anything about me\n\nAI: I don't h..."
+}
+[2025-03-24T22:08:38.368Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854118368",
+  "textLength": 346,
+  "textPreview": "User: do you know anything about me\n\nAI: I don't h..."
+}
+[2025-03-24T22:08:38.368Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854118368",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:38.717Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854118368",
+  "duration": 349,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:38.718Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "7ad5fc45-f9f1-450c-be0c-315aad5b3388",
+  "similarity": 0.32003993219382154,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: do you know anything about me\n\nAI: I don't h..."
+}
+[2025-03-24T22:08:38.719Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854118719",
+  "textLength": 201,
+  "textPreview": "User: hey\n\nAI: Hello! 😊 How are you today? I hope..."
+}
+[2025-03-24T22:08:38.719Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854118719",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:39.294Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854118719",
+  "duration": 575,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:39.296Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "269158fc-5e41-4039-9a06-3a4f9cbd26f4",
+  "similarity": 0.49365397998170174,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hey\n\nAI: Hello! 😊 How are you today? I hope..."
+}
+[2025-03-24T22:08:39.297Z] [INFO] [Pinecone] Including knowledge item in results {
+  "itemId": "269158fc-5e41-4039-9a06-3a4f9cbd26f4",
+  "similarity": 0.49365397998170174,
+  "title": "Conversation on 3/23/2025"
+}
+[2025-03-24T22:08:39.298Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854119298",
+  "textLength": 216,
+  "textPreview": "User: hey\n\nAI: Hey there! 😊 How are you today? I ..."
+}
+[2025-03-24T22:08:39.299Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854119298",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:39.844Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854119298",
+  "duration": 545,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:39.845Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "2dddb210-2867-4d14-9933-0f2651e1dfb6",
+  "similarity": 0.5092410886610014,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hey\n\nAI: Hey there! 😊 How are you today? I ..."
+}
+[2025-03-24T22:08:39.845Z] [INFO] [Pinecone] Including knowledge item in results {
+  "itemId": "2dddb210-2867-4d14-9933-0f2651e1dfb6",
+  "similarity": 0.5092410886610014,
+  "title": "Conversation on 3/23/2025"
+}
+[2025-03-24T22:08:39.845Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854119845",
+  "textLength": 476,
+  "textPreview": "User: I love football, basketball and really all s..."
+}
+[2025-03-24T22:08:39.845Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854119845",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:40.242Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854119845",
+  "duration": 397,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:40.242Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "6db95169-6a2d-4a97-aa7f-56bed059c1cb",
+  "similarity": 0.2126543877788545,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: I love football, basketball and really all s..."
+}
+[2025-03-24T22:08:40.243Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854120243",
+  "textLength": 264,
+  "textPreview": "User: hey there\n\nAI: Hello again! 🌺 I'm so deligh..."
+}
+[2025-03-24T22:08:40.243Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854120243",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:40.448Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854120243",
+  "duration": 205,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:40.448Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "74f45308-cc85-49d1-b3e6-3df5cf53a885",
+  "similarity": 0.45967157855501906,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hey there\n\nAI: Hello again! 🌺 I'm so deligh..."
+}
+[2025-03-24T22:08:40.449Z] [INFO] [Pinecone] Including knowledge item in results {
+  "itemId": "74f45308-cc85-49d1-b3e6-3df5cf53a885",
+  "similarity": 0.45967157855501906,
+  "title": "Conversation on 3/23/2025"
+}
+[2025-03-24T22:08:40.449Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854120449",
+  "textLength": 210,
+  "textPreview": "User: hey there\n\nAI: Hello there! 😊 How are you d..."
+}
+[2025-03-24T22:08:40.449Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854120449",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:40.996Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854120449",
+  "duration": 547,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:40.997Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "2db3e5b3-5a16-4087-9edf-c00918edf7e5",
+  "similarity": 0.5372953645960136,
+  "title": "Conversation on 3/23/2025",
+  "contentPreview": "User: hey there\n\nAI: Hello there! 😊 How are you d..."
+}
+[2025-03-24T22:08:40.998Z] [INFO] [Pinecone] Including knowledge item in results {
+  "itemId": "2db3e5b3-5a16-4087-9edf-c00918edf7e5",
+  "similarity": 0.5372953645960136,
+  "title": "Conversation on 3/23/2025"
+}
+[2025-03-24T22:08:40.999Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854120999",
+  "textLength": 17,
+  "textPreview": "I love basketball"
+}
+[2025-03-24T22:08:40.999Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854120999",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:41.294Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854120999",
+  "duration": 295,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:41.294Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "9f11361d-c878-4959-b610-015496a8f973",
+  "similarity": 0.1914287023003325,
+  "title": "test",
+  "contentPreview": "I love basketball"
+}
+[2025-03-24T22:08:41.294Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854121294",
+  "textLength": 42,
+  "textPreview": "My name is Connor and I live in California"
+}
+[2025-03-24T22:08:41.295Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854121294",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:41.657Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854121294",
+  "duration": 362,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:41.657Z] [DEBUG] [Pinecone] Knowledge item similarity {
+  "itemId": "52fbce1a-396c-46b4-a669-749258773633",
+  "similarity": 0.29224219031132237,
+  "title": "Test Knowledge",
+  "contentPreview": "My name is Connor and I live in California"
+}
+[2025-03-24T22:08:41.657Z] [DEBUG] [Pinecone] Upserting knowledge items to Pinecone {
+  "count": 31
+}
+[2025-03-24T22:08:41.658Z] [INFO] [Pinecone] Upserting documents {
+  "count": 31
+}
+[2025-03-24T22:08:41.658Z] [DEBUG] [Pinecone] Generating embedding for document 1/31 {
+  "textLength": 322,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:41.658Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854121658",
+  "textLength": 322,
+  "textPreview": "User: hey whats up\n\nAI: Oh, look who's back again ..."
+}
+[2025-03-24T22:08:41.658Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854121658",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:41.659Z] [INFO] [Pinecone] Query results combined {
+  "pineconeMatches": 5,
+  "knowledgeMatches": 9,
+  "totalMatches": 14,
+  "topMatchType": "user_knowledge",
+  "isIdentityQuery": false
+}
+[2025-03-24T22:08:41.659Z] [INFO] [API] RAG service request completed {
+  "requestId": "api-rag-1742854097238",
+  "duration": 24418,
+  "matchCount": 8
+}
+[2025-03-24T22:08:42.086Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854121658",
+  "duration": 428,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:42.087Z] [DEBUG] [Pinecone] Generating embedding for document 2/31 {
+  "textLength": 249,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:42.087Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854122087",
+  "textLength": 249,
+  "textPreview": "User: hey my name is connor\n\nAI: Hello, Connor! It..."
+}
+[2025-03-24T22:08:42.087Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854122087",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:44.635Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854122087",
+  "duration": 2547,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:44.638Z] [DEBUG] [Pinecone] Generating embedding for document 3/31 {
+  "textLength": 268,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:44.639Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854124639",
+  "textLength": 268,
+  "textPreview": "User: do you know my name\n\nAI: I don't have access..."
+}
+[2025-03-24T22:08:44.639Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854124639",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:44.982Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854124639",
+  "duration": 343,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:44.982Z] [DEBUG] [Pinecone] Generating embedding for document 4/31 {
+  "textLength": 250,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:44.983Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854124983",
+  "textLength": 250,
+  "textPreview": "User: do you know where im from\n\nAI: I don't have ..."
+}
+[2025-03-24T22:08:44.983Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854124983",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:45.393Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854124983",
+  "duration": 410,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:45.395Z] [DEBUG] [Pinecone] Generating embedding for document 5/31 {
+  "textLength": 348,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:45.395Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854125395",
+  "textLength": 348,
+  "textPreview": "User: hey tell me what you know about me\n\nAI: Hell..."
+}
+[2025-03-24T22:08:45.396Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854125395",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:45.727Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854125395",
+  "duration": 331,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:45.729Z] [DEBUG] [Pinecone] Generating embedding for document 6/31 {
+  "textLength": 249,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:45.730Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854125730",
+  "textLength": 249,
+  "textPreview": "User: hey there do you remember me\n\nAI: Hello! At ..."
+}
+[2025-03-24T22:08:45.730Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854125730",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:48.621Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854125730",
+  "duration": 2891,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:48.621Z] [DEBUG] [Pinecone] Generating embedding for document 7/31 {
+  "textLength": 345,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:48.622Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854128622",
+  "textLength": 345,
+  "textPreview": "User: what do you know about me\n\nAI: I know that y..."
+}
+[2025-03-24T22:08:48.622Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854128622",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:49.314Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854128622",
+  "duration": 692,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:49.314Z] [DEBUG] [Pinecone] Generating embedding for document 8/31 {
+  "textLength": 353,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:49.315Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854129315",
+  "textLength": 353,
+  "textPreview": "User: hey there. what do you know about me\n\nAI: He..."
+}
+[2025-03-24T22:08:49.315Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854129315",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:49.613Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854129315",
+  "duration": 298,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:49.614Z] [DEBUG] [Pinecone] Generating embedding for document 9/31 {
+  "textLength": 361,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:49.614Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854129614",
+  "textLength": 361,
+  "textPreview": "User: hey there. what do you know about me\n\nAI: He..."
+}
+[2025-03-24T22:08:49.614Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854129614",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:50.443Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854129614",
+  "duration": 829,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:50.443Z] [DEBUG] [Pinecone] Generating embedding for document 10/31 {
+  "textLength": 336,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:50.443Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854130443",
+  "textLength": 336,
+  "textPreview": "User: what do you know about me?\n\nAI: I don't have..."
+}
+[2025-03-24T22:08:50.443Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854130443",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:50.776Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854130443",
+  "duration": 333,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:50.776Z] [DEBUG] [Pinecone] Generating embedding for document 11/31 {
+  "textLength": 249,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:50.776Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854130776",
+  "textLength": 249,
+  "textPreview": "User: hey there!\n\nAI: Hello again! 😊 How's your d..."
+}
+[2025-03-24T22:08:50.777Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854130776",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:51.090Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854130776",
+  "duration": 313,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:51.093Z] [DEBUG] [Pinecone] Generating embedding for document 12/31 {
+  "textLength": 423,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:51.094Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854131094",
+  "textLength": 423,
+  "textPreview": "User: do you konw anything about me. do you rememb..."
+}
+[2025-03-24T22:08:51.094Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854131094",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:51.381Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854131094",
+  "duration": 287,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:51.382Z] [DEBUG] [Pinecone] Generating embedding for document 13/31 {
+  "textLength": 210,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:51.383Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854131383",
+  "textLength": 210,
+  "textPreview": "User: hey there\n\nAI: Hello there! 😊 How are you d..."
+}
+[2025-03-24T22:08:51.384Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854131383",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:52.110Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854131383",
+  "duration": 726,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:52.111Z] [DEBUG] [Pinecone] Generating embedding for document 14/31 {
+  "textLength": 226,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:52.112Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854132112",
+  "textLength": 226,
+  "textPreview": "User: Thanks for watching!\n\nAI: You're so very wel..."
+}
+[2025-03-24T22:08:52.113Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854132112",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:53.280Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854132112",
+  "duration": 1167,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:53.281Z] [DEBUG] [Pinecone] Generating embedding for document 15/31 {
+  "textLength": 111,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:53.282Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854133282",
+  "textLength": 111,
+  "textPreview": "User: Testing, testing, testing, is this working?\n..."
+}
+[2025-03-24T22:08:53.282Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854133282",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:53.534Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854133282",
+  "duration": 252,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:53.535Z] [DEBUG] [Pinecone] Generating embedding for document 16/31 {
+  "textLength": 276,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:53.535Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854133535",
+  "textLength": 276,
+  "textPreview": "User: Thanks for watching!\n\nAI: You're so very wel..."
+}
+[2025-03-24T22:08:53.535Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854133535",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:53.777Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854133535",
+  "duration": 242,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:53.778Z] [DEBUG] [Pinecone] Generating embedding for document 17/31 {
+  "textLength": 267,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:53.778Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854133778",
+  "textLength": 267,
+  "textPreview": "User: hi\n\nAI: Hello there! 😊 I'm absolutely delig..."
+}
+[2025-03-24T22:08:53.778Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854133778",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:54.167Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854133778",
+  "duration": 389,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:54.169Z] [DEBUG] [Pinecone] Generating embedding for document 18/31 {
+  "textLength": 247,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:54.169Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854134169",
+  "textLength": 247,
+  "textPreview": "User: hi\n\nAI: Hi there! 😊 I'm absolutely thrilled..."
+}
+[2025-03-24T22:08:54.170Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854134169",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:55.030Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854134169",
+  "duration": 860,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:55.030Z] [DEBUG] [Pinecone] Generating embedding for document 19/31 {
+  "textLength": 281,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:55.031Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854135031",
+  "textLength": 281,
+  "textPreview": "User: hi\n\nAI: Hello! 😊 How are you today? It's so..."
+}
+[2025-03-24T22:08:55.031Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854135031",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:55.713Z] [INFO] [API] Completion request received {
+  "requestId": "api-completion-1742854135713"
+}
+[2025-03-24T22:08:55.719Z] [DEBUG] [API] Completion request details {
+  "requestId": "api-completion-1742854135713",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 1855,
+  "conversationId": "65eb8285-3e83-4bd5-95bf-9239ae917ee5",
+  "userId": "none"
+}
+[2025-03-24T22:08:55.720Z] [DEBUG] [API] Calling getCompletion {
+  "requestId": "api-completion-1742854135713"
+}
+[2025-03-24T22:08:55.721Z] [INFO] [OpenAI] Getting completion {
+  "requestId": "completion-1742854135721",
+  "messageCount": 1,
+  "hasContext": true,
+  "contextLength": 1855
+}
+[2025-03-24T22:08:55.722Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-24T22:08:55.746Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854135031",
+  "duration": 715,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:55.746Z] [DEBUG] [Pinecone] Generating embedding for document 20/31 {
+  "textLength": 260,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:55.747Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854135747",
+  "textLength": 260,
+  "textPreview": "User: hey there\n\nAI: Hello there! 😊 I hope you're..."
+}
+[2025-03-24T22:08:55.747Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854135747",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:56.104Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854135747",
+  "duration": 357,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:56.105Z] [DEBUG] [Pinecone] Generating embedding for document 21/31 {
+  "textLength": 279,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:56.105Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854136105",
+  "textLength": 279,
+  "textPreview": "User: hey\n\nAI: Hi there! 😊 It's so lovely to hear..."
+}
+[2025-03-24T22:08:56.105Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854136105",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:56.146Z] [DEBUG] [OpenAI] Retrieved active system prompt {
+  "requestId": "completion-1742854135721",
+  "hasSystemPrompt": true,
+  "promptName": "mean"
+}
+[2025-03-24T22:08:56.147Z] [DEBUG] [OpenAI] Adding context to system message {
+  "requestId": "completion-1742854135721",
+  "contextLength": 1855
+}
+[2025-03-24T22:08:56.147Z] [DEBUG] [OpenAI] Calling chat completions API {
+  "requestId": "completion-1742854135721",
+  "model": "gpt-4o",
+  "messageCount": 2
+}
+[2025-03-24T22:08:56.412Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854136105",
+  "duration": 307,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:56.413Z] [DEBUG] [Pinecone] Generating embedding for document 22/31 {
+  "textLength": 216,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:56.413Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854136413",
+  "textLength": 216,
+  "textPreview": "User: hey\n\nAI: Hey there! 😊 How's everything goin..."
+}
+[2025-03-24T22:08:56.413Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854136413",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:56.687Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854136413",
+  "duration": 274,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:56.688Z] [DEBUG] [Pinecone] Generating embedding for document 23/31 {
+  "textLength": 348,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:56.688Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854136688",
+  "textLength": 348,
+  "textPreview": "User: do you know anything about me\n\nAI: I don't h..."
+}
+[2025-03-24T22:08:56.688Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854136688",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:57.105Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854136688",
+  "duration": 417,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:57.106Z] [DEBUG] [Pinecone] Generating embedding for document 24/31 {
+  "textLength": 346,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:57.106Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854137106",
+  "textLength": 346,
+  "textPreview": "User: do you know anything about me\n\nAI: I don't h..."
+}
+[2025-03-24T22:08:57.108Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854137106",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:59.142Z] [INFO] [OpenAI] Completion generated successfully {
+  "requestId": "completion-1742854135721",
+  "duration": 2995,
+  "promptTokens": 467,
+  "completionTokens": 57,
+  "totalTokens": 524,
+  "responseLength": 263
+}
+[2025-03-24T22:08:59.143Z] [DEBUG] [API] Logging messages to database {
+  "requestId": "api-completion-1742854135713",
+  "conversationId": "65eb8285-3e83-4bd5-95bf-9239ae917ee5",
+  "userMessageLength": 9,
+  "assistantMessageLength": 263
+}
+[2025-03-24T22:08:59.188Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854137106",
+  "duration": 2078,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:59.208Z] [DEBUG] [Pinecone] Generating embedding for document 25/31 {
+  "textLength": 201,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:59.212Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854139212",
+  "textLength": 201,
+  "textPreview": "User: hey\n\nAI: Hello! 😊 How are you today? I hope..."
+}
+[2025-03-24T22:08:59.213Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854139212",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:08:59.457Z] [INFO] [API] Messages logged to database {
+  "requestId": "api-completion-1742854135713",
+  "conversationId": "65eb8285-3e83-4bd5-95bf-9239ae917ee5"
+}
+[2025-03-24T22:08:59.747Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854139212",
+  "duration": 534,
+  "dimensions": 1536
+}
+[2025-03-24T22:08:59.748Z] [DEBUG] [Pinecone] Generating embedding for document 26/31 {
+  "textLength": 216,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:08:59.749Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854139749",
+  "textLength": 216,
+  "textPreview": "User: hey\n\nAI: Hey there! 😊 How are you today? I ..."
+}
+[2025-03-24T22:08:59.750Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854139749",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:09:00.195Z] [INFO] [API] Conversation needs summarization {
+  "requestId": "api-completion-1742854135713",
+  "conversationId": "65eb8285-3e83-4bd5-95bf-9239ae917ee5"
+}
+[2025-03-24T22:09:00.206Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854139749",
+  "duration": 456,
+  "dimensions": 1536
+}
+[2025-03-24T22:09:00.207Z] [DEBUG] [Pinecone] Generating embedding for document 27/31 {
+  "textLength": 476,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:09:00.207Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854140207",
+  "textLength": 476,
+  "textPreview": "User: I love football, basketball and really all s..."
+}
+[2025-03-24T22:09:00.208Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854140207",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:09:00.673Z] [INFO] [API] Completion request completed {
+  "requestId": "api-completion-1742854135713",
+  "duration": 3423,
+  "answerLength": 263
+}
+[2025-03-24T22:09:00.710Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854140207",
+  "duration": 502,
+  "dimensions": 1536
+}
+[2025-03-24T22:09:00.710Z] [DEBUG] [Pinecone] Generating embedding for document 28/31 {
+  "textLength": 264,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:09:00.710Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854140710",
+  "textLength": 264,
+  "textPreview": "User: hey there\n\nAI: Hello again! 🌺 I'm so deligh..."
+}
+[2025-03-24T22:09:00.711Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854140710",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:09:01.456Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854140710",
+  "duration": 745,
+  "dimensions": 1536
+}
+[2025-03-24T22:09:01.456Z] [DEBUG] [Pinecone] Generating embedding for document 29/31 {
+  "textLength": 210,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:09:01.457Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854141457",
+  "textLength": 210,
+  "textPreview": "User: hey there\n\nAI: Hello there! 😊 How are you d..."
+}
+[2025-03-24T22:09:01.457Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854141457",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:09:04.110Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854141457",
+  "duration": 2323,
+  "dimensions": 1536
+}
+[2025-03-24T22:09:04.587Z] [DEBUG] [Pinecone] Generating embedding for document 30/31 {
+  "textLength": 17,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:09:04.603Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854144599",
+  "textLength": 17,
+  "textPreview": "I love basketball"
+}
+[2025-03-24T22:09:04.607Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854144599",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:09:05.426Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854144599",
+  "duration": 819,
+  "dimensions": 1536
+}
+[2025-03-24T22:09:05.427Z] [DEBUG] [Pinecone] Generating embedding for document 31/31 {
+  "textLength": 42,
+  "source": "user_knowledge",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:09:05.428Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854145428",
+  "textLength": 42,
+  "textPreview": "My name is Connor and I live in California"
+}
+[2025-03-24T22:09:05.428Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854145428",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:09:06.076Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854145428",
+  "duration": 648,
+  "dimensions": 1536
+}
+[2025-03-24T22:09:06.078Z] [INFO] [Pinecone] Upserting 31 vectors to Pinecone 
+[2025-03-24T22:09:06.975Z] [INFO] [Pinecone] Document upsert complete 
+[2025-03-24T22:09:07.019Z] [INFO] [API] Knowledge item created in database {
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
+  "itemId": "876e5a25-7e8b-4c27-bf8e-ed05b728c3d7",
+  "contentLength": 284,
+  "type": "conversation"
+}
+[2025-03-24T22:09:07.020Z] [INFO] [API] Upserting knowledge item to Pinecone {
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
+  "itemId": "876e5a25-7e8b-4c27-bf8e-ed05b728c3d7",
+  "contentLength": 284
+}
+[2025-03-24T22:09:07.021Z] [INFO] [Pinecone] Upserting documents {
+  "count": 1
+}
+[2025-03-24T22:09:07.021Z] [INFO] [Pinecone] Initializing Pinecone client 
+[2025-03-24T22:09:07.023Z] [DEBUG] [Pinecone] Generating embedding for document 1/1 {
+  "textLength": 284,
+  "source": "conversation",
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a"
+}
+[2025-03-24T22:09:07.024Z] [INFO] [OpenAI] Generating embedding {
+  "requestId": "embed-1742854147024",
+  "textLength": 284,
+  "textPreview": "User: hey there\n\nAI: Oh great, another \"hey there...."
+}
+[2025-03-24T22:09:07.024Z] [INFO] [OpenAI] Initializing OpenAI client 
+[2025-03-24T22:09:07.029Z] [DEBUG] [OpenAI] Calling embeddings API {
+  "requestId": "embed-1742854147024",
+  "model": "text-embedding-3-small"
+}
+[2025-03-24T22:09:07.550Z] [INFO] [OpenAI] Embedding generated successfully {
+  "requestId": "embed-1742854147024",
+  "duration": 520,
+  "dimensions": 1536
+}
+[2025-03-24T22:09:07.552Z] [INFO] [Pinecone] Upserting 1 vectors to Pinecone 
+[2025-03-24T22:09:07.682Z] [INFO] [Pinecone] Document upsert complete 
+[2025-03-24T22:09:07.682Z] [INFO] [API] Knowledge item upserted to Pinecone 
+[2025-03-24T22:10:50.583Z] [INFO] [API] Knowledge items fetched {
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
+  "count": 32
+}
+[2025-03-24T22:10:50.910Z] [INFO] [API] Knowledge items fetched {
+  "userId": "860577c7-2047-4ee4-85a5-1554916dfc5a",
+  "count": 32
+}
