@@ -8,7 +8,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "build:web": "expo export:web",
-    "deploy:web": "expo export:web && vercel deploy dist"
+    "deploy:web": "expo export:web && vercel deploy dist",
+    "vercel-build": "expo export:web"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.9.6",
