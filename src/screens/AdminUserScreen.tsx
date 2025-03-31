@@ -7,15 +7,16 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
-  Platform
+  Platform,
 } from 'react-native';
+import { Button } from 'react-native-paper';
 import { useApi } from '../hooks/useApi';
 
 // Type definitions
 type User = {
   id: string;
   clerkId: string;
-  username?: string; // Optional as it might be received from Clerk display name/identifier
+  username?: string; // Added username field
   createdAt: string;
 };
 
@@ -71,25 +72,34 @@ const AdminUserScreen = () => {
   const handleUserSelect = async (user: User) => {
     if (selectedUser?.id === user.id) return;
 
+    setSelectedUser(user);
+    setLoadingDetails(true);
+    setError(null); // Reset error at the start
+    setUserHistory([]); // Clear previous data
+    setUserSummary(null); // Clear previous data
+
     try {
-      setSelectedUser(user);
-      setLoadingDetails(true);
-      setError(null);
-      setUserHistory([]);
-      setUserSummary(null);
-      
-      // Load user conversation history
-      const history = await api.admin.getUserHistory(user.clerkId);
-      setUserHistory(history);
-      
-      // Load user structured summary
+      // Fetch History Separately to handle its errors distinctly
+      let history: Message[] = [];
+      try {
+        history = await api.admin.getUserHistory(user.clerkId);
+        setUserHistory(history); // Set history state immediately if successful
+      } catch (historyError) {
+        console.error(`Failed to load history for user ${user.clerkId}:`, historyError);
+        setError('Failed to load user conversation history.');
+        // Optionally, you could stop here, but we'll try fetching the summary anyway
+      }
+
+      // Fetch Summary (will return null if 404, or throw for other errors)
       const summary = await api.admin.getUserSummary(user.clerkId);
-      setUserSummary(summary);
-    } catch (err) {
-      setError('Failed to load user details');
-      setUserHistory([]);
+      setUserSummary(summary); // Set summary state (will be null if not found)
+
+    } catch (err) { // This will now primarily catch non-404 errors from getUserSummary or other unexpected issues
+      setError('An unexpected error occurred while loading user details.');
+      console.error('Error in handleUserSelect (likely non-404 summary error):', err);
+      // Ensure states are cleared on unexpected errors
+      setUserHistory([]); 
       setUserSummary(null);
-      console.error(err);
     } finally {
       setLoadingDetails(false);
     }
@@ -135,6 +145,23 @@ const AdminUserScreen = () => {
     </View>
   );
   
+  const handleGenerateSummary = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      setLoadingDetails(true);
+      setError(null);
+      await api.admin.generateUserSummary(selectedUser.clerkId);
+      // After generating summary, reload the user details
+      await handleUserSelect(selectedUser);
+    } catch (err) {
+      setError('Failed to generate summary');
+      console.error(err);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+  
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -169,6 +196,15 @@ const AdminUserScreen = () => {
               <Text style={styles.detailsTitle}>
                 Details for {selectedUser.username || selectedUser.clerkId}
               </Text>
+              
+              <Button 
+                mode="contained" 
+                onPress={handleGenerateSummary}
+                style={styles.generateButton}
+                disabled={loadingDetails}
+              >
+                Generate/Update Summary
+              </Button>
               
               {loadingDetails ? (
                 <ActivityIndicator size="large" style={styles.loader} />
@@ -381,6 +417,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
     paddingHorizontal: 16,
+  },
+  generateButton: {
+    marginVertical: 10,
   },
 });
 

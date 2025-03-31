@@ -49,6 +49,8 @@ export const ChatScreen = () => {
   const [systemPrompts, setSystemPrompts] = useState<SystemPrompt[]>([]);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [isDebugEnabled, setIsDebugEnabled] = useState(false);
+  // Add state for active prompt name
+  const [activePromptName, setActivePromptName] = useState<string>('Loading...');
   // Removed local debugInfo state, now using context's debugInfo
   const [loadingPrompts, setLoadingPrompts] = useState(false);
   const flatListRef = useRef<FlatList>(null);
@@ -68,13 +70,12 @@ export const ChatScreen = () => {
       setLoadingPrompts(true);
       const prompts = await api.admin.getSystemPrompts();
       setSystemPrompts(prompts);
-      // Find the default active prompt to potentially pre-select or indicate
-      const activePrompt = prompts.find(p => p.isActive);
-      // You could set selectedPromptId to activePrompt.id here if desired,
-      // but null represents using the backend's default active one.
+      // Find the default active prompt and update the active prompt name state
+      const activePrompt = prompts.find((p: SystemPrompt) => p.isActive);
+      setActivePromptName(activePrompt ? activePrompt.name : 'Default (None Active!)');
     } catch (err) {
       console.error('Failed to load system prompts:', err);
-      // Handle error display if needed
+      setActivePromptName('Error loading prompts');
     } finally {
       setLoadingPrompts(false);
     }
@@ -127,6 +128,12 @@ export const ChatScreen = () => {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0} // Adjust as needed
     >
       <StatusBar style="auto" />
+      
+      {/* Active Prompt Display */}
+      <View style={styles.activePromptContainer}>
+        <Text style={styles.activePromptLabel}>Active Prompt:</Text>
+        <Text style={styles.activePromptValue}>{activePromptName}</Text>
+      </View>
       
       {/* Debug Panel */}
       <Card style={styles.debugCard}>
@@ -438,11 +445,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 16, // Match list padding
     marginVertical: 8,
     padding: 12, // Increase padding
-    backgroundColor: MD3Colors.errorContainer, // Use theme color
+    backgroundColor: '#ffcccc', // Use standard color instead of MD3Colors.errorContainer
     borderRadius: 8,
   },
   errorText: {
-    color: MD3Colors.onError, // Use theme color
+    color: '#d32f2f', // Use standard color instead of MD3Colors.onError
     textAlign: 'center',
   },
   loadingIndicator: {
@@ -462,6 +469,21 @@ const styles = StyleSheet.create({
   },
   // Optional loading indicator style (if re-enabled)
   // ...
+  activePromptContainer: {
+    flexDirection: 'row',
+    padding: 8,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#dddddd',
+  },
+  activePromptLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
+  activePromptValue: {
+    fontSize: 14,
+  },
 });
 
 export default ChatScreen; 

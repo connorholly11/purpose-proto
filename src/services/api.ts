@@ -134,7 +134,42 @@ export const createApiService = (authenticatedApi: any) => ({
         });
         return response.data;
       } catch (error) {
-        console.error('Error getting user summary:', error);
+        // Check if it's an Axios error and the status is 404
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          // Log a warning for debugging, but don't treat as a fatal error
+          console.warn(`Structured summary not found for user ${userId} (404). Returning null.`);
+          return null; // Return null to indicate the summary doesn't exist
+        } else {
+          // For any other error (500, network issues, etc.), log and re-throw
+          console.error('Error getting user summary:', error);
+          throw error; 
+        }
+      }
+    },
+    
+    // Generate/update a summary for a user
+    generateUserSummary: async (userId: string) => {
+      try {
+        const response = await authenticatedApi.post('/admin/generate-summary', {
+          userId,
+          trigger: 'manual',
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error generating user summary:', error);
+        throw error;
+      }
+    },
+    
+    // Get summarization logs
+    getSummarizationLogs: async (filters?: { userId?: string; status?: string }) => {
+      try {
+        const response = await authenticatedApi.get('/admin/summarization-logs', {
+          params: filters
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error getting summarization logs:', error);
         throw error;
       }
     },

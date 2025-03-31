@@ -8,6 +8,7 @@ import SignInScreen from '../screens/SignInScreen';
 import ChatScreen from '../screens/ChatScreen';
 import AdminPromptScreen from '../screens/AdminPromptScreen';
 import AdminUserScreen from '../screens/AdminUserScreen';
+import AdminScreen from '../screens/AdminScreen';
 import { ParamListBase, RouteProp } from '@react-navigation/native';
 
 // Define the stack navigator parameter types
@@ -19,8 +20,8 @@ export type AppStackParamList = {
 // Define the bottom tab navigator parameter types
 export type MainTabParamList = {
   Chat: undefined;
-  AdminPrompts: undefined;
-  AdminUsers: undefined;
+  Prompts: undefined;
+  Admin: undefined;
 };
 
 // Create the stack navigator
@@ -35,10 +36,10 @@ const MainTabNavigator = () => {
         tabBarIcon: ({ color, size }: { color: string; size: number }) => {
           let iconName: keyof typeof MaterialIcons.glyphMap = 'chat-bubble';
 
-          if (route.name === 'AdminPrompts') {
+          if (route.name === 'Prompts') {
             iconName = 'settings';
-          } else if (route.name === 'AdminUsers') {
-            iconName = 'people';
+          } else if (route.name === 'Admin') {
+            iconName = 'admin-panel-settings';
           }
 
           return <MaterialIcons name={iconName} size={size} color={color} />;
@@ -55,17 +56,17 @@ const MainTabNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="AdminPrompts"
+        name="Prompts"
         component={AdminPromptScreen}
         options={{
-          title: 'Prompts',
+          title: 'System Prompts',
         }}
       />
       <Tab.Screen
-        name="AdminUsers"
-        component={AdminUserScreen}
+        name="Admin"
+        component={AdminScreen}
         options={{
-          title: 'Users',
+          title: 'Admin Tools',
         }}
       />
     </Tab.Navigator>
