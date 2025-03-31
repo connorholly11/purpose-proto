@@ -58,7 +58,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Get all system prompts
     getSystemPrompts: async () => {
       try {
-        const response = await authenticatedApi.get('/admin/system-prompts');
+        const response = await authenticatedApi.get('/api/admin/system-prompts'); // Updated path
         return response.data;
       } catch (error) {
         console.error('Error getting system prompts:', error);
@@ -69,7 +69,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Create a new system prompt
     createSystemPrompt: async (name: string, promptText: string) => {
       try {
-        const response = await authenticatedApi.post('/admin/system-prompts', {
+        const response = await authenticatedApi.post('/api/admin/system-prompts', { // Updated path
           name,
           promptText,
         });
@@ -83,7 +83,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Update an existing system prompt
     updateSystemPrompt: async (id: string, data: { name?: string; promptText?: string }) => {
       try {
-        const response = await authenticatedApi.put(`/admin/system-prompts/${id}`, data);
+        const response = await authenticatedApi.put(`/api/admin/system-prompts/${id}`, data); // Updated path
         return response.data;
       } catch (error) {
         console.error('Error updating system prompt:', error);
@@ -94,7 +94,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Set a system prompt as active
     setActiveSystemPrompt: async (id: string) => {
       try {
-        const response = await authenticatedApi.put(`/admin/system-prompts/${id}/activate`);
+        const response = await authenticatedApi.put(`/api/admin/system-prompts/${id}/activate`); // Updated path
         return response.data;
       } catch (error) {
         console.error('Error setting active system prompt:', error);
@@ -105,7 +105,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Get the list of users
     getUsers: async () => {
       try {
-        const response = await authenticatedApi.get('/admin/users');
+        const response = await authenticatedApi.get('/api/admin/users'); // Updated path
         return response.data;
       } catch (error) {
         console.error('Error getting users:', error);
@@ -116,7 +116,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Get a user's conversation history
     getUserHistory: async (userId: string) => {
       try {
-        const response = await authenticatedApi.get('/admin/history', {
+        const response = await authenticatedApi.get('/api/admin/history', { // Updated path
           params: { userId },
         });
         return response.data;
@@ -129,7 +129,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Get a user's structured summary
     getUserSummary: async (userId: string) => {
       try {
-        const response = await authenticatedApi.get('/admin/summary', {
+        const response = await authenticatedApi.get('/api/admin/summary', { // Updated path
           params: { userId },
         });
         return response.data;
@@ -150,7 +150,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Generate/update a summary for a user
     generateUserSummary: async (userId: string) => {
       try {
-        const response = await authenticatedApi.post('/admin/generate-summary', {
+        const response = await authenticatedApi.post('/api/admin/generate-summary', { // Updated path
           userId,
           trigger: 'manual',
         });
@@ -164,7 +164,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Get summarization logs
     getSummarizationLogs: async (filters?: { userId?: string; status?: string }) => {
       try {
-        const response = await authenticatedApi.get('/admin/summarization-logs', {
+        const response = await authenticatedApi.get('/api/admin/summarization-logs', { // Updated path
           params: filters
         });
         return response.data;
@@ -176,4 +176,4 @@ export const createApiService = (authenticatedApi: any) => ({
   }
 });
 
-export default api; 
+export default api;

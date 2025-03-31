@@ -11,7 +11,7 @@ export const useApi = () => {
   
   const api = useMemo(() => {
     // Determine the correct Base URL
-    const localApiUrl = 'http://localhost:3001/api'; // Local backend
+    const localApiUrl = 'http://localhost:3001'; // Local backend - removed /api suffix
     const productionApiUrl = process.env.EXPO_PUBLIC_API_URL; // From env vars
     
     // Use __DEV__ global provided by Expo to check environment
