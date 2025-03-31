@@ -16,7 +16,7 @@ import { useApi } from '../hooks/useApi';
 type User = {
   id: string;
   clerkId: string;
-  username?: string; // Added username field
+  username?: string;
   createdAt: string;
 };
 
@@ -31,7 +31,7 @@ type Message = {
 type StructuredSummary = {
   id: string;
   userId: string;
-  summaryData: any; // Using any for flexibility, but would be better typed in a real app
+  summaryData: any;
   createdAt: string;
   updatedAt: string;
 };
@@ -74,31 +74,28 @@ const AdminUserScreen = () => {
 
     setSelectedUser(user);
     setLoadingDetails(true);
-    setError(null); // Reset error at the start
-    setUserHistory([]); // Clear previous data
-    setUserSummary(null); // Clear previous data
+    setError(null);
+    setUserHistory([]);
+    setUserSummary(null);
 
     try {
-      // Fetch History Separately to handle its errors distinctly
+      // Fetch History
       let history: Message[] = [];
       try {
         history = await api.admin.getUserHistory(user.clerkId);
-        setUserHistory(history); // Set history state immediately if successful
+        setUserHistory(history);
       } catch (historyError) {
         console.error(`Failed to load history for user ${user.clerkId}:`, historyError);
         setError('Failed to load user conversation history.');
-        // Optionally, you could stop here, but we'll try fetching the summary anyway
       }
 
-      // Fetch Summary (will return null if 404, or throw for other errors)
+      // Fetch Summary
       const summary = await api.admin.getUserSummary(user.clerkId);
-      setUserSummary(summary); // Set summary state (will be null if not found)
-
-    } catch (err) { // This will now primarily catch non-404 errors from getUserSummary or other unexpected issues
+      setUserSummary(summary);
+    } catch (err) {
       setError('An unexpected error occurred while loading user details.');
       console.error('Error in handleUserSelect (likely non-404 summary error):', err);
-      // Ensure states are cleared on unexpected errors
-      setUserHistory([]); 
+      setUserHistory([]);
       setUserSummary(null);
     } finally {
       setLoadingDetails(false);
@@ -181,11 +178,11 @@ const AdminUserScreen = () => {
           
           {!loading && (
             <FlatList
-            data={users}
-            keyExtractor={item => item.id}
-            renderItem={renderUserItem}
-            contentContainerStyle={styles.list}
-          />
+              data={users}
+              keyExtractor={item => item.id}
+              renderItem={renderUserItem}
+              contentContainerStyle={styles.list}
+            />
           )}
         </View>
         
@@ -288,20 +285,18 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 2,
-      },
-      web: {
-        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-      }
-    }),
+    ...(Platform.OS === 'ios' ? {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+    } : {}),
+    ...(Platform.OS === 'android' ? {
+      elevation: 2,
+    } : {}),
+    ...(Platform.OS === 'web' ? {
+      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+    } : {}),
   },
   selectedUserItem: {
     backgroundColor: '#e9f5fe',
@@ -365,20 +360,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-      web: {
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-      }
-    }),
+    ...(Platform.OS === 'ios' ? {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    } : {}),
+    ...(Platform.OS === 'android' ? {
+      elevation: 3,
+    } : {}),
+    ...(Platform.OS === 'web' ? {
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    } : {}),
   },
   summaryLabel: {
     fontSize: 12,
@@ -423,4 +416,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AdminUserScreen; 
+export default AdminUserScreen;

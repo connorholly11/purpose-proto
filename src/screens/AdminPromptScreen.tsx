@@ -253,20 +253,18 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-      web: {
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-      }
-    }),
+    ...(Platform.OS === 'ios' ? {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    } : {}),
+    ...(Platform.OS === 'android' ? {
+      elevation: 3,
+    } : {}),
+    ...(Platform.OS === 'web' ? {
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    } : {}),
   },
   promptHeader: {
     flexDirection: 'row',
@@ -356,4 +354,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AdminPromptScreen; 
+export default AdminPromptScreen;
