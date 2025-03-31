@@ -41,11 +41,13 @@ export const createApiService = (authenticatedApi: any) => ({
     // Send a message to the AI and get a response
     sendMessage: async (message: string, overridePromptId?: string, requestDebugInfo = false) => {
       try {
+        console.log('Sending chat message...');
         const response = await authenticatedApi.post('/api/chat', {
           message,
           overridePromptId,
           requestDebugInfo,
         });
+        console.log('Chat message sent successfully');
         return response.data;
       } catch (error) {
         console.error('Error sending message:', error);
@@ -54,11 +56,36 @@ export const createApiService = (authenticatedApi: any) => ({
     },
   },
   
+  // Add the game section for Inner Cosmos
+  game: {
+    // Get the user's game state
+    getGameState: async () => {
+      try {
+        console.log('Fetching game state...');
+        // Correct the path to include the /api prefix expected by the backend router
+        const response = await authenticatedApi.get('/api/game/state'); 
+        console.log('Game state fetched successfully');
+        return response.data;
+      } catch (error) {
+        // Check if it's an Axios error and the status is 404 (no game state yet)
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          // The backend returns 404 if the UserGameState record doesn't exist.
+          // Handle this gracefully by returning null.
+          console.warn('Game state not found (404). Returning null.');
+          return null; // Return null to indicate no game state exists yet
+        } else {
+          console.error('Error getting game state:', error);
+          throw error; // Re-throw other errors
+        }
+      }
+    },
+  },
+  
   admin: {
     // Get all system prompts
     getSystemPrompts: async () => {
       try {
-        const response = await authenticatedApi.get('/api/admin/system-prompts'); // Updated path
+        const response = await authenticatedApi.get('/api/admin/system-prompts');
         return response.data;
       } catch (error) {
         console.error('Error getting system prompts:', error);
@@ -69,7 +96,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Create a new system prompt
     createSystemPrompt: async (name: string, promptText: string) => {
       try {
-        const response = await authenticatedApi.post('/api/admin/system-prompts', { // Updated path
+        const response = await authenticatedApi.post('/api/admin/system-prompts', {
           name,
           promptText,
         });
@@ -83,7 +110,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Update an existing system prompt
     updateSystemPrompt: async (id: string, data: { name?: string; promptText?: string }) => {
       try {
-        const response = await authenticatedApi.put(`/api/admin/system-prompts/${id}`, data); // Updated path
+        const response = await authenticatedApi.put(`/api/admin/system-prompts/${id}`, data);
         return response.data;
       } catch (error) {
         console.error('Error updating system prompt:', error);
@@ -94,7 +121,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Set a system prompt as active
     setActiveSystemPrompt: async (id: string) => {
       try {
-        const response = await authenticatedApi.put(`/api/admin/system-prompts/${id}/activate`); // Updated path
+        const response = await authenticatedApi.put(`/api/admin/system-prompts/${id}/activate`);
         return response.data;
       } catch (error) {
         console.error('Error setting active system prompt:', error);
@@ -105,7 +132,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Get the list of users
     getUsers: async () => {
       try {
-        const response = await authenticatedApi.get('/api/admin/users'); // Updated path
+        const response = await authenticatedApi.get('/api/admin/users');
         return response.data;
       } catch (error) {
         console.error('Error getting users:', error);
@@ -116,7 +143,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Get a user's conversation history
     getUserHistory: async (userId: string) => {
       try {
-        const response = await authenticatedApi.get('/api/admin/history', { // Updated path
+        const response = await authenticatedApi.get('/api/admin/history', {
           params: { userId },
         });
         return response.data;
@@ -129,7 +156,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Get a user's structured summary
     getUserSummary: async (userId: string) => {
       try {
-        const response = await authenticatedApi.get('/api/admin/summary', { // Updated path
+        const response = await authenticatedApi.get('/api/admin/summary', {
           params: { userId },
         });
         return response.data;
@@ -150,7 +177,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Generate/update a summary for a user
     generateUserSummary: async (userId: string) => {
       try {
-        const response = await authenticatedApi.post('/api/admin/generate-summary', { // Updated path
+        const response = await authenticatedApi.post('/api/admin/generate-summary', {
           userId,
           trigger: 'manual',
         });
@@ -164,7 +191,7 @@ export const createApiService = (authenticatedApi: any) => ({
     // Get summarization logs
     getSummarizationLogs: async (filters?: { userId?: string; status?: string }) => {
       try {
-        const response = await authenticatedApi.get('/api/admin/summarization-logs', { // Updated path
+        const response = await authenticatedApi.get('/api/admin/summarization-logs', {
           params: filters
         });
         return response.data;

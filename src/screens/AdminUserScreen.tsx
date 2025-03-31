@@ -17,6 +17,7 @@ type User = {
   id: string;
   clerkId: string;
   username?: string;
+  email?: string;
   createdAt: string;
 };
 
@@ -123,7 +124,7 @@ const AdminUserScreen = () => {
       onPress={() => handleUserSelect(item)}
     >
       <Text style={styles.userName}>
-        {item.username || item.clerkId.substring(0, 12) + '...'}
+        {item.email || item.username || item.clerkId.substring(0, 12) + '...'}
       </Text>
     </TouchableOpacity>
   );
