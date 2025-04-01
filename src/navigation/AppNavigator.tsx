@@ -9,8 +9,7 @@ import {
   ChatScreen, 
   AdminPromptScreen, 
   AdminUserScreen, 
-  AdminScreen,
-  CosmosScreen 
+  AdminScreen
 } from '../screens';
 import { ParamListBase, RouteProp } from '@react-navigation/native';
 import AppHeader from '../components/AppHeader';
@@ -24,7 +23,6 @@ export type AppStackParamList = {
 // Define the bottom tab navigator parameter types
 export type MainTabParamList = {
   Chat: undefined;
-  Cosmos: undefined;
   Prompts: undefined;
   Admin: undefined;
 };
@@ -41,9 +39,7 @@ const MainTabNavigator = () => {
         tabBarIcon: ({ color, size }: { color: string; size: number }) => {
           let iconName: keyof typeof MaterialIcons.glyphMap = 'chat-bubble';
 
-          if (route.name === 'Cosmos') {
-            iconName = 'public';
-          } else if (route.name === 'Prompts') {
+          if (route.name === 'Prompts') {
             iconName = 'settings';
           } else if (route.name === 'Admin') {
             iconName = 'admin-panel-settings';
@@ -61,13 +57,6 @@ const MainTabNavigator = () => {
         component={ChatScreen}
         options={{
           title: 'AI Companion',
-        }}
-      />
-      <Tab.Screen
-        name="Cosmos"
-        component={CosmosScreen}
-        options={{
-          title: 'Inner Cosmos',
         }}
       />
       <Tab.Screen

@@ -29,10 +29,18 @@ type Message = {
   createdAt: string;
 };
 
+// Define the expected structure of summaryData based on backend changes
+interface UserContextData {
+  preferences?: string[];
+  facts?: string[];
+  latest_chat?: string[];
+  conversation_summaries?: Record<string, string>;
+}
+
 type StructuredSummary = {
   id: string;
   userId: string;
-  summaryData: any;
+  summaryData: UserContextData | null; // Use the new interface
   createdAt: string;
   updatedAt: string;
 };
@@ -71,7 +79,7 @@ const AdminUserScreen = () => {
   
   // Load user details when a user is selected
   const handleUserSelect = async (user: User) => {
-    if (selectedUser?.id === user.id) return;
+    if (selectedUser?.id === user.id && !loadingDetails) return; // Prevent re-fetch if already selected and not loading
 
     setSelectedUser(user);
     setLoadingDetails(true);
@@ -88,16 +96,27 @@ const AdminUserScreen = () => {
       } catch (historyError) {
         console.error(`Failed to load history for user ${user.clerkId}:`, historyError);
         setError('Failed to load user conversation history.');
+        // Don't stop here, try fetching summary anyway
       }
 
-      // Fetch Summary
-      const summary = await api.admin.getUserSummary(user.clerkId);
-      setUserSummary(summary);
+      // Fetch Summary (Context)
+      try {
+        const summary = await api.admin.getUserSummary(user.clerkId);
+        setUserSummary(summary);
+      } catch (err: any) {
+        // Handle cases where summary fetch fails for reasons other than 404
+        if (!(err.response?.status === 404)) {
+          setError('An unexpected error occurred while loading user details.');
+          console.error('Error in handleUserSelect (non-404 summary error):', err);
+        } else {
+          // If it was a 404, summary is already null, no extra error needed
+          console.log(`No summary found for user ${user.clerkId} (404)`);
+        }
+      }
+
     } catch (err) {
       setError('An unexpected error occurred while loading user details.');
-      console.error('Error in handleUserSelect (likely non-404 summary error):', err);
-      setUserHistory([]);
-      setUserSummary(null);
+      console.error('Error in handleUserSelect:', err);
     } finally {
       setLoadingDetails(false);
     }
@@ -107,10 +126,14 @@ const AdminUserScreen = () => {
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
+      // Check if date is valid before formatting
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date';
+      }
       return date.toLocaleString();
     } catch (e) {
-      const date = new Date(dateString);
-      return date.toLocaleString();
+      console.error("Error formatting date:", dateString, e);
+      return 'Invalid Date';
     }
   };
   
@@ -124,8 +147,9 @@ const AdminUserScreen = () => {
       onPress={() => handleUserSelect(item)}
     >
       <Text style={styles.userName}>
-        {item.email || item.username || item.clerkId.substring(0, 12) + '...'}
+        {item.email || item.username || item.clerkId.substring(5)} {/* Shorten clerkId */}
       </Text>
+      <Text style={styles.userDate}>Joined: {formatDate(item.createdAt)}</Text>
     </TouchableOpacity>
   );
   
@@ -143,21 +167,57 @@ const AdminUserScreen = () => {
     </View>
   );
   
+  // Helper to render context sections
+  const renderContextSection = (title: string, data: string[] | undefined) => {
+    if (!data || data.length === 0) return null;
+    return (
+      <>
+        <Text style={styles.summarySectionTitle}>{title}:</Text>
+        {data.map((item, index) => (
+          <Text key={`${title}-${index}`} style={styles.summaryItem}>- {item}</Text>
+        ))}
+      </>
+    );
+  };
+
+  // Helper to render conversation summaries
+  const renderConversationSummaries = (summaries: Record<string, string> | undefined) => {
+    if (!summaries || Object.keys(summaries).length === 0) return null;
+
+    // Sort keys numerically (conversation_1, conversation_2, ...)
+    const sortedKeys = Object.keys(summaries)
+        .filter(key => key.startsWith('conversation_'))
+        .sort((a, b) => parseInt(a.split('_')[1]) - parseInt(b.split('_')[1]));
+
+    return (
+      <>
+        <Text style={styles.summarySectionTitle}>Conversation Summaries (Last 10):</Text>
+        {sortedKeys.slice(-10).map(key => ( // Show only last 10
+          <Text key={key} style={styles.summaryItem}>
+            <Text style={styles.summaryConvKey}>{key.replace('_', ' ')}:</Text> {summaries[key]}
+          </Text>
+        ))}
+      </>
+    );
+  };
+
   const handleGenerateSummary = async () => {
-    if (!selectedUser) return;
+    if (!selectedUser || loadingDetails) return;
     
     try {
       setLoadingDetails(true);
       setError(null);
+      console.log(`Triggering manual context update for ${selectedUser.clerkId}`);
       await api.admin.generateUserSummary(selectedUser.clerkId);
-      // After generating summary, reload the user details
-      await handleUserSelect(selectedUser);
+      // After generating summary, reload the user details to show the update
+      console.log(`Context update complete for ${selectedUser.clerkId}, reloading details...`);
+      await handleUserSelect(selectedUser); // Re-fetch data
     } catch (err) {
-      setError('Failed to generate summary');
-      console.error(err);
-    } finally {
-      setLoadingDetails(false);
+      setError('Failed to update context summary');
+      console.error('Error triggering manual context update:', err);
+      setLoadingDetails(false); // Ensure loading stops on error
     }
+    // setLoadingDetails(false); // Moved to finally block in handleUserSelect
   };
   
   return (
@@ -171,13 +231,11 @@ const AdminUserScreen = () => {
       <View style={styles.content}>
         {/* User list */}
         <View style={styles.userList}>
-          <Text style={styles.sectionTitle}>Users</Text>
+          <Text style={styles.sectionTitle}>Users ({users.length})</Text>
           
-          {loading && (
+          {loading ? (
             <ActivityIndicator size="large" style={styles.loader} />
-          )}
-          
-          {!loading && (
+          ) : (
             <FlatList
               data={users}
               keyExtractor={item => item.id}
@@ -191,59 +249,63 @@ const AdminUserScreen = () => {
         <View style={styles.userDetails}>
           {selectedUser ? (
             <>
-              <Text style={styles.detailsTitle}>
-                Details for {selectedUser.username || selectedUser.clerkId}
-              </Text>
-              
-              <Button 
-                mode="contained" 
-                onPress={handleGenerateSummary}
-                style={styles.generateButton}
-                disabled={loadingDetails}
-              >
-                Generate/Update Summary
-              </Button>
-              
+              <View style={styles.detailsHeader}>
+                <Text style={styles.detailsTitle}>
+                  Details for {selectedUser.email || selectedUser.username || selectedUser.clerkId.substring(5)}
+                </Text>
+                <Button
+                  mode="contained"
+                  onPress={handleGenerateSummary}
+                  style={styles.generateButton}
+                  disabled={loadingDetails}
+                  loading={loadingDetails && !userHistory.length} // Show loading on button only if details are loading initially
+                  compact
+                >
+                  Update Context
+                </Button>
+              </View>
+
               {loadingDetails ? (
                 <ActivityIndicator size="large" style={styles.loader} />
               ) : (
                 <ScrollView style={styles.detailsContent}>
+                  {/* Structured Context Summary */}
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>User Context</Text>
+                    {userSummary && userSummary.summaryData ? (
+                      <View style={styles.summaryContainer}>
+                        <Text style={styles.summaryLabel}>Context Last Updated: {formatDate(userSummary.updatedAt)}</Text>
+                        {renderContextSection("Preferences", userSummary.summaryData.preferences)}
+                        {renderContextSection("Facts", userSummary.summaryData.facts)}
+                        {renderContextSection("Latest Chat (Last 5)", userSummary.summaryData.latest_chat)}
+                        {renderConversationSummaries(userSummary.summaryData.conversation_summaries)}
+                      </View>
+                    ) : (
+                      <Text style={styles.emptyText}>No context summary data available for this user.</Text>
+                    )}
+                  </View>
+
                   {/* Conversation History */}
                   <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Conversation History</Text>
+                    <Text style={styles.sectionTitle}>Conversation History ({userHistory.length} messages)</Text>
                     {userHistory.length > 0 ? (
                       <FlatList
                         data={userHistory}
                         keyExtractor={item => item.id}
                         renderItem={renderMessageItem}
-                        scrollEnabled={false}
+                        scrollEnabled={false} // Disable scrolling within ScrollView
+                        // Consider adding initialNumToRender for long histories
                       />
                     ) : (
-                      <Text style={styles.emptyText}>No conversation history</Text>
+                      <Text style={styles.emptyText}>No conversation history found.</Text>
                     )}
                   </View>
-                  
-                  {/* Structured Summary */}
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Memory Summary</Text>
-                    {userSummary ? (
-                      <View style={styles.summaryContainer}>
-                        <Text style={styles.summaryLabel}>Updated: {formatDate(userSummary.updatedAt)}</Text>
-                        <View style={styles.jsonContainer}>
-                          <Text style={styles.jsonText}>
-                            {JSON.stringify(userSummary.summaryData, null, 2)}
-                          </Text>
-                        </View>
-                      </View>
-                    ) : (
-                      <Text style={styles.emptyText}>No summary data available</Text>
-                    )}
-                  </View>
+
                 </ScrollView>
               )}
             </>
           ) : (
-            !loading && <Text style={styles.selectPrompt}>Please select a user</Text>
+            !loading && <Text style={styles.selectPrompt}>Please select a user from the list</Text>
           )}
         </View>
       </View>
@@ -269,7 +331,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   userList: {
-    width: '30%',
+    width: Platform.OS === 'web' ? '25%' : '35%', // Adjust width for web vs native
     borderRightWidth: 1,
     borderRightColor: '#dee2e6',
     paddingRight: 16,
@@ -278,39 +340,46 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingLeft: 16,
   },
+  detailsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   list: {
     paddingBottom: 20,
   },
   userItem: {
     backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6, // Slightly smaller radius
     marginBottom: 8,
-    ...(Platform.OS === 'ios' ? {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-    } : {}),
-    ...(Platform.OS === 'android' ? {
-      elevation: 2,
-    } : {}),
+    borderWidth: 1,
+    borderColor: '#e9ecef', // Lighter border
     ...(Platform.OS === 'web' ? {
-      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+      cursor: 'pointer',
+      transition: 'background-color 0.2s ease',
     } : {}),
   },
   selectedUserItem: {
-    backgroundColor: '#e9f5fe',
-    borderColor: '#007bff',
-    borderWidth: 1,
+    backgroundColor: '#e0f3ff', // Lighter blue selection
+    borderColor: '#99d6ff', // Matching border
   },
   userName: {
     fontWeight: '500',
+    fontSize: 14, // Slightly smaller
+  },
+  userDate: {
+    fontSize: 11,
+    color: '#6c757d',
+    marginTop: 2,
   },
   detailsTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 16,
+    // marginBottom removed, handled by detailsHeader
   },
   detailsContent: {
     flex: 1,
@@ -320,24 +389,28 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600', // Slightly bolder
     marginBottom: 12,
-    color: '#495057',
+    color: '#343a40', // Darker grey
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+    paddingBottom: 6,
   },
   messageItem: {
-    padding: 12,
+    padding: 10, // Slightly smaller padding
     borderRadius: 8,
     marginBottom: 8,
+    maxWidth: '90%', // Limit width
   },
   userMessage: {
     backgroundColor: '#e9ecef',
     alignSelf: 'flex-end',
-    marginLeft: 40,
+    marginLeft: '10%', // Ensure space on left
   },
   assistantMessage: {
-    backgroundColor: '#f1f8ff',
+    backgroundColor: '#f1f8ff', // Lighter blue for assistant
     alignSelf: 'flex-start',
-    marginRight: 40,
+    marginRight: '10%', // Ensure space on right
   },
   messageHeader: {
     flexDirection: 'row',
@@ -345,7 +418,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   messageRole: {
-    fontSize: 12,
+    fontSize: 11, // Smaller role text
     color: '#6c757d',
     fontWeight: 'bold',
     textTransform: 'uppercase',
@@ -356,44 +429,56 @@ const styles = StyleSheet.create({
   },
   messageContent: {
     fontSize: 14,
+    lineHeight: 20, // Improve readability
   },
   summaryContainer: {
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 16,
-    ...(Platform.OS === 'ios' ? {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    } : {}),
-    ...(Platform.OS === 'android' ? {
-      elevation: 3,
-    } : {}),
-    ...(Platform.OS === 'web' ? {
-      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-    } : {}),
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    marginBottom: 16, // Add margin below summary
   },
   summaryLabel: {
     fontSize: 12,
     color: '#6c757d',
-    marginBottom: 8,
+    marginBottom: 12, // More space below label
+    fontStyle: 'italic',
   },
-  jsonContainer: {
+  summarySectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#495057',
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  summaryItem: {
+    fontSize: 13,
+    marginLeft: 10, // Indent items
+    marginBottom: 3,
+    lineHeight: 18,
+  },
+  summaryConvKey: {
+    fontWeight: '500',
+    textTransform: 'capitalize',
+  },
+  jsonContainer: { // Style for optional raw JSON view
     backgroundColor: '#f8f9fa',
     padding: 12,
     borderRadius: 4,
     borderWidth: 1,
     borderColor: '#dee2e6',
+    marginTop: 16,
   },
-  jsonText: {
+  jsonText: { // Style for optional raw JSON view
     fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
-    fontSize: 13,
+    fontSize: 12, // Smaller font for JSON
   },
   emptyText: {
     fontStyle: 'italic',
     color: '#6c757d',
     marginTop: 8,
+    fontSize: 14,
   },
   selectPrompt: {
     fontStyle: 'italic',
@@ -408,12 +493,16 @@ const styles = StyleSheet.create({
   },
   error: {
     color: '#dc3545',
+    backgroundColor: '#f8d7da',
+    borderColor: '#f5c6cb',
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: 10,
     marginBottom: 16,
     textAlign: 'center',
-    paddingHorizontal: 16,
   },
   generateButton: {
-    marginVertical: 10,
+    marginLeft: 10, // Add space between title and button
   },
 });
 

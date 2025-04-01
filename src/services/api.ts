@@ -56,31 +56,6 @@ export const createApiService = (authenticatedApi: any) => ({
     },
   },
   
-  // Add the game section for Inner Cosmos
-  game: {
-    // Get the user's game state
-    getGameState: async () => {
-      try {
-        console.log('Fetching game state...');
-        // Correct the path to include the /api prefix expected by the backend router
-        const response = await authenticatedApi.get('/api/game/state'); 
-        console.log('Game state fetched successfully');
-        return response.data;
-      } catch (error) {
-        // Check if it's an Axios error and the status is 404 (no game state yet)
-        if (axios.isAxiosError(error) && error.response?.status === 404) {
-          // The backend returns 404 if the UserGameState record doesn't exist.
-          // Handle this gracefully by returning null.
-          console.warn('Game state not found (404). Returning null.');
-          return null; // Return null to indicate no game state exists yet
-        } else {
-          console.error('Error getting game state:', error);
-          throw error; // Re-throw other errors
-        }
-      }
-    },
-  },
-  
   admin: {
     // Get all system prompts
     getSystemPrompts: async () => {
