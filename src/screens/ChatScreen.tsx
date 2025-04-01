@@ -13,15 +13,10 @@ type SystemPrompt = {
   name: string;
   promptText: string;
   isActive: boolean;
+  modelName?: string;    // <-- ADDED to handle which model is used
   createdAt: string;
   updatedAt: string;
 };
-
-// Debug response type
-// This is now managed within ChatContext, but kept here for reference if needed
-// type DebugInfo = {
-// ...
-// };
 
 // Component to render a chat message
 const MessageBubble = ({ message }: { message: Message }) => {
@@ -44,20 +39,24 @@ const MessageBubble = ({ message }: { message: Message }) => {
 export const ChatScreen = () => {
   // Get state and functions from ChatContext, including debugInfo
   const { messages, loading, error, sendMessage, debugInfo } = useChatContext();
+
+  // Local state
   const [inputText, setInputText] = useState('');
   const [debugExpanded, setDebugExpanded] = useState(false);
   const [systemPrompts, setSystemPrompts] = useState<SystemPrompt[]>([]);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [isDebugEnabled, setIsDebugEnabled] = useState(false);
-  // Add state for active prompt name
+
+  // Add states for active prompt & model
   const [activePromptName, setActivePromptName] = useState<string>('Loading...');
-  // Removed local debugInfo state, now using context's debugInfo
+  const [activeModelName, setActiveModelName] = useState<string>('(Unknown)');
+
   const [loadingPrompts, setLoadingPrompts] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
 
   // API instance
-  const api = useApi(); // Use the hook
+  const api = useApi();
   
   // Load system prompts on component mount
   useEffect(() => {
@@ -70,12 +69,20 @@ export const ChatScreen = () => {
       setLoadingPrompts(true);
       const prompts = await api.admin.getSystemPrompts();
       setSystemPrompts(prompts);
-      // Find the default active prompt and update the active prompt name state
+
+      // Find the default active prompt & update the active prompt name + model
       const activePrompt = prompts.find((p: SystemPrompt) => p.isActive);
-      setActivePromptName(activePrompt ? activePrompt.name : 'Default (None Active!)');
+      if (activePrompt) {
+        setActivePromptName(activePrompt.name);
+        setActiveModelName(activePrompt.modelName || 'gpt-4o');
+      } else {
+        setActivePromptName('Default (None Active!)');
+        setActiveModelName('gpt-4o');
+      }
     } catch (err) {
       console.error('Failed to load system prompts:', err);
       setActivePromptName('Error loading prompts');
+      setActiveModelName('(Error)');
     } finally {
       setLoadingPrompts(false);
     }
@@ -91,12 +98,11 @@ export const ChatScreen = () => {
         // Call the context's sendMessage function, passing debug options
         await sendMessage(
           messageText,
-          selectedPromptId || undefined, // Pass override ID or undefined
-          isDebugEnabled // Pass debug request flag
+          selectedPromptId || undefined, 
+          isDebugEnabled
         );
-        // Debug info is now handled and stored within the context
       } catch (err) {
-        // Error is handled within the context, but you could add specific UI feedback here if needed
+        // Error is handled within the context, but you could add extra UI feedback if needed
         console.error('Error sending message (from ChatScreen):', err);
       }
     }
@@ -125,14 +131,17 @@ export const ChatScreen = () => {
     <KeyboardAvoidingView 
       style={[styles.container, { paddingBottom: insets.bottom }]} 
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0} // Adjust as needed
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <StatusBar style="auto" />
       
-      {/* Active Prompt Display */}
+      {/* Active Prompt & Model Display */}
       <View style={styles.activePromptContainer}>
         <Text style={styles.activePromptLabel}>Active Prompt:</Text>
         <Text style={styles.activePromptValue}>{activePromptName}</Text>
+
+        <Text style={styles.activePromptLabel}>Active Model:</Text>
+        <Text style={styles.activePromptValue}>{activeModelName}</Text>
       </View>
       
       {/* Debug Panel */}
@@ -166,7 +175,7 @@ export const ChatScreen = () => {
                       selected={selectedPromptId === null}
                       onPress={() => setSelectedPromptId(null)}
                       style={styles.promptChip}
-                      mode="outlined" // Use outlined for better selection indication
+                      mode="outlined"
                     >
                       Default (Active)
                     </Chip>
@@ -177,7 +186,7 @@ export const ChatScreen = () => {
                         selected={selectedPromptId === prompt.id}
                         onPress={() => setSelectedPromptId(prompt.id)}
                         style={styles.promptChip}
-                        mode="outlined" // Use outlined for better selection indication
+                        mode="outlined"
                       >
                         {prompt.name}
                       </Chip>
@@ -190,14 +199,13 @@ export const ChatScreen = () => {
               
               <View style={styles.debugSwitch}>
                 <Text>Show Debug Info</Text>
-                <Checkbox.Android // Use Checkbox.Android or Checkbox.IOS explicitly if needed
+                <Checkbox.Android
                   status={isDebugEnabled ? 'checked' : 'unchecked'}
                   onPress={() => setIsDebugEnabled(!isDebugEnabled)}
                 />
               </View>
             </View>
             
-            {/* Debug Info Display - Reads from context's debugInfo */}
             {isDebugEnabled && debugInfo && (
               <View style={styles.debugInfoContainer}>
                 <Divider style={styles.divider} />
@@ -208,7 +216,7 @@ export const ChatScreen = () => {
                 
                 <List.Accordion
                   title="Prompt Used"
-                  id="prompt-accordion" // Add unique id for accessibility/testing
+                  id="prompt-accordion"
                   style={styles.debugAccordion}
                   titleStyle={styles.debugAccordionTitle}
                 >
@@ -222,7 +230,7 @@ export const ChatScreen = () => {
                 
                 <List.Accordion
                   title="Memory Summary Context"
-                  id="memory-accordion" // Add unique id
+                  id="memory-accordion"
                   style={styles.debugAccordion}
                   titleStyle={styles.debugAccordionTitle}
                 >
@@ -246,10 +254,6 @@ export const ChatScreen = () => {
         renderItem={({ item }) => <MessageBubble message={item} />}
         contentContainerStyle={styles.messagesList}
         style={styles.messagesContainer}
-        // Optimization: removeClippedSubviews={true} // Can improve performance on long lists
-        // Optimization: initialNumToRender={10} // Render fewer items initially
-        // Optimization: maxToRenderPerBatch={5} // Control batch rendering
-        // Optimization: windowSize={10} // Control the rendering window size
       />
       
       {/* Error message display */}
@@ -268,22 +272,21 @@ export const ChatScreen = () => {
           value={inputText}
           onChangeText={setInputText}
           multiline
-          disabled={loading} // Disable input while loading
-          right={loading ? <TextInput.Icon icon="loading" size={20} /> : null} // Show loading in input
+          disabled={loading}
+          right={loading ? <TextInput.Icon icon="loading" size={20} /> : null}
         />
         <Button 
           mode="contained" 
           onPress={handleSend} 
           style={styles.sendButton}
-          disabled={!inputText.trim() || loading} // Disable send if empty or loading
-          // Remove loading prop from Button as it's shown in TextInput
+          disabled={!inputText.trim() || loading}
         >
           Send
         </Button>
       </View>
       
-      {/* Loading indicator overlay (optional, could rely on input indicator) */}
-      {/* {loading && (
+      {/* Optional loading overlay
+      {loading && (
         <View style={styles.loadingIndicator}>
           <ActivityIndicator size="small" color={MD3Colors.primary60} />
           <Text style={styles.loadingText}>AI is thinking...</Text>
@@ -299,15 +302,15 @@ const styles = StyleSheet.create({
   },
   debugCard: {
     margin: 8,
-    marginBottom: 4, // Reduce bottom margin slightly
+    marginBottom: 4,
     overflow: 'hidden',
-    backgroundColor: '#ffffff', // Ensure background color
+    backgroundColor: '#ffffff',
   },
   debugHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12, // Adjust padding
+    paddingVertical: 12,
     paddingHorizontal: 16,
   },
   debugTitle: {
@@ -322,12 +325,12 @@ const styles = StyleSheet.create({
   },
   promptSelectorTitle: {
     fontSize: 14,
-    paddingHorizontal: 0, // Remove padding if Card.Content has it
+    paddingHorizontal: 0,
     marginBottom: 8,
   },
   promptChips: {
     flexDirection: 'row',
-    paddingBottom: 4, // Add padding for scrollbar space if needed
+    paddingBottom: 4,
   },
   promptChip: {
     marginRight: 8,
@@ -340,8 +343,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 0, // Remove padding if Card.Content has it
-    minHeight: 40, // Ensure minimum height for touch target
+    paddingHorizontal: 0,
+    minHeight: 40,
   },
   debugInfoContainer: {
     marginTop: 8,
@@ -357,10 +360,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   debugAccordion: {
-    paddingVertical: 0, // Reduce padding
+    paddingVertical: 0,
     paddingHorizontal: 0,
-    backgroundColor: '#f9f9f9', // Light background for accordion header
-    minHeight: 40, // Ensure minimum height
+    backgroundColor: '#f9f9f9',
+    minHeight: 40,
   },
   debugAccordionTitle: {
     fontSize: 14,
@@ -368,7 +371,7 @@ const styles = StyleSheet.create({
   debugInfoContent: {
     paddingHorizontal: 16,
     paddingBottom: 8,
-    backgroundColor: '#ffffff', // White background for content
+    backgroundColor: '#ffffff',
   },
   debugInfoKey: {
     fontSize: 12,
@@ -385,7 +388,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: 6,
     color: '#000',
-    // Allow text selection on web
     userSelect: Platform.OS === 'web' ? 'text' : undefined,
   },
   smallLoader: {
@@ -397,33 +399,33 @@ const styles = StyleSheet.create({
   },
   messagesList: {
     paddingHorizontal: 16,
-    paddingTop: 8, // Reduce top padding
+    paddingTop: 8,
     paddingBottom: 8,
   },
   messageBubble: {
     padding: 12,
     borderRadius: 16,
-    maxWidth: '85%', // Slightly increase max width
+    maxWidth: '85%',
     marginBottom: 8,
   },
   userBubble: {
     alignSelf: 'flex-end',
-    backgroundColor: MD3Colors.primary80, // Consider primary color from theme
-    borderBottomRightRadius: 4, // Add slight variation
+    backgroundColor: MD3Colors.primary80,
+    borderBottomRightRadius: 4,
   },
   aiBubble: {
     alignSelf: 'flex-start',
     backgroundColor: '#ffffff',
-    borderBottomLeftRadius: 4, // Add slight variation
+    borderBottomLeftRadius: 4,
   },
   messageText: {
     fontSize: 16,
-    color: '#000000', // Ensure text color for AI bubble
+    color: '#000000',
   },
   inputContainer: {
     flexDirection: 'row',
     padding: 8,
-    paddingBottom: Platform.OS === 'ios' ? 8 : 12, // Adjust padding for different OS
+    paddingBottom: Platform.OS === 'ios' ? 8 : 12,
     backgroundColor: '#ffffff',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#dddddd',
@@ -432,24 +434,24 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     marginRight: 8,
-    maxHeight: 100, // Limit input height
-    backgroundColor: '#ffffff', // Ensure background for outlined input
+    maxHeight: 100,
+    backgroundColor: '#ffffff',
   },
   sendButton: {
-    borderRadius: 20, // Make it rounder
-    height: 40, // Match input height better
+    borderRadius: 20,
+    height: 40,
     justifyContent: 'center',
-    marginBottom: Platform.OS === 'ios' ? 0 : 4, // Align button better on Android
+    marginBottom: Platform.OS === 'ios' ? 0 : 4,
   },
   errorContainer: {
-    marginHorizontal: 16, // Match list padding
+    marginHorizontal: 16,
     marginVertical: 8,
-    padding: 12, // Increase padding
-    backgroundColor: '#ffcccc', // Use standard color instead of MD3Colors.errorContainer
+    padding: 12,
+    backgroundColor: '#ffcccc',
     borderRadius: 8,
   },
   errorText: {
-    color: '#d32f2f', // Use standard color instead of MD3Colors.onError
+    color: '#d32f2f',
     textAlign: 'center',
   },
   loadingIndicator: {
@@ -461,14 +463,12 @@ const styles = StyleSheet.create({
     padding: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    elevation: 4, // Add elevation
+    elevation: 4,
   },
   loadingText: {
     marginLeft: 8,
     fontSize: 14,
   },
-  // Optional loading indicator style (if re-enabled)
-  // ...
   activePromptContainer: {
     flexDirection: 'row',
     padding: 8,
@@ -483,7 +483,8 @@ const styles = StyleSheet.create({
   },
   activePromptValue: {
     fontSize: 14,
+    marginRight: 16, // Extra spacing so the next label doesn't butt up against it
   },
 });
 
-export default ChatScreen; 
+export default ChatScreen;

@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Platform
 } from 'react-native';
+import { ToggleButton } from 'react-native-paper';
 import { useApi } from '../hooks/useApi';
 
 // Type for the system prompt
@@ -19,6 +20,7 @@ type SystemPrompt = {
   name: string;
   promptText: string;
   isActive: boolean;
+  modelName?: string; // <-- We'll edit this
   createdAt: string;
   updatedAt: string;
 };
@@ -28,16 +30,15 @@ const AdminPromptScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Modal states
   const [modalVisible, setModalVisible] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<SystemPrompt | null>(null);
   const [name, setName] = useState('');
   const [promptText, setPromptText] = useState('');
-  
-  // API instance
+  const [modelName, setModelName] = useState('gpt-4o'); // <-- New field
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+
   const api = useApi();
   
-  // Load all prompts
   const loadPrompts = async () => {
     try {
       setLoading(true);
@@ -52,17 +53,14 @@ const AdminPromptScreen = () => {
     }
   };
   
-  // Load prompts on component mount
   useEffect(() => {
     loadPrompts();
   }, []);
   
-  // Handle activating a prompt
   const handleActivate = async (id: string) => {
     try {
       setLoading(true);
       await api.admin.setActiveSystemPrompt(id);
-      // Update local state to reflect the change
       setPrompts(prompts.map(prompt => ({
         ...prompt,
         isActive: prompt.id === id
@@ -75,36 +73,36 @@ const AdminPromptScreen = () => {
     }
   };
   
-  // Open the modal for creating a new prompt
   const handleCreate = () => {
     setEditingPrompt(null);
     setName('');
     setPromptText('');
+    setModelName('gpt-4o');
     setModalVisible(true);
   };
   
-  // Open the modal for editing an existing prompt
   const handleEdit = (prompt: SystemPrompt) => {
     setEditingPrompt(prompt);
     setName(prompt.name);
     setPromptText(prompt.promptText);
+    setModelName(prompt.modelName || 'gpt-4o');
     setModalVisible(true);
   };
   
-  // Save the prompt (create or update)
   const handleSave = async () => {
     try {
       setLoading(true);
       
       if (editingPrompt) {
-        // Update existing prompt
-        await api.admin.updateSystemPrompt(editingPrompt.id, { name, promptText });
+        await api.admin.updateSystemPrompt(editingPrompt.id, {
+          name,
+          promptText,
+          modelName,
+        });
       } else {
-        // Create new prompt
-        await api.admin.createSystemPrompt(name, promptText);
+        await api.admin.createSystemPrompt(name, promptText, modelName);
       }
       
-      // Reload the prompts to get the latest data
       await loadPrompts();
       setModalVisible(false);
     } catch (err) {
@@ -115,7 +113,23 @@ const AdminPromptScreen = () => {
     }
   };
   
-  // Render an individual prompt item
+  const handleDelete = async () => {
+    if (!editingPrompt) return;
+    
+    try {
+      setLoading(true);
+      await api.admin.deleteSystemPrompt(editingPrompt.id);
+      await loadPrompts();
+      setModalVisible(false);
+      setDeleteConfirmVisible(false);
+    } catch (err) {
+      setError('Failed to delete prompt');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const renderPromptItem = ({ item }: { item: SystemPrompt }) => (
     <View style={styles.promptItem}>
       <View style={styles.promptHeader}>
@@ -125,6 +139,9 @@ const AdminPromptScreen = () => {
       
       <Text style={styles.promptText} numberOfLines={3}>
         {item.promptText}
+      </Text>
+      <Text style={styles.promptModel}>
+        Model: {item.modelName || 'gpt-4o'}
       </Text>
       
       <View style={styles.promptActions}>
@@ -170,7 +187,6 @@ const AdminPromptScreen = () => {
         contentContainerStyle={styles.list}
       />
       
-      {/* Modal for creating/editing prompts */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -199,6 +215,18 @@ const AdminPromptScreen = () => {
               numberOfLines={8}
               textAlignVertical="top"
             />
+
+            <View style={styles.modelSelectorContainer}>
+              <Text style={styles.modelSelectorLabel}>Select Model:</Text>
+              <ToggleButton.Row 
+                onValueChange={value => value && setModelName(value)}
+                value={modelName}
+                style={styles.toggleButtonRow}
+              >
+                <ToggleButton icon={() => <Text>GPT-4o</Text>} value="gpt-4o" style={styles.toggleButton} />
+                <ToggleButton icon={() => <Text>Sonnet 3.5</Text>} value="claude-3-5-sonnet-20241022" style={styles.toggleButton} />
+              </ToggleButton.Row>
+            </View>
             
             <View style={styles.modalButtons}>
               <Button
@@ -211,6 +239,47 @@ const AdminPromptScreen = () => {
                 onPress={handleSave}
                 disabled={!name || !promptText || loading}
               />
+              {editingPrompt && (
+                <Button
+                  title="Delete"
+                  onPress={() => setDeleteConfirmVisible(true)}
+                  color="#dc3545"
+                />
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={deleteConfirmVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setDeleteConfirmVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={[styles.modalContent, styles.confirmModalContent]}>
+            <Text style={styles.confirmTitle}>Delete System Prompt</Text>
+            <Text style={styles.confirmText}>
+              Are you sure you want to delete "{editingPrompt?.name}"?
+              This action cannot be undone.
+            </Text>
+            
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity
+                style={[styles.confirmButton, styles.cancelButton]}
+                onPress={() => setDeleteConfirmVisible(false)}
+              >
+                <Text style={styles.confirmButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.confirmButton, styles.deleteButton]}
+                onPress={handleDelete}
+              >
+                <Text style={styles.confirmButtonText}>Delete</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -218,6 +287,8 @@ const AdminPromptScreen = () => {
     </View>
   );
 };
+
+export default AdminPromptScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -253,18 +324,24 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     marginBottom: 16,
-    ...(Platform.OS === 'ios' ? {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    } : {}),
-    ...(Platform.OS === 'android' ? {
-      elevation: 3,
-    } : {}),
-    ...(Platform.OS === 'web' ? {
-      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-    } : {}),
+    ...(Platform.OS === 'ios'
+      ? {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        }
+      : {}),
+    ...(Platform.OS === 'android'
+      ? {
+          elevation: 3,
+        }
+      : {}),
+    ...(Platform.OS === 'web'
+      ? {
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        }
+      : {}),
   },
   promptHeader: {
     flexDirection: 'row',
@@ -288,7 +365,13 @@ const styles = StyleSheet.create({
   promptText: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 16,
+    marginBottom: 8,
+  },
+  promptModel: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 12,
+    fontStyle: 'italic',
   },
   promptActions: {
     flexDirection: 'row',
@@ -347,11 +430,62 @@ const styles = StyleSheet.create({
   textArea: {
     height: 150,
   },
+  modelSelectorContainer: {
+    marginBottom: 16,
+  },
+  modelSelectorLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
+  },
+  toggleButtonRow: {
+    justifyContent: 'center',
+  },
+  toggleButton: {
+    flex: 1,
+  },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 16,
   },
+  confirmModalContent: {
+    padding: 16,
+    maxWidth: 400,
+  },
+  confirmTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+    color: '#dc3545',
+  },
+  confirmText: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  confirmButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 4,
+    flex: 1,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#6c757d',
+  },
+  deleteButton: {
+    backgroundColor: '#dc3545',
+  },
+  confirmButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
 });
-
-export default AdminPromptScreen;

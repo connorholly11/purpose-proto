@@ -69,11 +69,12 @@ export const createApiService = (authenticatedApi: any) => ({
     },
     
     // Create a new system prompt
-    createSystemPrompt: async (name: string, promptText: string) => {
+    createSystemPrompt: async (name: string, promptText: string, modelName: string) => {
       try {
         const response = await authenticatedApi.post('/api/admin/system-prompts', {
           name,
           promptText,
+          modelName,
         });
         return response.data;
       } catch (error) {
@@ -83,12 +84,23 @@ export const createApiService = (authenticatedApi: any) => ({
     },
     
     // Update an existing system prompt
-    updateSystemPrompt: async (id: string, data: { name?: string; promptText?: string }) => {
+    updateSystemPrompt: async (id: string, data: { name?: string; promptText?: string; modelName?: string }) => {
       try {
         const response = await authenticatedApi.put(`/api/admin/system-prompts/${id}`, data);
         return response.data;
       } catch (error) {
         console.error('Error updating system prompt:', error);
+        throw error;
+      }
+    },
+    
+    // Delete a system prompt
+    deleteSystemPrompt: async (id: string) => {
+      try {
+        const response = await authenticatedApi.delete(`/api/admin/system-prompts/${id}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error deleting system prompt:', error);
         throw error;
       }
     },
