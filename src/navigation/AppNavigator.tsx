@@ -9,10 +9,13 @@ import {
   ChatScreen, 
   AdminPromptScreen, 
   AdminUserScreen, 
-  AdminScreen
+  AdminScreen,
+  SummarizationStatusScreen
 } from '../screens';
-import { ParamListBase, RouteProp } from '@react-navigation/native';
 import AppHeader from '../components/AppHeader';
+
+// Import our new TestingScreen
+import TestingScreen from '../screens/TestingScreen'; // <--- NEW IMPORT
 
 // Define the stack navigator parameter types
 export type AppStackParamList = {
@@ -25,6 +28,7 @@ export type MainTabParamList = {
   Chat: undefined;
   Prompts: undefined;
   Admin: undefined;
+  Testing: undefined; // <--- NEW
 };
 
 // Create the stack navigator
@@ -35,14 +39,16 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const MainTabNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={({ route }: { route: RouteProp<ParamListBase, string> }) => ({
-        tabBarIcon: ({ color, size }: { color: string; size: number }) => {
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ color, size }) => {
           let iconName: keyof typeof MaterialIcons.glyphMap = 'chat-bubble';
 
           if (route.name === 'Prompts') {
             iconName = 'settings';
           } else if (route.name === 'Admin') {
             iconName = 'admin-panel-settings';
+          } else if (route.name === 'Testing') {
+            iconName = 'science'; // or any other icon
           }
 
           return <MaterialIcons name={iconName} size={size} color={color} />;
@@ -73,6 +79,14 @@ const MainTabNavigator = () => {
           title: 'Admin Tools',
         }}
       />
+      {/* NEW TESTING TAB */}
+      <Tab.Screen
+        name="Testing"
+        component={TestingScreen}
+        options={{
+          title: 'Testing',
+        }}
+      />
     </Tab.Navigator>
   );
 };
@@ -81,15 +95,8 @@ const MainTabNavigator = () => {
 export const AppNavigator = () => {
   const { isSignedIn, isLoaded } = useAuthContext();
 
-  // --- Add Logging ---
-  console.log('[AppNavigator] Auth Context State:', { isLoaded, isSignedIn });
-  // --- End Logging ---
-
   // Show nothing while auth is loading
   if (!isLoaded) {
-    // --- Add Logging ---
-    console.log('[AppNavigator] Rendering null because isLoaded is false.');
-    // --- End Logging ---
     return null;
   }
 

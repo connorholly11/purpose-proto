@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView } from 'react-native';
-import { TextInput, Button, Text, Surface, MD3Colors, Checkbox, TouchableRipple, Divider, Card, Chip, List } from 'react-native-paper';
+import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { TextInput, Button, Text, Surface, MD3Colors, Checkbox } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChatContext, Message } from '../context/ChatContext';
 import { useApi } from '../hooks/useApi';
-import { MaterialIcons } from '@expo/vector-icons';
 
 // Define type for system prompts
 type SystemPrompt = {
@@ -38,14 +37,11 @@ const MessageBubble = ({ message }: { message: Message }) => {
 // Main chat screen component
 export const ChatScreen = () => {
   // Get state and functions from ChatContext, including debugInfo
-  const { messages, loading, error, sendMessage, debugInfo } = useChatContext();
+  const { messages, loading, error, sendMessage } = useChatContext();
 
   // Local state
   const [inputText, setInputText] = useState('');
-  const [debugExpanded, setDebugExpanded] = useState(false);
   const [systemPrompts, setSystemPrompts] = useState<SystemPrompt[]>([]);
-  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
-  const [isDebugEnabled, setIsDebugEnabled] = useState(false);
   const [useUserContext, setUseUserContext] = useState(true);
 
   // Add states for active prompt & model
@@ -96,11 +92,11 @@ export const ChatScreen = () => {
       setInputText(''); // Clear input immediately
 
       try {
-        // Call the context's sendMessage function, passing debug options
+        // Call the context's sendMessage function with just the message and user context
         await sendMessage(
           messageText,
-          selectedPromptId || undefined,
-          isDebugEnabled,
+          undefined,
+          false,
           useUserContext
         );
       } catch (err) {
@@ -119,16 +115,6 @@ export const ChatScreen = () => {
     }
   }, [messages]);
   
-  // Format the debug timestamp for display
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleString();
-    } catch (e) {
-      return 'Invalid Date';
-    }
-  };
-  
   return (
     <KeyboardAvoidingView 
       style={[styles.container, { paddingBottom: insets.bottom }]} 
@@ -137,126 +123,22 @@ export const ChatScreen = () => {
     >
       <StatusBar style="auto" />
       
-      {/* Active Prompt & Model Display */}
+      {/* Active Prompt, Active Model, and User Context Display */}
       <View style={styles.activePromptContainer}>
         <Text style={styles.activePromptLabel}>Active Prompt:</Text>
         <Text style={styles.activePromptValue}>{activePromptName}</Text>
 
         <Text style={styles.activePromptLabel}>Active Model:</Text>
         <Text style={styles.activePromptValue}>{activeModelName}</Text>
-      </View>
-      
-      {/* Debug Panel */}
-      <Card style={styles.debugCard}>
-        <TouchableRipple onPress={() => setDebugExpanded(!debugExpanded)}>
-          <View style={styles.debugHeader}>
-            <Text style={styles.debugTitle}>Debug Tools</Text>
-            <MaterialIcons 
-              name={debugExpanded ? "expand-less" : "expand-more"} 
-              size={24} 
-              color="#666"
-            />
-          </View>
-        </TouchableRipple>
-        
-        {debugExpanded && (
-          <Card.Content>
-            <View style={styles.debugControls}>
-              <View style={styles.promptSelector}>
-                <Text style={styles.promptSelectorTitle}>Override System Prompt:</Text>
-                
-                {loadingPrompts ? (
-                  <ActivityIndicator size="small" style={styles.smallLoader} />
-                ) : (
-                  <ScrollView 
-                    horizontal 
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.promptChips}
-                  >
-                    <Chip
-                      selected={selectedPromptId === null}
-                      onPress={() => setSelectedPromptId(null)}
-                      style={styles.promptChip}
-                      mode="outlined"
-                    >
-                      Default (Active)
-                    </Chip>
-                    
-                    {systemPrompts.map(prompt => (
-                      <Chip
-                        key={prompt.id}
-                        selected={selectedPromptId === prompt.id}
-                        onPress={() => setSelectedPromptId(prompt.id)}
-                        style={styles.promptChip}
-                        mode="outlined"
-                      >
-                        {prompt.name}
-                      </Chip>
-                    ))}
-                  </ScrollView>
-                )}
-              </View>
-              
-              <Divider style={styles.divider} />
-              
-              <View style={styles.debugSwitch}>
-                <Text>Show Debug Info</Text>
-                <Checkbox.Android
-                  status={isDebugEnabled ? 'checked' : 'unchecked'}
-                  onPress={() => setIsDebugEnabled(!isDebugEnabled)}
-                />
-              </View>
 
-              {/* Add User Context Toggle */}
-              <Divider style={styles.divider} />
-              <View style={styles.debugSwitch}>
-                <Text>Use User Context</Text>
-                <Checkbox.Android
-                  status={useUserContext ? 'checked' : 'unchecked'}
-                  onPress={() => setUseUserContext(!useUserContext)}
-                />
-              </View>
-            </View>
-            
-            {isDebugEnabled && debugInfo && (
-              <View style={styles.debugInfoContainer}>
-                <Divider style={styles.divider} />
-                <Text style={styles.debugInfoTitle}>Last Message Debug Info:</Text>
-                <Text style={styles.debugInfoTime}>
-                  Timestamp: {formatDate(debugInfo.timestamp)}
-                </Text>
-                
-                <List.Accordion
-                  title="Prompt Used"
-                  id="prompt-accordion"
-                  style={styles.debugAccordion}
-                  titleStyle={styles.debugAccordionTitle}
-                >
-                  <View style={styles.debugInfoContent}>
-                    <Text style={styles.debugInfoKey}>Name:</Text>
-                    <Text style={styles.debugInfoValue}>{debugInfo.systemPromptUsedName}</Text>
-                    <Text style={styles.debugInfoKey}>ID:</Text>
-                    <Text style={styles.debugInfoValue}>{debugInfo.systemPromptUsedId}</Text>
-                  </View>
-                </List.Accordion>
-                
-                <List.Accordion
-                  title="Memory Summary Context"
-                  id="memory-accordion"
-                  style={styles.debugAccordion}
-                  titleStyle={styles.debugAccordionTitle}
-                >
-                  <View style={styles.debugInfoContent}>
-                    <Text style={styles.debugInfoValue}>
-                      {debugInfo.summaryContextInjected || 'No summary context.'}
-                    </Text>
-                  </View>
-                </List.Accordion>
-              </View>
-            )}
-          </Card.Content>
-        )}
-      </Card>
+        <Text style={styles.activePromptLabel}>User Context:</Text>
+        <View style={styles.userContextSwitch}>
+          <Checkbox.Android
+            status={useUserContext ? 'checked' : 'unchecked'}
+            onPress={() => setUseUserContext(!useUserContext)}
+          />
+        </View>
+      </View>
       
       {/* Messages list */}
       <FlatList
@@ -311,99 +193,6 @@ export const ChatScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  debugCard: {
-    margin: 8,
-    marginBottom: 4,
-    overflow: 'hidden',
-    backgroundColor: '#ffffff',
-  },
-  debugHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  debugTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  debugControls: {
-    padding: 8,
-  },
-  promptSelector: {
-    marginBottom: 16,
-  },
-  promptSelectorTitle: {
-    fontSize: 14,
-    paddingHorizontal: 0,
-    marginBottom: 8,
-  },
-  promptChips: {
-    flexDirection: 'row',
-    paddingBottom: 4,
-  },
-  promptChip: {
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  divider: {
-    marginVertical: 8,
-  },
-  debugSwitch: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 0,
-    minHeight: 40,
-  },
-  debugInfoContainer: {
-    marginTop: 8,
-  },
-  debugInfoTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  debugInfoTime: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 8,
-  },
-  debugAccordion: {
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-    backgroundColor: '#f9f9f9',
-    minHeight: 40,
-  },
-  debugAccordionTitle: {
-    fontSize: 14,
-  },
-  debugInfoContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    backgroundColor: '#ffffff',
-  },
-  debugInfoKey: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginTop: 4,
-    color: '#333',
-  },
-  debugInfoValue: {
-    fontSize: 12,
-    backgroundColor: '#f0f0f0',
-    padding: 8,
-    borderRadius: 4,
-    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
-    marginTop: 2,
-    marginBottom: 6,
-    color: '#000',
-    userSelect: Platform.OS === 'web' ? 'text' : undefined,
-  },
-  smallLoader: {
-    marginVertical: 8,
   },
   messagesContainer: {
     flex: 1,
@@ -487,6 +276,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#dddddd',
+    alignItems: 'center',
   },
   activePromptLabel: {
     fontSize: 14,
@@ -496,6 +286,9 @@ const styles = StyleSheet.create({
   activePromptValue: {
     fontSize: 14,
     marginRight: 16, // Extra spacing so the next label doesn't butt up against it
+  },
+  userContextSwitch: {
+    marginRight: 8,
   },
 });
 
