@@ -60,7 +60,7 @@ interface UserContextData {
 type StructuredSummary = {
   id: string;
   userId: string;
-  summaryData: UserContextData | null; // Use the new interface
+  summaryData: UserContextData | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -99,7 +99,7 @@ const AdminUserScreen = () => {
   
   // Load user details when a user is selected
   const handleUserSelect = async (user: User) => {
-    if (selectedUser?.id === user.id && !loadingDetails) return; // Prevent re-fetch if already selected and not loading
+    if (selectedUser?.id === user.id && !loadingDetails) return;
 
     setSelectedUser(user);
     setLoadingDetails(true);
@@ -116,7 +116,6 @@ const AdminUserScreen = () => {
       } catch (historyError) {
         console.error(`Failed to load history for user ${user.clerkId}:`, historyError);
         setError('Failed to load user conversation history.');
-        // Don't stop here, try fetching summary anyway
       }
 
       // Fetch Summary (Context)
@@ -124,16 +123,13 @@ const AdminUserScreen = () => {
         const summary = await api.admin.getUserSummary(user.clerkId);
         setUserSummary(summary);
       } catch (err: any) {
-        // Handle cases where summary fetch fails for reasons other than 404
         if (!(err.response?.status === 404)) {
           setError('An unexpected error occurred while loading user details.');
           console.error('Error in handleUserSelect (non-404 summary error):', err);
         } else {
-          // If it was a 404, summary is already null, no extra error needed
           console.log(`No summary found for user ${user.clerkId} (404)`);
         }
       }
-
     } catch (err) {
       setError('An unexpected error occurred while loading user details.');
       console.error('Error in handleUserSelect:', err);
@@ -146,7 +142,6 @@ const AdminUserScreen = () => {
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      // Check if date is valid before formatting
       if (isNaN(date.getTime())) {
         return 'Invalid Date';
       }
@@ -167,7 +162,7 @@ const AdminUserScreen = () => {
       onPress={() => handleUserSelect(item)}
     >
       <Text style={styles.userName}>
-        {item.email || item.username || item.clerkId.substring(5)} {/* Shorten clerkId */}
+        {item.email || item.username || item.clerkId.substring(5)}
       </Text>
       <Text style={styles.userDate}>Joined: {formatDate(item.createdAt)}</Text>
     </TouchableOpacity>
@@ -200,19 +195,19 @@ const AdminUserScreen = () => {
     );
   };
 
-  // Helper to render conversation summaries
+  // Helper to render conversation summaries (if we had them in old format)
   const renderConversationSummaries = (summaries: Record<string, string> | undefined) => {
     if (!summaries || Object.keys(summaries).length === 0) return null;
 
-    // Sort keys numerically (conversation_1, conversation_2, ...)
+    // Sort keys numerically
     const sortedKeys = Object.keys(summaries)
-        .filter(key => key.startsWith('conversation_'))
-        .sort((a, b) => parseInt(a.split('_')[1]) - parseInt(b.split('_')[1]));
+      .filter(key => key.startsWith('conversation_'))
+      .sort((a, b) => parseInt(a.split('_')[1]) - parseInt(b.split('_')[1]));
 
     return (
       <>
         <Text style={styles.summarySectionTitle}>Conversation Summaries (Last 10):</Text>
-        {sortedKeys.slice(-10).map(key => ( // Show only last 10
+        {sortedKeys.slice(-10).map(key => (
           <Text key={key} style={styles.summaryItem}>
             <Text style={styles.summaryConvKey}>{key.replace('_', ' ')}:</Text> {summaries[key]}
           </Text>
@@ -229,21 +224,26 @@ const AdminUserScreen = () => {
       setError(null);
       console.log(`Triggering manual context update for ${selectedUser.clerkId}`);
       await api.admin.generateUserSummary(selectedUser.clerkId);
-      // After generating summary, reload the user details to show the update
+      // After generating, reload
       console.log(`Context update complete for ${selectedUser.clerkId}, reloading details...`);
-      await handleUserSelect(selectedUser); // Re-fetch data
-    } catch (err) {
-      setError('Failed to update context summary');
-      console.error('Error triggering manual context update:', err);
-      setLoadingDetails(false); // Ensure loading stops on error
+      await handleUserSelect(selectedUser);
+    } catch (err: any) {
+      if (err.response?.status === 500) {
+        console.error('Server error when generating summary:', err);
+        setError('Server error (500) when generating summary. The backend may be unavailable.');
+      } else {
+        setError('Failed to update context summary');
+        console.error('Error triggering manual context update:', err);
+      }
+      setLoadingDetails(false);
     }
   };
   
-  // Helper to render the natural user context
+  // Helper to render the new or old user context
   const renderNaturalUserContext = (contextData: UserContextData | null) => {
     if (!contextData) return null;
     
-    // Handle old format temporarily during migration
+    // OLD FORMAT MIGRATION:
     if (!('core_understanding' in contextData) && ('preferences' in contextData as any)) {
       const oldContext = contextData as any;
       return (
@@ -259,77 +259,76 @@ const AdminUserScreen = () => {
       );
     }
     
-    // Render the new natural context format
+    // NEW FORMAT
+    const coreUnderstanding = contextData.core_understanding || {};
+    const relationshipPatterns = contextData.relationship_patterns || {};
+    const evolvingInsights = contextData.evolving_insights || { 
+      recent_observations: [], 
+      consistent_patterns: [], 
+      changing_patterns: [] 
+    };
+    
     return (
       <>
-        {/* Core Understanding Section */}
         <Text style={styles.summarySectionTitle}>Core Understanding</Text>
-        {contextData.core_understanding.personality && (
-          <Text style={styles.summaryItem}>Personality: {contextData.core_understanding.personality}</Text>
+        {coreUnderstanding.personality && (
+          <Text style={styles.summaryItem}>Personality: {coreUnderstanding.personality}</Text>
         )}
-        {contextData.core_understanding.current_journey && (
-          <Text style={styles.summaryItem}>Current Journey: {contextData.core_understanding.current_journey}</Text>
+        {coreUnderstanding.current_journey && (
+          <Text style={styles.summaryItem}>Current Journey: {coreUnderstanding.current_journey}</Text>
         )}
-        {contextData.core_understanding.communication_style && (
-          <Text style={styles.summaryItem}>Communication Style: {contextData.core_understanding.communication_style}</Text>
+        {coreUnderstanding.communication_style && (
+          <Text style={styles.summaryItem}>Communication Style: {coreUnderstanding.communication_style}</Text>
         )}
-        
-        {/* Relationship Patterns Section */}
+
         <Text style={styles.summarySectionTitle}>Relationship Patterns</Text>
-        {contextData.relationship_patterns.interaction_style && (
-          <Text style={styles.summaryItem}>Interaction Style: {contextData.relationship_patterns.interaction_style}</Text>
+        {relationshipPatterns.interaction_style && (
+          <Text style={styles.summaryItem}>Interaction Style: {relationshipPatterns.interaction_style}</Text>
         )}
-        {contextData.relationship_patterns.trust_development && (
-          <Text style={styles.summaryItem}>Trust Development: {contextData.relationship_patterns.trust_development}</Text>
+        {relationshipPatterns.trust_development && (
+          <Text style={styles.summaryItem}>Trust Development: {relationshipPatterns.trust_development}</Text>
         )}
-        {contextData.relationship_patterns.engagement_patterns && (
-          <Text style={styles.summaryItem}>Engagement Patterns: {contextData.relationship_patterns.engagement_patterns}</Text>
+        {relationshipPatterns.engagement_patterns && (
+          <Text style={styles.summaryItem}>Engagement Patterns: {relationshipPatterns.engagement_patterns}</Text>
         )}
-        
-        {/* Dynamic Insights Section */}
+
         <Text style={styles.summarySectionTitle}>Evolving Insights</Text>
-        
-        {/* Recent Observations */}
-        {contextData.evolving_insights.recent_observations.length > 0 && (
+        {evolvingInsights.recent_observations?.length > 0 && (
           <>
             <Text style={styles.summarySubsectionTitle}>Recent Observations:</Text>
-            {contextData.evolving_insights.recent_observations.map((observation, index) => (
-              <Text key={`observation-${index}`} style={styles.summaryItem}>• {observation}</Text>
+            {evolvingInsights.recent_observations.map((obs, i) => (
+              <Text key={`obs-${i}`} style={styles.summaryItem}>• {obs}</Text>
             ))}
           </>
         )}
-        
-        {/* Consistent Patterns */}
-        {contextData.evolving_insights.consistent_patterns.length > 0 && (
+        {evolvingInsights.consistent_patterns?.length > 0 && (
           <>
             <Text style={styles.summarySubsectionTitle}>Consistent Patterns:</Text>
-            {contextData.evolving_insights.consistent_patterns.map((pattern, index) => (
-              <Text key={`pattern-${index}`} style={styles.summaryItem}>• {pattern}</Text>
+            {evolvingInsights.consistent_patterns.map((pat, i) => (
+              <Text key={`pat-${i}`} style={styles.summaryItem}>• {pat}</Text>
             ))}
           </>
         )}
-        
-        {/* Changing Patterns */}
-        {contextData.evolving_insights.changing_patterns.length > 0 && (
+        {evolvingInsights.changing_patterns?.length > 0 && (
           <>
             <Text style={styles.summarySubsectionTitle}>Changing Patterns:</Text>
-            {contextData.evolving_insights.changing_patterns.map((change, index) => (
-              <Text key={`change-${index}`} style={styles.summaryItem}>• {change}</Text>
+            {evolvingInsights.changing_patterns.map((chg, i) => (
+              <Text key={`chg-${i}`} style={styles.summaryItem}>• {chg}</Text>
             ))}
           </>
         )}
-        
-        {/* Most Recent Messages */}
+
         {contextData.latest_interactions && contextData.latest_interactions.length > 0 && (
           <>
             <Text style={styles.summarySectionTitle}>Recent Exchanges</Text>
             {contextData.latest_interactions.map((msg, index) => (
-              <Text key={`latest-${index}`} style={styles.summaryLatestMsg}>"{msg}"</Text>
+              <Text key={`latest-${index}`} style={styles.summaryLatestMsg}>
+                "{msg}"
+              </Text>
             ))}
           </>
         )}
         
-        {/* Last Update */}
         {contextData.last_update && (
           <Text style={styles.summaryUpdateTime}>
             Last updated: {formatDate(contextData.last_update)}
@@ -351,7 +350,6 @@ const AdminUserScreen = () => {
         {/* User list */}
         <View style={styles.userList}>
           <Text style={styles.sectionTitle}>Users ({users.length})</Text>
-          
           {loading ? (
             <ActivityIndicator size="large" style={styles.loader} />
           ) : (
@@ -377,7 +375,7 @@ const AdminUserScreen = () => {
                   onPress={handleGenerateSummary}
                   style={styles.generateButton}
                   disabled={loadingDetails}
-                  loading={loadingDetails && !userHistory.length} // Show loading on button only if details are loading initially
+                  loading={loadingDetails && !userHistory.length}
                   compact
                 >
                   Update Context
@@ -388,55 +386,52 @@ const AdminUserScreen = () => {
                 <ActivityIndicator size="large" style={styles.loader} />
               ) : (
                 <ScrollView style={styles.detailsContent}>
-                  {/* Structured Context Summary */}
                   <View style={styles.section}>
                     <Text style={styles.sectionTitle}>User Context</Text>
-                    {selectedUser && userSummary ? (
+                    <Text style={styles.summaryLabel}>
+                      Natural understanding of the user based on conversation history
+                    </Text>
+                    {userSummary ? (
                       <View style={styles.summaryContainer}>
                         <View style={styles.summaryHeader}>
                           <Text style={styles.sectionTitle}>User Context</Text>
-                          <TouchableOpacity
-                            style={styles.generateButton}
-                            onPress={handleGenerateSummary}
-                            disabled={loadingDetails}
-                          >
-                            <Text style={styles.generateButtonText}>
-                              {loadingDetails ? 'Updating...' : 'Update Context'}
-                            </Text>
-                          </TouchableOpacity>
                         </View>
-                        <Text style={styles.summaryLabel}>
-                          Natural understanding of the user based on conversation history
-                        </Text>
-                        
+
                         {renderNaturalUserContext(userSummary.summaryData)}
                       </View>
                     ) : (
-                      <Text style={styles.emptyText}>No context summary data available for this user.</Text>
+                      <Text style={styles.emptyText}>
+                        No context summary data available for this user.
+                      </Text>
                     )}
                   </View>
 
-                  {/* Conversation History */}
                   <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Conversation History ({userHistory.length} messages)</Text>
+                    <Text style={styles.sectionTitle}>
+                      Conversation History ({userHistory.length} messages)
+                    </Text>
                     {userHistory.length > 0 ? (
                       <FlatList
                         data={userHistory}
                         keyExtractor={item => item.id}
                         renderItem={renderMessageItem}
-                        scrollEnabled={false} // Disable scrolling within ScrollView
-                        // Consider adding initialNumToRender for long histories
+                        scrollEnabled={false}
                       />
                     ) : (
-                      <Text style={styles.emptyText}>No conversation history found.</Text>
+                      <Text style={styles.emptyText}>
+                        No conversation history found.
+                      </Text>
                     )}
                   </View>
-
                 </ScrollView>
               )}
             </>
           ) : (
-            !loading && <Text style={styles.selectPrompt}>Please select a user from the list</Text>
+            !loading && (
+              <Text style={styles.selectPrompt}>
+                Please select a user from the list
+              </Text>
+            )
           )}
         </View>
       </View>
@@ -462,7 +457,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   userList: {
-    width: Platform.OS === 'web' ? '25%' : '35%', // Adjust width for web vs native
+    width: Platform.OS === 'web' ? '25%' : '35%',
     borderRightWidth: 1,
     borderRightColor: '#dee2e6',
     paddingRight: 16,
@@ -484,23 +479,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 6, // Slightly smaller radius
+    borderRadius: 6,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#e9ecef', // Lighter border
-    ...(Platform.OS === 'web' ? {
-      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s ease',
-    } : {}),
+    borderColor: '#e9ecef',
+    ...(Platform.OS === 'web'
+      ? {
+          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+          cursor: 'pointer',
+          transition: 'background-color 0.2s ease',
+        }
+      : {}),
   },
   selectedUserItem: {
-    backgroundColor: '#e0f3ff', // Lighter blue selection
-    borderColor: '#99d6ff', // Matching border
+    backgroundColor: '#e0f3ff',
+    borderColor: '#99d6ff',
   },
   userName: {
     fontWeight: '500',
-    fontSize: 14, // Slightly smaller
+    fontSize: 14,
   },
   userDate: {
     fontSize: 11,
@@ -510,7 +507,6 @@ const styles = StyleSheet.create({
   detailsTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    // marginBottom removed, handled by detailsHeader
   },
   detailsContent: {
     flex: 1,
@@ -520,47 +516,18 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600', // Slightly bolder
+    fontWeight: '600',
     marginBottom: 12,
-    color: '#343a40', // Darker grey
+    color: '#343a40',
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
     paddingBottom: 6,
   },
-  messageItem: {
-    padding: 10, // Slightly smaller padding
-    borderRadius: 8,
-    marginBottom: 8,
-    maxWidth: '90%', // Limit width
-  },
-  userMessage: {
-    backgroundColor: '#e9ecef',
-    alignSelf: 'flex-end',
-    marginLeft: '10%', // Ensure space on left
-  },
-  assistantMessage: {
-    backgroundColor: '#f1f8ff', // Lighter blue for assistant
-    alignSelf: 'flex-start',
-    marginRight: '10%', // Ensure space on right
-  },
-  messageHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  messageRole: {
-    fontSize: 11, // Smaller role text
+  summaryLabel: {
+    fontSize: 12,
     color: '#6c757d',
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-  messageTime: {
-    fontSize: 10,
-    color: '#adb5bd',
-  },
-  messageContent: {
-    fontSize: 14,
-    lineHeight: 20, // Improve readability
+    marginBottom: 12,
+    fontStyle: 'italic',
   },
   summaryContainer: {
     backgroundColor: '#fff',
@@ -568,14 +535,16 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: '#e9ecef',
-    marginBottom: 16, // Add margin below summary
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    marginBottom: 16,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }
+      : {}),
   },
-  summaryLabel: {
-    fontSize: 12,
-    color: '#6c757d',
-    marginBottom: 12, // More space below label
-    fontStyle: 'italic',
+  summaryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   summarySectionTitle: {
     fontSize: 16,
@@ -597,7 +566,7 @@ const styles = StyleSheet.create({
   },
   summaryItem: {
     fontSize: 13,
-    marginLeft: 10, // Indent items
+    marginLeft: 10,
     marginBottom: 6,
     lineHeight: 18,
   },
@@ -605,17 +574,18 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textTransform: 'capitalize',
   },
-  jsonContainer: { // Style for optional raw JSON view
-    backgroundColor: '#f8f9fa',
-    padding: 12,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#dee2e6',
-    marginTop: 16,
+  summaryLatestMsg: {
+    fontSize: 12,
+    color: '#6c757d',
+    marginBottom: 5,
+    marginLeft: 10,
+    fontStyle: 'italic',
   },
-  jsonText: { // Style for optional raw JSON view
-    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
-    fontSize: 12, // Smaller font for JSON
+  summaryUpdateTime: {
+    fontSize: 10,
+    color: '#adb5bd',
+    marginTop: 12,
+    textAlign: 'right',
   },
   emptyText: {
     fontStyle: 'italic',
@@ -652,29 +622,40 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#a5d8ff',
   },
-  generateButtonText: {
-    fontSize: 12,
-    color: '#1c7ed6',
-    fontWeight: '500',
+  messageItem: {
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+    maxWidth: '90%',
   },
-  summaryHeader: {
+  userMessage: {
+    backgroundColor: '#e9ecef',
+    alignSelf: 'flex-end',
+    marginLeft: '10%',
+  },
+  assistantMessage: {
+    backgroundColor: '#f1f8ff',
+    alignSelf: 'flex-start',
+    marginRight: '10%',
+  },
+  messageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 4,
   },
-  summaryLatestMsg: {
-    fontSize: 12,
+  messageRole: {
+    fontSize: 11,
     color: '#6c757d',
-    marginBottom: 5,
-    marginLeft: 10,
-    fontStyle: 'italic',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
   },
-  summaryUpdateTime: {
+  messageTime: {
     fontSize: 10,
     color: '#adb5bd',
-    marginTop: 12,
-    textAlign: 'right',
+  },
+  messageContent: {
+    fontSize: 14,
+    lineHeight: 20,
   },
 });
 
