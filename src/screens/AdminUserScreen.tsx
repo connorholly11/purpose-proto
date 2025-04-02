@@ -31,10 +31,30 @@ type Message = {
 
 // Define the expected structure of summaryData based on backend changes
 interface UserContextData {
-  preferences?: string[];
-  facts?: string[];
-  latest_chat?: string[];
-  conversation_summaries?: Record<string, string>;
+  // Core understanding of the user
+  core_understanding: {
+    personality: string;        // Natural description of user's personality
+    current_journey: string;    // What they're focused on/going through
+    communication_style: string // How they interact and communicate
+  };
+  
+  // How our relationship/understanding evolves
+  relationship_patterns: {
+    interaction_style: string;  // How we work together
+    trust_development: string;  // How our rapport has developed
+    engagement_patterns: string // What drives meaningful interactions
+  };
+  
+  // Dynamic learning about the user
+  evolving_insights: {
+    recent_observations: string[];     // New patterns or understanding
+    consistent_patterns: string[];     // Stable traits/preferences
+    changing_patterns: string[];       // How they're evolving
+  };
+
+  // Technical necessities
+  latest_interactions: string[];      // Recent messages for immediate context
+  last_update: string;               // When understanding was last deepened
 }
 
 type StructuredSummary = {
@@ -217,9 +237,108 @@ const AdminUserScreen = () => {
       console.error('Error triggering manual context update:', err);
       setLoadingDetails(false); // Ensure loading stops on error
     }
-    // setLoadingDetails(false); // Moved to finally block in handleUserSelect
   };
   
+  // Helper to render the natural user context
+  const renderNaturalUserContext = (contextData: UserContextData | null) => {
+    if (!contextData) return null;
+    
+    // Handle old format temporarily during migration
+    if (!('core_understanding' in contextData) && ('preferences' in contextData as any)) {
+      const oldContext = contextData as any;
+      return (
+        <>
+          {renderContextSection("Preferences", oldContext.preferences)}
+          {renderContextSection("Facts", oldContext.facts)}
+          {renderContextSection("Latest Chat", oldContext.latest_chat)}
+          {renderConversationSummaries(oldContext.conversation_summaries)}
+          <Text style={styles.summaryLabel}>
+            Note: Context is in legacy format and will be migrated on next update
+          </Text>
+        </>
+      );
+    }
+    
+    // Render the new natural context format
+    return (
+      <>
+        {/* Core Understanding Section */}
+        <Text style={styles.summarySectionTitle}>Core Understanding</Text>
+        {contextData.core_understanding.personality && (
+          <Text style={styles.summaryItem}>Personality: {contextData.core_understanding.personality}</Text>
+        )}
+        {contextData.core_understanding.current_journey && (
+          <Text style={styles.summaryItem}>Current Journey: {contextData.core_understanding.current_journey}</Text>
+        )}
+        {contextData.core_understanding.communication_style && (
+          <Text style={styles.summaryItem}>Communication Style: {contextData.core_understanding.communication_style}</Text>
+        )}
+        
+        {/* Relationship Patterns Section */}
+        <Text style={styles.summarySectionTitle}>Relationship Patterns</Text>
+        {contextData.relationship_patterns.interaction_style && (
+          <Text style={styles.summaryItem}>Interaction Style: {contextData.relationship_patterns.interaction_style}</Text>
+        )}
+        {contextData.relationship_patterns.trust_development && (
+          <Text style={styles.summaryItem}>Trust Development: {contextData.relationship_patterns.trust_development}</Text>
+        )}
+        {contextData.relationship_patterns.engagement_patterns && (
+          <Text style={styles.summaryItem}>Engagement Patterns: {contextData.relationship_patterns.engagement_patterns}</Text>
+        )}
+        
+        {/* Dynamic Insights Section */}
+        <Text style={styles.summarySectionTitle}>Evolving Insights</Text>
+        
+        {/* Recent Observations */}
+        {contextData.evolving_insights.recent_observations.length > 0 && (
+          <>
+            <Text style={styles.summarySubsectionTitle}>Recent Observations:</Text>
+            {contextData.evolving_insights.recent_observations.map((observation, index) => (
+              <Text key={`observation-${index}`} style={styles.summaryItem}>• {observation}</Text>
+            ))}
+          </>
+        )}
+        
+        {/* Consistent Patterns */}
+        {contextData.evolving_insights.consistent_patterns.length > 0 && (
+          <>
+            <Text style={styles.summarySubsectionTitle}>Consistent Patterns:</Text>
+            {contextData.evolving_insights.consistent_patterns.map((pattern, index) => (
+              <Text key={`pattern-${index}`} style={styles.summaryItem}>• {pattern}</Text>
+            ))}
+          </>
+        )}
+        
+        {/* Changing Patterns */}
+        {contextData.evolving_insights.changing_patterns.length > 0 && (
+          <>
+            <Text style={styles.summarySubsectionTitle}>Changing Patterns:</Text>
+            {contextData.evolving_insights.changing_patterns.map((change, index) => (
+              <Text key={`change-${index}`} style={styles.summaryItem}>• {change}</Text>
+            ))}
+          </>
+        )}
+        
+        {/* Most Recent Messages */}
+        {contextData.latest_interactions && contextData.latest_interactions.length > 0 && (
+          <>
+            <Text style={styles.summarySectionTitle}>Recent Exchanges</Text>
+            {contextData.latest_interactions.map((msg, index) => (
+              <Text key={`latest-${index}`} style={styles.summaryLatestMsg}>"{msg}"</Text>
+            ))}
+          </>
+        )}
+        
+        {/* Last Update */}
+        {contextData.last_update && (
+          <Text style={styles.summaryUpdateTime}>
+            Last updated: {formatDate(contextData.last_update)}
+          </Text>
+        )}
+      </>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -272,13 +391,25 @@ const AdminUserScreen = () => {
                   {/* Structured Context Summary */}
                   <View style={styles.section}>
                     <Text style={styles.sectionTitle}>User Context</Text>
-                    {userSummary && userSummary.summaryData ? (
+                    {selectedUser && userSummary ? (
                       <View style={styles.summaryContainer}>
-                        <Text style={styles.summaryLabel}>Context Last Updated: {formatDate(userSummary.updatedAt)}</Text>
-                        {renderContextSection("Preferences", userSummary.summaryData.preferences)}
-                        {renderContextSection("Facts", userSummary.summaryData.facts)}
-                        {renderContextSection("Latest Chat (Last 5)", userSummary.summaryData.latest_chat)}
-                        {renderConversationSummaries(userSummary.summaryData.conversation_summaries)}
+                        <View style={styles.summaryHeader}>
+                          <Text style={styles.sectionTitle}>User Context</Text>
+                          <TouchableOpacity
+                            style={styles.generateButton}
+                            onPress={handleGenerateSummary}
+                            disabled={loadingDetails}
+                          >
+                            <Text style={styles.generateButtonText}>
+                              {loadingDetails ? 'Updating...' : 'Update Context'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                        <Text style={styles.summaryLabel}>
+                          Natural understanding of the user based on conversation history
+                        </Text>
+                        
+                        {renderNaturalUserContext(userSummary.summaryData)}
                       </View>
                     ) : (
                       <Text style={styles.emptyText}>No context summary data available for this user.</Text>
@@ -438,6 +569,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e9ecef',
     marginBottom: 16, // Add margin below summary
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
   },
   summaryLabel: {
     fontSize: 12,
@@ -446,16 +578,27 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   summarySectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#495057',
+    marginTop: 14,
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+    paddingBottom: 4,
+  },
+  summarySubsectionTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#495057',
-    marginTop: 10,
+    marginTop: 8,
     marginBottom: 4,
+    marginLeft: 4,
   },
   summaryItem: {
     fontSize: 13,
     marginLeft: 10, // Indent items
-    marginBottom: 3,
+    marginBottom: 6,
     lineHeight: 18,
   },
   summaryConvKey: {
@@ -502,7 +645,36 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   generateButton: {
-    marginLeft: 10, // Add space between title and button
+    backgroundColor: '#e7f5ff',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#a5d8ff',
+  },
+  generateButtonText: {
+    fontSize: 12,
+    color: '#1c7ed6',
+    fontWeight: '500',
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  summaryLatestMsg: {
+    fontSize: 12,
+    color: '#6c757d',
+    marginBottom: 5,
+    marginLeft: 10,
+    fontStyle: 'italic',
+  },
+  summaryUpdateTime: {
+    fontSize: 10,
+    color: '#adb5bd',
+    marginTop: 12,
+    textAlign: 'right',
   },
 });
 

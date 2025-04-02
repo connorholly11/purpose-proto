@@ -271,7 +271,7 @@ export const ChatScreen = () => {
           placeholder="Type a message..."
           value={inputText}
           onChangeText={setInputText}
-          multiline
+          onSubmitEditing={handleSend}
           disabled={loading}
           right={loading ? <TextInput.Icon icon="loading" size={20} /> : null}
         />
