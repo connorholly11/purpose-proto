@@ -13,7 +13,7 @@ export function useTestingApi() {
   const testApi = axios.create({
     baseURL: __DEV__
       ? 'http://localhost:3001/api/testing'
-      : (process.env.EXPO_PUBLIC_API_URL || '') + '/api/testing',
+      : (normalizeUrl(process.env.EXPO_PUBLIC_API_URL || '') + '/api/testing'),
   });
 
   // Attach auth token if available
@@ -29,9 +29,10 @@ export function useTestingApi() {
     // Option 1: Reuse the existing admin route to fetch system prompts
     // Or implement a new getAllPrompts route in testingRoutes if you prefer total separation
     async getAllSystemPrompts() {
-      const adminEndpoint = __DEV__
-        ? 'http://localhost:3001/api/admin/system-prompts'
-        : (process.env.EXPO_PUBLIC_API_URL || '') + '/api/admin/system-prompts';
+      const baseUrl = __DEV__
+        ? 'http://localhost:3001'
+        : normalizeUrl(process.env.EXPO_PUBLIC_API_URL || '');
+      const adminEndpoint = `${baseUrl}/api/admin/system-prompts`;
       const resp = await axios.get(adminEndpoint, {
         headers: { Authorization: `Bearer ${await getToken()}` },
       });
@@ -144,4 +145,9 @@ export function useTestingApi() {
       }
     },
   };
+}
+
+// Helper function to normalize URLs by removing trailing slashes
+function normalizeUrl(url: string): string {
+  return url.endsWith('/') ? url.slice(0, -1) : url;
 }

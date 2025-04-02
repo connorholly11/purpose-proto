@@ -17,7 +17,12 @@ export const useApi = () => {
     // Use __DEV__ global provided by Expo to check environment
     const resolvedBaseUrl = __DEV__ ? localApiUrl : productionApiUrl;
     
-    console.log(`[useApi] Using API Base URL: ${resolvedBaseUrl}`); // Add logging for verification
+    // Remove trailing slash if present to prevent double-slash issues
+    const normalizedBaseUrl = resolvedBaseUrl?.endsWith('/') 
+      ? resolvedBaseUrl.slice(0, -1) 
+      : resolvedBaseUrl;
+    
+    console.log(`[useApi] Using API Base URL: ${normalizedBaseUrl}`); // Add logging for verification
     
     if (!__DEV__ && !productionApiUrl) {
       console.warn('[useApi] Production environment detected, but EXPO_PUBLIC_API_URL is not set!');
@@ -25,7 +30,7 @@ export const useApi = () => {
     
     // Create a new axios instance
     const axiosInstance = axios.create({
-      baseURL: resolvedBaseUrl,
+      baseURL: normalizedBaseUrl,
       headers: {
         'Content-Type': 'application/json',
       },
