@@ -39,13 +39,14 @@ export const createAuthenticatedApi = () => {
 export const createApiService = (authenticatedApi: any) => ({
   chat: {
     // Send a message to the AI and get a response
-    sendMessage: async (message: string, overridePromptId?: string, requestDebugInfo = false) => {
+    sendMessage: async (message: string, overridePromptId?: string, requestDebugInfo = false, useContext = true) => {
       try {
         console.log('Sending chat message...');
         const response = await authenticatedApi.post('/api/chat', {
           message,
           overridePromptId,
           requestDebugInfo,
+          useContext,
         });
         console.log('Chat message sent successfully');
         return response.data;

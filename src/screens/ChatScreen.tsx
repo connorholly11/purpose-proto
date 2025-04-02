@@ -46,6 +46,7 @@ export const ChatScreen = () => {
   const [systemPrompts, setSystemPrompts] = useState<SystemPrompt[]>([]);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [isDebugEnabled, setIsDebugEnabled] = useState(false);
+  const [useUserContext, setUseUserContext] = useState(true);
 
   // Add states for active prompt & model
   const [activePromptName, setActivePromptName] = useState<string>('Loading...');
@@ -98,8 +99,9 @@ export const ChatScreen = () => {
         // Call the context's sendMessage function, passing debug options
         await sendMessage(
           messageText,
-          selectedPromptId || undefined, 
-          isDebugEnabled
+          selectedPromptId || undefined,
+          isDebugEnabled,
+          useUserContext
         );
       } catch (err) {
         // Error is handled within the context, but you could add extra UI feedback if needed
@@ -202,6 +204,16 @@ export const ChatScreen = () => {
                 <Checkbox.Android
                   status={isDebugEnabled ? 'checked' : 'unchecked'}
                   onPress={() => setIsDebugEnabled(!isDebugEnabled)}
+                />
+              </View>
+
+              {/* Add User Context Toggle */}
+              <Divider style={styles.divider} />
+              <View style={styles.debugSwitch}>
+                <Text>Use User Context</Text>
+                <Checkbox.Android
+                  status={useUserContext ? 'checked' : 'unchecked'}
+                  onPress={() => setUseUserContext(!useUserContext)}
                 />
               </View>
             </View>

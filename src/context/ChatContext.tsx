@@ -26,7 +26,8 @@ type ChatContextType = {
   sendMessage: (
     content: string,
     overridePromptId?: string, // Add debug option
-    requestDebugInfo?: boolean // Add debug option
+    requestDebugInfo?: boolean, // Add debug option
+    useContext?: boolean // <-- Add context toggle option
   ) => Promise<void>;
   clearMessages: () => void;
 };
@@ -60,7 +61,8 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
   const sendMessage = async (
     content: string,
     overridePromptId?: string, // Receive debug option
-    requestDebugInfo = false // Receive debug option
+    requestDebugInfo = false, // Receive debug option
+    useContext = true // <-- Receive context toggle option (default to true)
   ) => {
     // Don't send if already loading
     if (loading) return;
@@ -87,7 +89,8 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
       const response = await api.chat.sendMessage(
         content,
         overridePromptId,
-        requestDebugInfo
+        requestDebugInfo,
+        useContext // <-- Pass context toggle to API service
       );
       
       // Create AI message object
