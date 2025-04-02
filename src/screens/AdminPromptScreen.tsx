@@ -410,8 +410,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 20,
-    width: '90%',
-    maxWidth: 500,
+    width: '95%',
+    maxWidth: 800,
+    maxHeight: '90%',
   },
   modalTitle: {
     fontSize: 20,
@@ -428,7 +429,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   textArea: {
-    height: 150,
+    height: 300,
   },
   modelSelectorContainer: {
     marginBottom: 16,
