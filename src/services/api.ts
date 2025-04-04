@@ -254,6 +254,19 @@ export const createApiService = (authenticatedApi: any) => ({
         throw error;
       }
     },
+    
+    // Update feedback content
+    updateFeedbackContent: async (id: string, content: string) => {
+      try {
+        const response = await authenticatedApi.put(`/api/admin/feedback/${id}/content`, {
+          content,
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error updating feedback content:', error);
+        throw error;
+      }
+    },
   }
 });
 

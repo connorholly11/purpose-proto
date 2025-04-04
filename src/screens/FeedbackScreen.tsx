@@ -14,7 +14,10 @@ import {
   Divider,
   Menu,
   Searchbar,
-  IconButton
+  IconButton,
+  TextInput,
+  Dialog,
+  Portal
 } from 'react-native-paper';
 import { useApi } from '../hooks/useApi';
 
@@ -41,6 +44,9 @@ const FeedbackScreen = () => {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState<string | null>(null);
+  const [editDialogVisible, setEditDialogVisible] = useState(false);
+  const [currentEditItem, setCurrentEditItem] = useState<Feedback | null>(null);
+  const [editedContent, setEditedContent] = useState('');
   
   const api = useApi();
   
@@ -249,6 +255,33 @@ const FeedbackScreen = () => {
     </View>
   );
   
+  // Update feedback content
+  const updateContent = async () => {
+    if (!currentEditItem || !editedContent.trim()) return;
+    
+    try {
+      await api.admin.updateFeedbackContent(currentEditItem.id, editedContent);
+      // Update local state
+      setAllFeedback(prevFeedback => 
+        prevFeedback.map(item => 
+          item.id === currentEditItem.id ? { ...item, content: editedContent } : item
+        )
+      );
+      setEditDialogVisible(false);
+      setCurrentEditItem(null);
+    } catch (err) {
+      console.error('Error updating feedback content:', err);
+      setError('Failed to update feedback content');
+    }
+  };
+  
+  // Open edit dialog
+  const openEditDialog = (item: Feedback) => {
+    setCurrentEditItem(item);
+    setEditedContent(item.content);
+    setEditDialogVisible(true);
+  };
+  
   // Render an individual feedback item
   const renderFeedbackItem = ({ item }: { item: Feedback }) => (
     <Card style={styles.feedbackItem}>
@@ -272,6 +305,12 @@ const FeedbackScreen = () => {
         
         <View style={styles.actionRow}>
           {renderStatusMenu(item)}
+          <IconButton
+            icon="pencil"
+            size={20}
+            onPress={() => openEditDialog(item)}
+            style={styles.editButton}
+          />
         </View>
       </Card.Content>
     </Card>
@@ -320,6 +359,26 @@ const FeedbackScreen = () => {
           ) : null
         }
       />
+      
+      <Portal>
+        <Dialog visible={editDialogVisible} onDismiss={() => setEditDialogVisible(false)}>
+          <Dialog.Title>Edit Feedback</Dialog.Title>
+          <Dialog.Content>
+            <TextInput
+              label="Feedback Content"
+              value={editedContent}
+              onChangeText={setEditedContent}
+              multiline
+              numberOfLines={4}
+              mode="outlined"
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setEditDialogVisible(false)}>Cancel</Button>
+            <Button onPress={updateContent}>Save</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 };
@@ -418,9 +477,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     marginTop: 12,
+    alignItems: 'center',
   },
   statusButton: {
     borderWidth: 2,
+  },
+  editButton: {
+    marginLeft: 8,
   },
   emptyContainer: {
     padding: 20,
