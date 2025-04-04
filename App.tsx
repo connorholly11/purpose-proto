@@ -5,6 +5,7 @@ import { ClerkProvider } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { AuthProvider } from './src/context/AuthContext';
 import { ChatProvider } from './src/context/ChatContext';
+import { SystemPromptProvider } from './src/context/SystemPromptContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 
@@ -41,9 +42,11 @@ export default function App() {
       <PaperProvider>
         <ClerkProvider publishableKey={clerkPubKey || ''} tokenCache={tokenCache}>
           <AuthProvider>
-            <ChatProvider>
-              <AppNavigator />
-            </ChatProvider>
+            <SystemPromptProvider>
+              <ChatProvider>
+                <AppNavigator />
+              </ChatProvider>
+            </SystemPromptProvider>
           </AuthProvider>
         </ClerkProvider>
       </PaperProvider>

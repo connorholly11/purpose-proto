@@ -122,13 +122,37 @@ export const createApiService = (authenticatedApi: any) => ({
       }
     },
     
-    // Set a system prompt as active
+    // Set a system prompt as the global active prompt
     setActiveSystemPrompt: async (id: string) => {
       try {
         const response = await authenticatedApi.put(`/api/admin/system-prompts/${id}/activate`);
         return response.data;
       } catch (error) {
         console.error('Error setting active system prompt:', error);
+        throw error;
+      }
+    },
+    
+    // Set a system prompt as active for a specific user
+    setUserActiveSystemPrompt: async (userId: string, promptId: string) => {
+      try {
+        const response = await authenticatedApi.put(`/api/admin/system-prompts/${promptId}/activate`, {
+          userId,
+        });
+        return response.data;
+      } catch (error) {
+        console.error(`Error setting active system prompt for user ${userId}:`, error);
+        throw error;
+      }
+    },
+    
+    // Get the active system prompt for a specific user
+    getUserActiveSystemPrompt: async (userId: string) => {
+      try {
+        const response = await authenticatedApi.get(`/api/admin/system-prompts/user/${userId}/active`);
+        return response.data;
+      } catch (error) {
+        console.error(`Error getting active system prompt for user ${userId}:`, error);
         throw error;
       }
     },

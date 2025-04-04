@@ -4,18 +4,7 @@ import { TextInput, Button, Text, Surface, MD3Colors, Checkbox } from 'react-nat
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChatContext, Message } from '../context/ChatContext';
-import { useApi } from '../hooks/useApi';
-
-// Define type for system prompts
-type SystemPrompt = {
-  id: string;
-  name: string;
-  promptText: string;
-  isActive: boolean;
-  modelName?: string;    // <-- ADDED to handle which model is used
-  createdAt: string;
-  updatedAt: string;
-};
+import { useSystemPrompts } from '../context/SystemPromptContext';
 
 // Component to render a chat message
 const MessageBubble = ({ message }: { message: Message }) => {
@@ -38,52 +27,16 @@ const MessageBubble = ({ message }: { message: Message }) => {
 export const ChatScreen = () => {
   // Get state and functions from ChatContext, including debugInfo
   const { messages, loading, error, sendMessage } = useChatContext();
+  
+  // Get system prompts from context
+  const { activePrompt, loadingPrompts } = useSystemPrompts();
 
   // Local state
   const [inputText, setInputText] = useState('');
-  const [systemPrompts, setSystemPrompts] = useState<SystemPrompt[]>([]);
   const [useUserContext, setUseUserContext] = useState(true);
 
-  // Add states for active prompt & model
-  const [activePromptName, setActivePromptName] = useState<string>('Loading...');
-  const [activeModelName, setActiveModelName] = useState<string>('(Unknown)');
-
-  const [loadingPrompts, setLoadingPrompts] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
-
-  // API instance
-  const api = useApi();
-  
-  // Load system prompts on component mount
-  useEffect(() => {
-    loadSystemPrompts();
-  }, []);
-  
-  // Load system prompts from the backend
-  const loadSystemPrompts = async () => {
-    try {
-      setLoadingPrompts(true);
-      const prompts = await api.admin.getSystemPrompts();
-      setSystemPrompts(prompts);
-
-      // Find the default active prompt & update the active prompt name + model
-      const activePrompt = prompts.find((p: SystemPrompt) => p.isActive);
-      if (activePrompt) {
-        setActivePromptName(activePrompt.name);
-        setActiveModelName(activePrompt.modelName || 'gpt-4o');
-      } else {
-        setActivePromptName('Default (None Active!)');
-        setActiveModelName('gpt-4o');
-      }
-    } catch (err) {
-      console.error('Failed to load system prompts:', err);
-      setActivePromptName('Error loading prompts');
-      setActiveModelName('(Error)');
-    } finally {
-      setLoadingPrompts(false);
-    }
-  };
   
   // Function to handle sending a message using the context
   const handleSend = async () => {
@@ -126,10 +79,14 @@ export const ChatScreen = () => {
       {/* Active Prompt, Active Model, and User Context Display */}
       <View style={styles.activePromptContainer}>
         <Text style={styles.activePromptLabel}>Active Prompt:</Text>
-        <Text style={styles.activePromptValue}>{activePromptName}</Text>
+        <Text style={styles.activePromptValue}>
+          {loadingPrompts ? 'Loading...' : (activePrompt ? activePrompt.name : 'None')}
+        </Text>
 
         <Text style={styles.activePromptLabel}>Active Model:</Text>
-        <Text style={styles.activePromptValue}>{activeModelName}</Text>
+        <Text style={styles.activePromptValue}>
+          {loadingPrompts ? 'Loading...' : (activePrompt?.modelName || 'gpt-4o')}
+        </Text>
 
         <Text style={styles.activePromptLabel}>User Context:</Text>
         <View style={styles.userContextSwitch}>
@@ -178,14 +135,6 @@ export const ChatScreen = () => {
           Send
         </Button>
       </View>
-      
-      {/* Optional loading overlay
-      {loading && (
-        <View style={styles.loadingIndicator}>
-          <ActivityIndicator size="small" color={MD3Colors.primary60} />
-          <Text style={styles.loadingText}>AI is thinking...</Text>
-        </View>
-      )} */}
     </KeyboardAvoidingView>
   );
 };

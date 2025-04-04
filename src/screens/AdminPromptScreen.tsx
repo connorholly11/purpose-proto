@@ -12,64 +12,41 @@ import {
   Platform
 } from 'react-native';
 import { ToggleButton } from 'react-native-paper';
-import { useApi } from '../hooks/useApi';
-
-// Type for the system prompt
-type SystemPrompt = {
-  id: string;
-  name: string;
-  promptText: string;
-  isActive: boolean;
-  modelName?: string; // <-- We'll edit this
-  createdAt: string;
-  updatedAt: string;
-};
+import { useSystemPrompts, SystemPrompt } from '../context/SystemPromptContext';
 
 const AdminPromptScreen = () => {
-  const [prompts, setPrompts] = useState<SystemPrompt[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { 
+    prompts, 
+    loadingPrompts, 
+    error: contextError, 
+    loadPrompts,
+    activatePrompt,
+    createPrompt,
+    updatePrompt,
+    deletePrompt
+  } = useSystemPrompts();
   
+  const [error, setError] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<SystemPrompt | null>(null);
   const [name, setName] = useState('');
   const [promptText, setPromptText] = useState('');
-  const [modelName, setModelName] = useState('gpt-4o'); // <-- New field
+  const [modelName, setModelName] = useState('gpt-4o');
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
-
-  const api = useApi();
   
-  const loadPrompts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const fetchedPrompts = await api.admin.getSystemPrompts();
-      setPrompts(fetchedPrompts);
-    } catch (err) {
-      setError('Failed to load prompts');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
+  // Set local error state when context error changes
   useEffect(() => {
-    loadPrompts();
-  }, []);
+    if (contextError) {
+      setError(contextError);
+    }
+  }, [contextError]);
   
   const handleActivate = async (id: string) => {
     try {
-      setLoading(true);
-      await api.admin.setActiveSystemPrompt(id);
-      setPrompts(prompts.map(prompt => ({
-        ...prompt,
-        isActive: prompt.id === id
-      })));
+      await activatePrompt(id);
     } catch (err) {
       setError('Failed to activate prompt');
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
   
@@ -91,25 +68,22 @@ const AdminPromptScreen = () => {
   
   const handleSave = async () => {
     try {
-      setLoading(true);
+      setError(null);
       
       if (editingPrompt) {
-        await api.admin.updateSystemPrompt(editingPrompt.id, {
+        await updatePrompt(editingPrompt.id, {
           name,
           promptText,
           modelName,
         });
       } else {
-        await api.admin.createSystemPrompt(name, promptText, modelName);
+        await createPrompt(name, promptText, modelName);
       }
       
-      await loadPrompts();
       setModalVisible(false);
     } catch (err) {
       setError(`Failed to ${editingPrompt ? 'update' : 'create'} prompt`);
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
   
@@ -117,16 +91,13 @@ const AdminPromptScreen = () => {
     if (!editingPrompt) return;
     
     try {
-      setLoading(true);
-      await api.admin.deleteSystemPrompt(editingPrompt.id);
-      await loadPrompts();
+      setError(null);
+      await deletePrompt(editingPrompt.id);
       setModalVisible(false);
       setDeleteConfirmVisible(false);
     } catch (err) {
       setError('Failed to delete prompt');
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
   
@@ -176,7 +147,7 @@ const AdminPromptScreen = () => {
         </TouchableOpacity>
       </View>
       
-      {loading && <ActivityIndicator size="large" style={styles.loader} />}
+      {loadingPrompts && <ActivityIndicator size="large" style={styles.loader} />}
       
       {error && <Text style={styles.error}>{error}</Text>}
       
@@ -240,7 +211,7 @@ const AdminPromptScreen = () => {
               <Button
                 title="Save"
                 onPress={handleSave}
-                disabled={!name || !promptText || loading}
+                disabled={!name || !promptText || loadingPrompts}
               />
               {editingPrompt && (
                 <Button
@@ -254,7 +225,6 @@ const AdminPromptScreen = () => {
         </View>
       </Modal>
       
-      {/* Delete Confirmation Modal */}
       <Modal
         visible={deleteConfirmVisible}
         animationType="fade"
@@ -262,27 +232,19 @@ const AdminPromptScreen = () => {
         onRequestClose={() => setDeleteConfirmVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={[styles.modalContent, styles.confirmModalContent]}>
-            <Text style={styles.confirmTitle}>Delete System Prompt</Text>
-            <Text style={styles.confirmText}>
-              Are you sure you want to delete "{editingPrompt?.name}"?
-              This action cannot be undone.
-            </Text>
-            
+          <View style={[styles.modalContent, styles.confirmModal]}>
+            <Text style={styles.confirmText}>Are you sure you want to delete this prompt?</Text>
             <View style={styles.confirmButtons}>
-              <TouchableOpacity
-                style={[styles.confirmButton, styles.cancelButton]}
+              <Button
+                title="Cancel"
                 onPress={() => setDeleteConfirmVisible(false)}
-              >
-                <Text style={styles.confirmButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.confirmButton, styles.deleteButton]}
+                color="#666"
+              />
+              <Button
+                title="Delete"
                 onPress={handleDelete}
-              >
-                <Text style={styles.confirmButtonText}>Delete</Text>
-              </TouchableOpacity>
+                color="#dc3545"
+              />
             </View>
           </View>
         </View>
@@ -470,16 +432,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 16,
   },
-  confirmModalContent: {
+  confirmModal: {
     padding: 16,
     maxWidth: 400,
-  },
-  confirmTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    textAlign: 'center',
-    color: '#dc3545',
   },
   confirmText: {
     fontSize: 16,
@@ -489,23 +444,5 @@ const styles = StyleSheet.create({
   confirmButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  confirmButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 4,
-    flex: 1,
-    marginHorizontal: 5,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#6c757d',
-  },
-  deleteButton: {
-    backgroundColor: '#dc3545',
-  },
-  confirmButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
   },
 });
