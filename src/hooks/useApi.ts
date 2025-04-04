@@ -22,8 +22,6 @@ export const useApi = () => {
       ? resolvedBaseUrl.slice(0, -1) 
       : resolvedBaseUrl;
     
-    console.log(`[useApi] Using API Base URL: ${normalizedBaseUrl}`); // Add logging for verification
-    
     if (!__DEV__ && !productionApiUrl) {
       console.warn('[useApi] Production environment detected, but EXPO_PUBLIC_API_URL is not set!');
     }

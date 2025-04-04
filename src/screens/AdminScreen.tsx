@@ -3,20 +3,22 @@ import { View, StyleSheet } from 'react-native';
 import { SegmentedButtons } from 'react-native-paper';
 import AdminUserScreen from './AdminUserScreen';
 import SummarizationStatusScreen from './SummarizationStatusScreen'; // Will create later
+import FeedbackScreen from './FeedbackScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AdminScreen = () => {
-  const [activeView, setActiveView] = useState<'users' | 'status'>('users');
+  const [activeView, setActiveView] = useState<'users' | 'status' | 'feedback'>('users');
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <SegmentedButtons
           value={activeView}
-          onValueChange={(value) => setActiveView(value as 'users' | 'status')}
+          onValueChange={(value) => setActiveView(value as 'users' | 'status' | 'feedback')}
           buttons={[
             { value: 'users', label: 'User Inspector' },
             { value: 'status', label: 'Summarization Status' },
+            { value: 'feedback', label: 'Feedback' },
           ]}
           style={styles.segmentedButtons}
         />
@@ -24,6 +26,7 @@ const AdminScreen = () => {
       <View style={styles.content}>
         {activeView === 'users' && <AdminUserScreen />}
         {activeView === 'status' && <SummarizationStatusScreen />}
+        {activeView === 'feedback' && <FeedbackScreen />}
       </View>
     </SafeAreaView>
   );

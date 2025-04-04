@@ -57,6 +57,22 @@ export const createApiService = (authenticatedApi: any) => ({
     },
   },
   
+  feedback: {
+    // Submit new feedback
+    submitFeedback: async (category: string, content: string) => {
+      try {
+        const response = await authenticatedApi.post('/api/feedback', {
+          category,
+          content,
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error submitting feedback:', error);
+        throw error;
+      }
+    },
+  },
+  
   admin: {
     // Get all system prompts
     getSystemPrompts: async () => {
@@ -185,6 +201,32 @@ export const createApiService = (authenticatedApi: any) => ({
         return response.data;
       } catch (error) {
         console.error('Error getting summarization logs:', error);
+        throw error;
+      }
+    },
+    
+    // Get all feedback submissions
+    getFeedback: async (filters?: { category?: string; status?: string }) => {
+      try {
+        const response = await authenticatedApi.get('/api/admin/feedback', {
+          params: filters
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error getting feedback:', error);
+        throw error;
+      }
+    },
+    
+    // Update feedback status
+    updateFeedbackStatus: async (id: string, status: 'new' | 'reviewed' | 'resolved') => {
+      try {
+        const response = await authenticatedApi.put(`/api/admin/feedback/${id}`, {
+          status,
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error updating feedback status:', error);
         throw error;
       }
     },

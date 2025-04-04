@@ -13,6 +13,7 @@ import {
   SummarizationStatusScreen
 } from '../screens';
 import AppHeader from '../components/AppHeader';
+import { FeedbackButton } from '../components';
 
 // Import our new TestingScreen
 import TestingScreen from '../screens/TestingScreen'; // <--- NEW IMPORT
@@ -38,56 +39,61 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 // Main Tab Navigator component (used when authenticated)
 const MainTabNavigator = () => {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ color, size }) => {
-          let iconName: keyof typeof MaterialIcons.glyphMap = 'chat-bubble';
+    <>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ color, size }) => {
+            let iconName: keyof typeof MaterialIcons.glyphMap = 'chat-bubble';
 
-          if (route.name === 'Prompts') {
-            iconName = 'settings';
-          } else if (route.name === 'Admin') {
-            iconName = 'admin-panel-settings';
-          } else if (route.name === 'Testing') {
-            iconName = 'science'; // or any other icon
-          }
+            if (route.name === 'Prompts') {
+              iconName = 'settings';
+            } else if (route.name === 'Admin') {
+              iconName = 'admin-panel-settings';
+            } else if (route.name === 'Testing') {
+              iconName = 'science'; // or any other icon
+            }
 
-          return <MaterialIcons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: '#007bff',
-        tabBarInactiveTintColor: 'gray',
-        header: () => <AppHeader />,
-      })}
-    >
-      <Tab.Screen
-        name="Chat"
-        component={ChatScreen}
-        options={{
-          title: 'AI Companion',
-        }}
-      />
-      <Tab.Screen
-        name="Prompts"
-        component={AdminPromptScreen}
-        options={{
-          title: 'System Prompts',
-        }}
-      />
-      <Tab.Screen
-        name="Admin"
-        component={AdminScreen}
-        options={{
-          title: 'Admin Tools',
-        }}
-      />
-      {/* NEW TESTING TAB */}
-      <Tab.Screen
-        name="Testing"
-        component={TestingScreen}
-        options={{
-          title: 'Testing',
-        }}
-      />
-    </Tab.Navigator>
+            return <MaterialIcons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: '#007bff',
+          tabBarInactiveTintColor: 'gray',
+          header: () => <AppHeader />,
+        })}
+      >
+        <Tab.Screen
+          name="Chat"
+          component={ChatScreen}
+          options={{
+            title: 'AI Companion',
+          }}
+        />
+        <Tab.Screen
+          name="Prompts"
+          component={AdminPromptScreen}
+          options={{
+            title: 'System Prompts',
+          }}
+        />
+        <Tab.Screen
+          name="Admin"
+          component={AdminScreen}
+          options={{
+            title: 'Admin Tools',
+          }}
+        />
+        {/* NEW TESTING TAB */}
+        <Tab.Screen
+          name="Testing"
+          component={TestingScreen}
+          options={{
+            title: 'Testing',
+          }}
+        />
+      </Tab.Navigator>
+      
+      {/* Add the feedback button to the main layout */}
+      <FeedbackButton />
+    </>
   );
 };
 
