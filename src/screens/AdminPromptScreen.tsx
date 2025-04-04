@@ -31,7 +31,7 @@ const AdminPromptScreen = () => {
   const [editingPrompt, setEditingPrompt] = useState<SystemPrompt | null>(null);
   const [name, setName] = useState('');
   const [promptText, setPromptText] = useState('');
-  const [modelName, setModelName] = useState('gpt-4o');
+  const [modelName, setModelName] = useState('chatgpt-4o-latest');
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   
   // Set local error state when context error changes
@@ -54,7 +54,7 @@ const AdminPromptScreen = () => {
     setEditingPrompt(null);
     setName('');
     setPromptText('');
-    setModelName('gpt-4o');
+    setModelName('chatgpt-4o-latest');
     setModalVisible(true);
   };
   
@@ -112,7 +112,9 @@ const AdminPromptScreen = () => {
         {item.promptText}
       </Text>
       <Text style={styles.promptModel}>
-        {item.modelName || 'gpt-4o'}
+        {item.modelName?.toLowerCase().includes('claude') 
+          ? item.modelName 
+          : 'chatgpt-4o-latest'}
       </Text>
       
       <View style={styles.promptActions}>
@@ -197,7 +199,7 @@ const AdminPromptScreen = () => {
                 value={modelName}
                 style={styles.toggleButtonRow}
               >
-                <ToggleButton icon={() => <Text>GPT-4o</Text>} value="gpt-4o" style={styles.toggleButton} />
+                <ToggleButton icon={() => <Text>ChatGPT-4o Latest</Text>} value="chatgpt-4o-latest" style={styles.toggleButton} />
                 <ToggleButton icon={() => <Text>Sonnet 3.5</Text>} value="claude-3-5-sonnet-20241022" style={styles.toggleButton} />
               </ToggleButton.Row>
             </View>

@@ -85,7 +85,11 @@ export const ChatScreen = () => {
 
         <Text style={styles.activePromptLabel}>Active Model:</Text>
         <Text style={styles.activePromptValue}>
-          {loadingPrompts ? 'Loading...' : (activePrompt?.modelName || 'gpt-4o')}
+          {loadingPrompts ? 'Loading...' : (
+            activePrompt?.modelName?.toLowerCase().includes('claude') 
+              ? activePrompt.modelName 
+              : 'chatgpt-4o-latest'
+          )}
         </Text>
 
         <Text style={styles.activePromptLabel}>User Context:</Text>
