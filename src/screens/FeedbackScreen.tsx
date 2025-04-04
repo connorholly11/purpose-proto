@@ -33,7 +33,8 @@ type Feedback = {
 };
 
 const FeedbackScreen = () => {
-  const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
+  const [filteredFeedback, setFilteredFeedback] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,17 +44,13 @@ const FeedbackScreen = () => {
   
   const api = useApi();
   
-  // Load feedback items
+  // Load feedback items - remove filter dependencies
   const loadFeedback = useCallback(async () => {
     try {
       setError(null);
-      
-      const filters: { category?: string; status?: string } = {};
-      if (categoryFilter) filters.category = categoryFilter;
-      if (statusFilter) filters.status = statusFilter;
-      
-      const response = await api.admin.getFeedback(filters);
-      setFeedback(response);
+      // Don't apply filters during the API request
+      const response = await api.admin.getFeedback();
+      setAllFeedback(response);
     } catch (err) {
       setError('Failed to load feedback items');
       console.error(err);
@@ -61,9 +58,28 @@ const FeedbackScreen = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [api, categoryFilter, statusFilter]);
+  }, [api]);
   
-  // Load feedback on component mount
+  // Apply filters separately from data loading
+  useEffect(() => {
+    if (allFeedback.length > 0) {
+      let filtered = [...allFeedback];
+      
+      if (categoryFilter) {
+        filtered = filtered.filter(item => item.category === categoryFilter);
+      }
+      
+      if (statusFilter) {
+        filtered = filtered.filter(item => item.status === statusFilter);
+      }
+      
+      setFilteredFeedback(filtered);
+    } else {
+      setFilteredFeedback([]);
+    }
+  }, [allFeedback, categoryFilter, statusFilter]);
+  
+  // Load feedback on component mount - only once
   useEffect(() => {
     loadFeedback();
   }, [loadFeedback]);
@@ -88,8 +104,8 @@ const FeedbackScreen = () => {
   const updateStatus = async (id: string, status: 'new' | 'reviewed' | 'resolved') => {
     try {
       await api.admin.updateFeedbackStatus(id, status);
-      // Update local state
-      setFeedback(prevFeedback => 
+      // Update local state for both arrays
+      setAllFeedback(prevFeedback => 
         prevFeedback.map(item => 
           item.id === id ? { ...item, status } : item
         )
@@ -162,7 +178,7 @@ const FeedbackScreen = () => {
     </Menu>
   );
   
-  // Render filter chips
+  // Render filter chips - add smooth transitions
   const renderFilterChips = () => (
     <View style={styles.filterContainer}>
       <Text style={styles.filterLabel}>Filter by:</Text>
@@ -285,7 +301,7 @@ const FeedbackScreen = () => {
       )}
       
       <FlatList
-        data={feedback}
+        data={filteredFeedback}
         renderItem={renderFeedbackItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
