@@ -133,15 +133,15 @@ const AdminPromptScreen = () => {
   const renderPromptItem = ({ item }: { item: SystemPrompt }) => (
     <View style={styles.promptItem}>
       <View style={styles.promptHeader}>
-        <Text style={styles.promptName}>{item.name}</Text>
+        <Text style={styles.promptName} numberOfLines={1}>{item.name}</Text>
         {item.isActive && <Text style={styles.activeTag}>ACTIVE</Text>}
       </View>
       
-      <Text style={styles.promptText} numberOfLines={3}>
+      <Text style={styles.promptText} numberOfLines={2}>
         {item.promptText}
       </Text>
       <Text style={styles.promptModel}>
-        Model: {item.modelName || 'gpt-4o'}
+        {item.modelName || 'gpt-4o'}
       </Text>
       
       <View style={styles.promptActions}>
@@ -185,6 +185,9 @@ const AdminPromptScreen = () => {
         keyExtractor={item => item.id}
         renderItem={renderPromptItem}
         contentContainerStyle={styles.list}
+        numColumns={Platform.OS === 'web' ? 3 : 2}
+        key={Platform.OS === 'web' ? 'grid-web' : 'grid-mobile'}
+        columnWrapperStyle={styles.gridRow}
       />
       
       <Modal
@@ -319,11 +322,16 @@ const styles = StyleSheet.create({
   list: {
     paddingBottom: 20,
   },
+  gridRow: {
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    flexWrap: 'wrap',
+  },
   promptItem: {
     backgroundColor: '#fff',
     padding: 16,
     borderRadius: 8,
-    marginBottom: 16,
+    paddingBottom: 42,
     ...(Platform.OS === 'ios'
       ? {
           shadowColor: '#000',
@@ -340,43 +348,54 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web'
       ? {
           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          width: '31%',
         }
-      : {}),
+      : {
+          width: '48%',
+        }),
+    maxHeight: 200,
+    overflow: 'hidden',
+    position: 'relative',
   },
   promptHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   promptName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
+    flex: 1,
   },
   activeTag: {
     backgroundColor: '#28a745',
     color: '#fff',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
     borderRadius: 4,
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 'bold',
+    marginLeft: 4,
   },
   promptText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+    fontSize: 13,
+    color: '#555',
+    marginBottom: 6,
   },
   promptModel: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#666',
-    marginBottom: 12,
+    marginBottom: 8,
     fontStyle: 'italic',
   },
   promptActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 8,
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
   },
   actionButton: {
     paddingVertical: 6,
