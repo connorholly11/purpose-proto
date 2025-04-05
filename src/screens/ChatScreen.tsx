@@ -1,42 +1,247 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { TextInput, Button, Text, Surface, MD3Colors, Checkbox } from 'react-native-paper';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Switch, TouchableOpacity, Animated, ImageBackground } from 'react-native';
+import { TextInput, Button, Text, Surface, IconButton, FAB } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChatContext, Message } from '../context/ChatContext';
 import { useSystemPrompts } from '../context/SystemPromptContext';
+import { useAdminMode } from '../navigation/AppNavigator';
+import { useAuthContext } from '../context/AuthContext';
+import { LinearGradient } from 'expo-linear-gradient';
+
+// iMessage-inspired colors with consistent scheme
+const COLORS = {
+  background: '#FFFFFF', // White background like iMessage for conversation area
+  userBubble: '#007AFF', // iOS blue bubble color (iMessage blue)
+  assistantBubble: '#E9E9EB', // Light gray bubble for received messages
+  userText: '#FFFFFF', // White text for user messages
+  assistantText: '#000000', // Black text for assistant messages
+  inputBackground: '#F2F2F7', // Light gray for input field
+  sendButton: '#007AFF', // iOS blue for send button
+  header: '#FFFFFF', // White header like iMessage
+  headerText: '#8E8E93', // iOS gray for header text
+  typingDots: '#8E8E93', // iOS gray for typing dots
+  switchTrackActive: '#007AFF', // iOS blue for active switch
+  switchTrackInactive: '#E5E5EA', // Light gray for inactive switch
+  shadow: 'rgba(0, 0, 0, 0.1)', // Subtle shadow
+  userBubbleShadow: 'rgba(0, 87, 178, 0.25)', // Subtle blue shadow
+  assistantBubbleShadow: 'rgba(0, 0, 0, 0.1)', // Subtle gray shadow
+  inputShadow: 'rgba(0, 0, 0, 0.1)', // Input shadow
+  messageTimestamp: '#8E8E93', // iOS gray for timestamp
+  scrollButtonBackground: 'rgba(0, 122, 255, 0.9)', // iOS blue with opacity
+};
+
+// Component to render typing indicator
+const TypingIndicator = () => {
+  // Create animated values for the dots
+  const dot1Opacity = useRef(new Animated.Value(0.4)).current;
+  const dot2Opacity = useRef(new Animated.Value(0.4)).current;
+  const dot3Opacity = useRef(new Animated.Value(0.4)).current;
+  
+  const [scaleAnim] = useState(new Animated.Value(0.95));
+  const [fadeAnim] = useState(new Animated.Value(0));
+  
+  // Animation sequence
+  useEffect(() => {
+    // Entrance animation
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      })
+    ]).start();
+    
+    const createAnimation = (value: Animated.Value, delay: number) => {
+      return Animated.sequence([
+        Animated.timing(value, {
+          toValue: 1,
+          duration: 400,
+          delay,
+          useNativeDriver: true
+        }),
+        Animated.timing(value, {
+          toValue: 0.4,
+          duration: 400,
+          useNativeDriver: true
+        })
+      ]);
+    };
+    
+    // Run the animations in a loop
+    const runAnimation = () => {
+      Animated.parallel([
+        createAnimation(dot1Opacity, 0),
+        createAnimation(dot2Opacity, 200),
+        createAnimation(dot3Opacity, 400)
+      ]).start(() => runAnimation());
+    };
+    
+    runAnimation();
+    
+    // Clean up animations on unmount
+    return () => {
+      dot1Opacity.stopAnimation();
+      dot2Opacity.stopAnimation();
+      dot3Opacity.stopAnimation();
+    };
+  }, []);
+  
+  return (
+    <Animated.View style={{
+      opacity: fadeAnim,
+      transform: [{ scale: scaleAnim }],
+      alignSelf: 'flex-start',
+      marginBottom: 16,
+    }}>
+      <View style={[styles.messageBubble, styles.aiBubble, styles.typingContainer]}>
+        <View style={styles.typingDotsContainer}>
+          <Animated.View style={[styles.typingDot, { opacity: dot1Opacity }]} />
+          <Animated.View style={[styles.typingDot, { opacity: dot2Opacity }]} />
+          <Animated.View style={[styles.typingDot, { opacity: dot3Opacity }]} />
+        </View>
+      </View>
+      <View 
+        style={[
+          styles.tailStyle,
+          styles.aiTail,
+        ]} 
+      />
+    </Animated.View>
+  );
+};
 
 // Component to render a chat message
 const MessageBubble = ({ message }: { message: Message }) => {
   const isUser = message.role === 'user';
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [scaleAnim] = useState(new Animated.Value(0.95));
+  
+  // Only calculate time once during initial render
+  const timeString = useMemo(() => 
+    new Date(message.createdAt).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: true 
+    }),
+    [message.createdAt]
+  );
+  
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 7,
+        tension: 50,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
   
   return (
-    <Surface 
-      style={[
-        styles.messageBubble, 
-        isUser ? styles.userBubble : styles.aiBubble
-      ]}
-      elevation={1}
-    >
-      <Text style={styles.messageText}>{message.content}</Text>
-    </Surface>
+    <View style={{ marginBottom: 8 }}>
+      <Animated.View
+        style={{
+          opacity: fadeAnim,
+          transform: [{ scale: scaleAnim }],
+          alignSelf: isUser ? 'flex-end' : 'flex-start',
+          position: 'relative',
+          maxWidth: '70%', // Control max width at container level - iMessage is narrower
+        }}
+      >
+        {Platform.OS === 'ios' ? (
+          <>
+            <Surface 
+              style={[
+                styles.messageBubble, 
+                isUser ? styles.userBubble : styles.aiBubble
+              ]}
+              elevation={isUser ? 1 : 1}
+            >
+              <Text style={[
+                styles.messageText,
+                isUser ? styles.userMessageText : styles.aiMessageText
+              ]}>
+                {message.content}
+              </Text>
+            </Surface>
+            <View 
+              style={[
+                styles.tailStyle,
+                isUser ? styles.userTail : styles.aiTail,
+              ]} 
+            />
+          </>
+        ) : (
+          <>
+            <View
+              style={[
+                styles.messageBubble, 
+                isUser ? styles.userBubble : styles.aiBubble
+              ]}
+            >
+              <Text style={[
+                styles.messageText,
+                isUser ? styles.userMessageText : styles.aiMessageText
+              ]}>
+                {message.content}
+              </Text>
+            </View>
+            <View 
+              style={[
+                styles.tailStyle,
+                isUser ? styles.userTail : styles.aiTail
+              ]} 
+            />
+          </>
+        )}
+      </Animated.View>
+      
+      {/* Time indicator */}
+      <Text style={[
+        styles.timeText, 
+        { alignSelf: isUser ? 'flex-end' : 'flex-start' }
+      ]}>
+        {timeString}
+      </Text>
+    </View>
   );
 };
 
 // Main chat screen component
 export const ChatScreen = () => {
-  // Get state and functions from ChatContext, including debugInfo
+  // Get state and functions from ChatContext
   const { messages, loading, error, sendMessage } = useChatContext();
   
   // Get system prompts from context
   const { activePrompt, loadingPrompts } = useSystemPrompts();
 
+  // Get admin mode context
+  const { isAdminMode, setIsAdminMode } = useAdminMode();
+  
+  // Get auth context for logout
+  const { signOut } = useAuthContext();
+
   // Local state
   const [inputText, setInputText] = useState('');
   const [useUserContext, setUseUserContext] = useState(true);
-
+  
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
+  
+  // Add new state for scroll visibility
+  const [showScrollButton, setShowScrollButton] = useState(false);
   
   // Function to handle sending a message using the context
   const handleSend = async () => {
@@ -59,6 +264,15 @@ export const ChatScreen = () => {
     }
   };
   
+  // Handle key press for the text input
+  const handleKeyPress = (e: any) => {
+    // Check if Enter was pressed without the Shift key
+    if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
+      e.preventDefault(); // Prevent default behavior (new line)
+      handleSend();
+    }
+  };
+  
   // Scroll to the bottom when new messages arrive
   useEffect(() => {
     if (messages.length > 0) {
@@ -67,77 +281,168 @@ export const ChatScreen = () => {
       }, 100); // Short delay ensures layout is complete
     }
   }, [messages]);
+
+  // Helper to toggle admin mode
+  const toggleAdminMode = () => setIsAdminMode(!isAdminMode);
+
+  // Combined data for FlatList to include typing indicator when loading
+  const renderData = useMemo(() => [
+    ...messages, 
+    ...(loading ? [{ id: 'typing-indicator', role: 'typing', content: '', createdAt: '' }] : [])
+  ], [messages, loading]);
+  
+  // Optimize FlatList rendering
+  const renderMessageItem = useCallback(({ item }: { item: Message | { id: string; role: string; content: string; createdAt: string } }) => {
+    if (item.role === 'typing') {
+      return <TypingIndicator />;
+    }
+    return <MessageBubble message={item as Message} />;
+  }, []);
+  
+  const keyExtractor = useCallback((item: Message | { id: string; role: string; content: string; createdAt: string }) => item.id, []);
+  
+  // Function to handle scrolling to bottom
+  const scrollToBottom = () => {
+    flatListRef.current?.scrollToEnd({ animated: true });
+  };
+  
+  // Function to handle scroll events
+  const handleScroll = (event: { nativeEvent: { contentOffset: { y: number }, contentSize: { height: number }, layoutMeasurement: { height: number } } }) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    // Show button if scrolled up a significant amount
+    const scrolledUp = contentSize.height - layoutMeasurement.height - contentOffset.y > 200;
+    setShowScrollButton(scrolledUp && messages.length > 8);
+  };
   
   return (
-    <KeyboardAvoidingView 
-      style={[styles.container, { paddingBottom: insets.bottom }]} 
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingBottom: insets.bottom }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
       
-      {/* Active Prompt, Active Model, and User Context Display */}
-      <View style={styles.activePromptContainer}>
-        <Text style={styles.activePromptLabel}>Active Prompt:</Text>
-        <Text style={styles.activePromptValue}>
-          {loadingPrompts ? 'Loading...' : (activePrompt ? activePrompt.name : 'None')}
-        </Text>
-
-        <Text style={styles.activePromptLabel}>Active Model:</Text>
-        <Text style={styles.activePromptValue}>
-          {loadingPrompts ? 'Loading...' : (
-            activePrompt?.modelName?.toLowerCase().includes('claude') 
-              ? activePrompt.modelName 
-              : 'chatgpt-4o-latest'
-          )}
-        </Text>
-
-        <Text style={styles.activePromptLabel}>User Context:</Text>
-        <View style={styles.userContextSwitch}>
-          <Checkbox.Android
-            status={useUserContext ? 'checked' : 'unchecked'}
-            onPress={() => setUseUserContext(!useUserContext)}
+      <View style={styles.backgroundPattern}>
+        
+        {/* Admin mode header - only shown in admin mode */}
+        {isAdminMode && (
+          <View style={styles.headerContainer}>
+            <View style={styles.headerContent}>
+              <Text style={styles.headerText}>
+                {!loadingPrompts && activePrompt ? `${activePrompt.name} • ` : ''}
+                {!loadingPrompts && activePrompt?.modelName 
+                  ? (activePrompt.modelName.toLowerCase().includes('claude') 
+                      ? activePrompt.modelName 
+                      : 'ChatGPT-4o') 
+                  : 'AI Assistant'}
+              </Text>
+              
+              <View style={styles.adminControls}>
+                <View style={styles.contextToggleContainer}>
+                  <Text style={styles.contextToggleLabel}>User Context:</Text>
+                  <Switch
+                    value={useUserContext}
+                    onValueChange={() => setUseUserContext(!useUserContext)}
+                    trackColor={{ false: COLORS.switchTrackInactive, true: COLORS.switchTrackActive }}
+                    thumbColor="#FFFFFF"
+                  />
+                </View>
+                
+                <TouchableOpacity 
+                  style={styles.logoutButton}
+                  onPress={signOut}
+                >
+                  <Text style={styles.logoutText}>Logout</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+        
+        {/* User/Admin toggle - always visible but positioned differently based on mode */}
+        <View style={[
+          styles.adminToggleContainer,
+          isAdminMode ? styles.adminToggleAdmin : styles.adminToggleUser
+        ]}>
+          <Text style={styles.toggleLabel}>User</Text>
+          <Switch
+            value={isAdminMode}
+            onValueChange={toggleAdminMode}
+            trackColor={{ false: COLORS.switchTrackInactive, true: COLORS.switchTrackActive }}
+            thumbColor="#FFFFFF"
+            style={styles.switch}
+          />
+          <Text style={styles.toggleLabel}>Admin</Text>
+        </View>
+        
+        {/* Messages list */}
+        <FlatList
+          ref={flatListRef}
+          data={renderData}
+          keyExtractor={keyExtractor}
+          renderItem={renderMessageItem}
+          contentContainerStyle={[
+            styles.messagesList,
+            !isAdminMode && styles.userModeMessagesList
+          ]}
+          style={styles.messagesContainer}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          showsVerticalScrollIndicator={false}
+          removeClippedSubviews={Platform.OS === 'android'}
+          onScroll={handleScroll}
+          scrollEventThrottle={400}
+        />
+        
+        {/* Error message display */}
+        {error && (
+          <Surface style={styles.errorContainer} elevation={1}>
+            <Text style={styles.errorText}>{error}</Text>
+          </Surface>
+        )}
+        
+        {/* Scroll to bottom button */}
+        {showScrollButton && (
+          <FAB
+            icon="chevron-down"
+            style={styles.scrollButton}
+            color="#FFFFFF"
+            size="small"
+            onPress={scrollToBottom}
+          />
+        )}
+        
+        {/* Input area */}      
+        <View style={styles.inputContainer}>
+          <Surface style={styles.inputSurface} elevation={1}>
+            <TextInput
+              mode="outlined"
+              style={styles.input}
+              placeholder="iMessage"
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+              disabled={loading}
+              onKeyPress={handleKeyPress}
+              onSubmitEditing={handleSend}
+              blurOnSubmit={false}
+              right={loading ? <TextInput.Icon icon="loading" size={20} /> : null}
+              outlineStyle={styles.inputOutline}
+              theme={{ colors: { primary: COLORS.sendButton } }}
+            />
+          </Surface>
+          <IconButton
+            icon="arrow-up"
+            mode="contained"
+            containerColor={COLORS.sendButton}
+            iconColor="#FFFFFF"
+            size={22}
+            onPress={handleSend}
+            disabled={!inputText.trim() || loading}
+            style={styles.sendButton}
           />
         </View>
-      </View>
-      
-      {/* Messages list */}
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <MessageBubble message={item} />}
-        contentContainerStyle={styles.messagesList}
-        style={styles.messagesContainer}
-      />
-      
-      {/* Error message display */}
-      {error && (
-        <Surface style={styles.errorContainer} elevation={1}>
-          <Text style={styles.errorText}>{error}</Text>
-        </Surface>
-      )}
-      
-      {/* Input area */}      
-      <View style={styles.inputContainer}>
-        <TextInput
-          mode="outlined"
-          style={styles.input}
-          placeholder="Type a message..."
-          value={inputText}
-          onChangeText={setInputText}
-          onSubmitEditing={handleSend}
-          disabled={loading}
-          right={loading ? <TextInput.Icon icon="loading" size={20} /> : null}
-        />
-        <Button 
-          mode="contained" 
-          onPress={handleSend} 
-          style={styles.sendButton}
-          disabled={!inputText.trim() || loading}
-        >
-          Send
-        </Button>
       </View>
     </KeyboardAvoidingView>
   );
@@ -146,102 +451,276 @@ export const ChatScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  backgroundPattern: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    backgroundColor: COLORS.background,
+  },
+  headerContainer: {
+    backgroundColor: COLORS.header, // White header like iMessage
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#CCCCCC',
+  },
+  headerContent: {
+    paddingHorizontal: 16,
+  },
+  headerText: {
+    fontSize: 14,
+    color: COLORS.headerText,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  adminToggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    backgroundColor: COLORS.header, // White header like iMessage
+  },
+  adminToggleAdmin: {
+    position: 'absolute',
+    top: 10,
+    right: 16,
+    backgroundColor: 'transparent',
+    zIndex: 10,
+  },
+  adminToggleUser: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#CCCCCC',
+  },
+  toggleLabel: {
+    fontSize: 12,
+    color: COLORS.headerText,
+    marginHorizontal: 4,
+  },
+  switch: {
+    transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
+  },
+  adminControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  contextToggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  contextToggleLabel: {
+    fontSize: 13,
+    color: COLORS.headerText,
+    marginRight: 8,
+  },
+  logoutButton: {
+    padding: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#FF3B30',
+    borderRadius: 12,
+  },
+  logoutText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
   messagesContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: COLORS.background,
   },
   messagesList: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
+  },
+  userModeMessagesList: {
+    paddingTop: 60, // Extra padding for the toggle in user mode
   },
   messageBubble: {
     padding: 12,
-    borderRadius: 16,
-    maxWidth: '85%',
-    marginBottom: 8,
+    borderRadius: 20, // More rounded like iMessage
+    marginVertical: 1,
   },
   userBubble: {
     alignSelf: 'flex-end',
-    backgroundColor: MD3Colors.primary80,
-    borderBottomRightRadius: 4,
+    backgroundColor: COLORS.userBubble,
+    borderBottomRightRadius: 5, // Tailored corner like iMessage
+    ...Platform.select({
+      ios: {
+        shadowColor: 'rgba(0,0,0,0.15)',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.3,
+        shadowRadius: 1,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
   aiBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: '#ffffff',
-    borderBottomLeftRadius: 4,
+    backgroundColor: COLORS.assistantBubble,
+    borderBottomLeftRadius: 5, // Tailored corner like iMessage
+    ...Platform.select({
+      ios: {
+        shadowColor: 'rgba(0,0,0,0.1)',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 1,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
   messageText: {
     fontSize: 16,
-    color: '#000000',
+    lineHeight: 21, // Tighter line spacing like iMessage
+    letterSpacing: -0.2, // Tighter letter spacing like Apple's SF font
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif', // Use System font on iOS for SF Pro
+  },
+  userMessageText: {
+    color: COLORS.userText,
+    fontWeight: '400', // Regular weight
+  },
+  aiMessageText: {
+    color: COLORS.assistantText,
+    fontWeight: '400', // Regular weight
+  },
+  typingContainer: {
+    minWidth: 70,
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  typingDotsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 20,
+  },
+  typingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#8E8E93', // Fixed color for typing dots
+    marginHorizontal: 3,
+    opacity: 0.8, // Slightly reduce opacity for softer look
   },
   inputContainer: {
     flexDirection: 'row',
-    padding: 8,
-    paddingBottom: Platform.OS === 'ios' ? 8 : 12,
-    backgroundColor: '#ffffff',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#dddddd',
+    padding: 12,
+    paddingBottom: Platform.OS === 'ios' ? 12 : 16,
+    backgroundColor: 'transparent',
+    borderTopWidth: 0,
     alignItems: 'flex-end',
+  },
+  inputSurface: {
+    flex: 1,
+    borderRadius: 20, // More rounded corners like iMessage
+    marginRight: 10,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF', // White container around input
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.inputShadow,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.3,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   input: {
     flex: 1,
-    marginRight: 8,
-    maxHeight: 100,
-    backgroundColor: '#ffffff',
+    marginRight: 0,
+    maxHeight: 120,
+    backgroundColor: COLORS.inputBackground, // Gray input field
+    borderRadius: 20, // Match iMessage's more rounded corners
+    fontSize: 16, // iMessage text size
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+  },
+  inputOutline: {
+    borderRadius: 20, // Match iMessage's more rounded corners
+    borderWidth: 0,
   },
   sendButton: {
-    borderRadius: 20,
-    height: 40,
-    justifyContent: 'center',
-    marginBottom: Platform.OS === 'ios' ? 0 : 4,
+    borderRadius: 20, // Perfect circle
+    width: 36, // iMessage has a smaller send button
+    height: 36, // iMessage has a smaller send button
+    margin: 2,
+    ...Platform.select({
+      android: {
+        elevation: 4,
+      },
+      ios: {
+        shadowColor: COLORS.userBubbleShadow,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.3, // More subtle shadow like iMessage
+        shadowRadius: 2,
+      },
+    }),
   },
   errorContainer: {
     marginHorizontal: 16,
     marginVertical: 8,
     padding: 12,
-    backgroundColor: '#ffcccc',
+    backgroundColor: '#FFCCCC',
     borderRadius: 8,
   },
   errorText: {
-    color: '#d32f2f',
+    color: '#D32F2F',
     textAlign: 'center',
   },
-  loadingIndicator: {
+  timeText: {
+    fontSize: 10, // Smaller timestamp like iMessage
+    color: COLORS.messageTimestamp,
+    marginTop: 2,
+    marginHorizontal: 8, // Larger margins like iMessage
+    opacity: 0.7, // More subtle timestamp like iMessage
+  },
+  tailStyle: {
     position: 'absolute',
-    bottom: 70,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    borderRadius: 16,
-    padding: 8,
-    flexDirection: 'row',
+    width: 8, // Smaller tail like iMessage
+    height: 8,
+    transform: [{ rotate: '45deg' }],
+    bottom: 0,
+  },
+  userTail: {
+    right: 4, // Position closer to edge
+    backgroundColor: COLORS.userBubble,
+  },
+  aiTail: {
+    left: 4, // Position closer to edge
+    backgroundColor: COLORS.assistantBubble,
+  },
+  // Add scroll button styles
+  scrollButton: {
+    position: 'absolute',
+    right: 16,
+    bottom: 80,
+    backgroundColor: COLORS.scrollButtonBackground,
+    borderRadius: 28,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
-  },
-  loadingText: {
-    marginLeft: 8,
-    fontSize: 14,
-  },
-  activePromptContainer: {
-    flexDirection: 'row',
-    padding: 8,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#dddddd',
-    alignItems: 'center',
-  },
-  activePromptLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginRight: 8,
-  },
-  activePromptValue: {
-    fontSize: 14,
-    marginRight: 16, // Extra spacing so the next label doesn't butt up against it
-  },
-  userContextSwitch: {
-    marginRight: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: 'rgba(0,0,0,0.3)',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.8,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
 });
 

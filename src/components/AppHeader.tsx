@@ -3,9 +3,16 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuthContext } from '../context/AuthContext';
 import { Text } from 'react-native';
+import { useAdminMode } from '../navigation/AppNavigator';
 
 const AppHeader = () => {
   const { signOut } = useAuthContext();
+  const { isAdminMode } = useAdminMode();
+
+  // Don't render if not in admin mode
+  if (!isAdminMode) {
+    return null;
+  }
 
   const handleLogout = async () => {
     try {
@@ -19,11 +26,8 @@ const AppHeader = () => {
   return (
     <View style={styles.header}>
       <View style={styles.titleContainer}>
-        <Text style={styles.title}>Purpose</Text>
+        <Text style={styles.title}>Purpose Admin</Text>
       </View>
-      <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-        <MaterialIcons name="logout" size={24} color="#fff" />
-      </TouchableOpacity>
     </View>
   );
 };
@@ -32,21 +36,20 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     height: 50,
     paddingHorizontal: 16,
-    backgroundColor: '#007bff',
+    backgroundColor: '#F2F2F7',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#CCCCCC',
   },
   titleContainer: {
-    flex: 1,
+    alignItems: 'center',
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  logoutButton: {
-    padding: 8,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#007AFF',
   },
 });
 

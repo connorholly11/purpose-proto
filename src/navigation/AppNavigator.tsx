@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -17,6 +17,19 @@ import { FeedbackButton } from '../components';
 
 // Import our new TestingScreen
 import TestingScreen from '../screens/TestingScreen'; // <--- NEW IMPORT
+
+// Create a context to track admin mode state
+type AdminModeContextType = {
+  isAdminMode: boolean;
+  setIsAdminMode: (value: boolean) => void;
+};
+
+export const AdminModeContext = createContext<AdminModeContextType>({
+  isAdminMode: false,
+  setIsAdminMode: () => {},
+});
+
+export const useAdminMode = () => useContext(AdminModeContext);
 
 // Define the stack navigator parameter types
 export type AppStackParamList = {
@@ -38,6 +51,8 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 // Main Tab Navigator component (used when authenticated)
 const MainTabNavigator = () => {
+  const { isAdminMode } = useAdminMode();
+  
   return (
     <>
       <Tab.Navigator
@@ -57,7 +72,10 @@ const MainTabNavigator = () => {
           },
           tabBarActiveTintColor: '#007bff',
           tabBarInactiveTintColor: 'gray',
-          header: () => <AppHeader />,
+          header: () => isAdminMode ? <AppHeader /> : null,
+          tabBarStyle: { 
+            display: isAdminMode ? 'flex' : 'none' 
+          },
         })}
       >
         <Tab.Screen
@@ -91,8 +109,8 @@ const MainTabNavigator = () => {
         />
       </Tab.Navigator>
       
-      {/* Add the feedback button to the main layout */}
-      <FeedbackButton />
+      {/* Only show feedback button in admin mode */}
+      {isAdminMode && <FeedbackButton />}
     </>
   );
 };
@@ -100,6 +118,7 @@ const MainTabNavigator = () => {
 // Main App Navigator
 export const AppNavigator = () => {
   const { isSignedIn, isLoaded } = useAuthContext();
+  const [isAdminMode, setIsAdminMode] = useState(false);
 
   // Show nothing while auth is loading
   if (!isLoaded) {
@@ -107,24 +126,26 @@ export const AppNavigator = () => {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isSignedIn ? (
-          // Authenticated screens
-          <Stack.Screen
-            name="Main"
-            component={MainTabNavigator}
-          />
-        ) : (
-          // Authentication screens
-          <Stack.Screen
-            name="SignIn"
-            component={SignInScreen}
-            options={{ headerShown: false }}
-          />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <AdminModeContext.Provider value={{ isAdminMode, setIsAdminMode }}>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {isSignedIn ? (
+            // Authenticated screens
+            <Stack.Screen
+              name="Main"
+              component={MainTabNavigator}
+            />
+          ) : (
+            // Authentication screens
+            <Stack.Screen
+              name="SignIn"
+              component={SignInScreen}
+              options={{ headerShown: false }}
+            />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </AdminModeContext.Provider>
   );
 };
 
