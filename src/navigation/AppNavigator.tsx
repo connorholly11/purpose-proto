@@ -10,7 +10,8 @@ import {
   AdminPromptScreen, 
   AdminUserScreen, 
   AdminScreen,
-  SummarizationStatusScreen
+  SummarizationStatusScreen,
+  PlaceholderDashboardScreen
 } from '../screens';
 import AppHeader from '../components/AppHeader';
 import { FeedbackButton } from '../components';
@@ -40,6 +41,7 @@ export type AppStackParamList = {
 // Define the bottom tab navigator parameter types
 export type MainTabParamList = {
   Chat: undefined;
+  Dashboard: undefined;
   Prompts: undefined;
   Admin: undefined;
   Testing: undefined; // <--- NEW
@@ -60,7 +62,9 @@ const MainTabNavigator = () => {
           tabBarIcon: ({ color, size }) => {
             let iconName: keyof typeof MaterialIcons.glyphMap = 'chat-bubble';
 
-            if (route.name === 'Prompts') {
+            if (route.name === 'Dashboard') {
+              iconName = 'dashboard';
+            } else if (route.name === 'Prompts') {
               iconName = 'settings';
             } else if (route.name === 'Admin') {
               iconName = 'admin-panel-settings';
@@ -83,6 +87,13 @@ const MainTabNavigator = () => {
           component={ChatScreen}
           options={{
             title: 'AI Companion',
+          }}
+        />
+        <Tab.Screen
+          name="Dashboard"
+          component={PlaceholderDashboardScreen}
+          options={{
+            title: 'Dashboard',
           }}
         />
         <Tab.Screen
