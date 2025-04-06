@@ -2,12 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-// Run the favicon generation script
-console.log('Generating favicons...');
-execSync('node create-favicon.js', { stdio: 'inherit' });
-execSync('node create-favicon-ico.js', { stdio: 'inherit' });
-
-// Build the web app
+// Build the web app first
 console.log('Building web app...');
 execSync('expo export', { stdio: 'inherit' });
 
@@ -18,74 +13,117 @@ if (!fs.existsSync(distDir)) {
   process.exit(1);
 }
 
-// Copy favicon files to the dist directory
-console.log('Copying favicon files...');
+// Generate a simple favicon directly
+console.log('Generating favicon...');
 
-// Create the favicons directory in dist/assets if it doesn't exist
-const distFaviconsDir = path.join(distDir, 'assets', 'favicons');
-if (!fs.existsSync(distFaviconsDir)) {
-  fs.mkdirSync(distFaviconsDir, { recursive: true });
+// Use canvas to create a simple favicon
+const { createCanvas } = require('canvas');
+
+// Create a 192x192 canvas for the favicon
+const size = 192;
+const canvas = createCanvas(size, size);
+const ctx = canvas.getContext('2d');
+
+// Set up gradient background
+const gradient = ctx.createLinearGradient(0, 0, size, size);
+gradient.addColorStop(0, '#6366f1'); // Indigo
+gradient.addColorStop(1, '#8b5cf6'); // Purple
+
+// Fill background
+ctx.fillStyle = gradient;
+ctx.fillRect(0, 0, size, size);
+
+// Draw robot/AI face
+ctx.fillStyle = '#ffffff';
+
+// Draw circular face
+ctx.beginPath();
+ctx.arc(size/2, size/2, size/3, 0, Math.PI * 2);
+ctx.fill();
+
+// Draw eyes
+ctx.fillStyle = '#6366f1';
+// Left eye
+ctx.beginPath();
+ctx.arc(size/2 - size/8, size/2 - size/16, size/12, 0, Math.PI * 2);
+ctx.fill();
+// Right eye
+ctx.beginPath();
+ctx.arc(size/2 + size/8, size/2 - size/16, size/12, 0, Math.PI * 2);
+ctx.fill();
+
+// Draw mouth (slightly curved upward line)
+ctx.strokeStyle = '#6366f1';
+ctx.lineWidth = 4;
+ctx.beginPath();
+ctx.moveTo(size/2 - size/8, size/2 + size/8);
+ctx.quadraticCurveTo(size/2, size/2 + size/6, size/2 + size/8, size/2 + size/8);
+ctx.stroke();
+
+// Add antenna
+ctx.strokeStyle = '#ffffff';
+ctx.lineWidth = 3;
+ctx.beginPath();
+ctx.moveTo(size/2, size/2 - size/6);
+ctx.lineTo(size/2, size/2 - size/3);
+ctx.stroke();
+
+// Add small circle at the top of the antenna
+ctx.fillStyle = '#ffffff';
+ctx.beginPath();
+ctx.arc(size/2, size/2 - size/3, 4, 0, Math.PI * 2);
+ctx.fill();
+
+// Create favicon sizes
+const sizes = [16, 32, 64, 128, 152, 192];
+const faviconDir = path.join(distDir, 'assets');
+if (!fs.existsSync(faviconDir)) {
+  fs.mkdirSync(faviconDir, { recursive: true });
 }
 
-// Copy all favicon files
-const faviconDir = path.join(__dirname, 'assets', 'favicons');
-if (fs.existsSync(faviconDir)) {
-  const faviconFiles = fs.readdirSync(faviconDir);
-  
-  faviconFiles.forEach(file => {
-    const srcPath = path.join(faviconDir, file);
-    const destPath = path.join(distFaviconsDir, file);
-    
-    fs.copyFileSync(srcPath, destPath);
-    console.log(`Copied ${file} to dist/assets/favicons/`);
-  });
-}
+// Save the main favicon
+const buffer = canvas.toBuffer('image/png');
+const faviconPath = path.join(faviconDir, 'favicon.png');
+fs.writeFileSync(faviconPath, buffer);
+console.log(`Created favicon: ${faviconPath}`);
 
-// Copy favicon.ico to root directory
-const faviconIcoSrc = path.join(__dirname, 'assets', 'favicon.ico');
-const faviconIcoDest = path.join(distDir, 'favicon.ico');
-if (fs.existsSync(faviconIcoSrc)) {
-  fs.copyFileSync(faviconIcoSrc, faviconIcoDest);
-  console.log(`Copied favicon.ico to dist/`);
-}
+// Save favicon.ico directly to dist root using 16x16 version
+const iconCanvas16 = createCanvas(16, 16);
+const iconCtx16 = iconCanvas16.getContext('2d');
+iconCtx16.drawImage(canvas, 0, 0, size, size, 0, 0, 16, 16);
+const iconBuffer16 = iconCanvas16.toBuffer('image/png');
+const faviconIcoPath = path.join(distDir, 'favicon.ico');
+fs.writeFileSync(faviconIcoPath, iconBuffer16);
+console.log(`Created favicon.ico: ${faviconIcoPath}`);
 
 // Update the index.html file with the favicon links
 const indexHtmlPath = path.join(distDir, 'index.html');
 if (fs.existsSync(indexHtmlPath)) {
   let indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
   
-  // Check if our favicon tags already exist
-  if (!indexHtml.includes('rel="icon" type="image/png" sizes="16x16"')) {
-    // Find the head closing tag
-    const headCloseIndex = indexHtml.indexOf('</head>');
+  // Replace or add favicon links
+  const headEndIndex = indexHtml.indexOf('</head>');
+  if (headEndIndex !== -1) {
+    // Find and remove any existing favicon links
+    const linkPattern = /<link[^>]*rel=["'](?:icon|shortcut icon|apple-touch-icon)[^>]*>/g;
+    indexHtml = indexHtml.replace(linkPattern, '');
     
-    if (headCloseIndex !== -1) {
-      // Favicon tags to insert
-      const faviconTags = `
-  <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="./favicon.ico">
-  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicons/favicon-16x16.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicons/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="./assets/favicons/favicon-192x192.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="./assets/favicons/favicon-152x152.png">
-  <link rel="shortcut icon" href="./assets/favicon.png">
+    // Add our favicon links
+    const faviconLinks = `
+  <!-- Favicons -->
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/favicon.png">
 `;
+    
+    indexHtml = 
+      indexHtml.substring(0, headEndIndex) + 
+      faviconLinks +
+      indexHtml.substring(headEndIndex);
       
-      // Insert the favicon tags before the head closing tag
-      indexHtml = 
-        indexHtml.substring(0, headCloseIndex) + 
-        faviconTags + 
-        indexHtml.substring(headCloseIndex);
-      
-      // Write the updated HTML back to the file
-      fs.writeFileSync(indexHtmlPath, indexHtml);
-      console.log('Updated index.html with favicon links');
-    }
-  } else {
-    console.log('Favicon links already exist in index.html');
+    fs.writeFileSync(indexHtmlPath, indexHtml);
+    console.log('Updated index.html with favicon links');
   }
-} else {
-  console.error('index.html not found in dist directory');
 }
 
 console.log('Web build completed with favicon support'); 
