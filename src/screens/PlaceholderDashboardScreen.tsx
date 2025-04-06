@@ -4,6 +4,58 @@ import { Card, Title, Paragraph, useTheme, Button, ProgressBar, Chip, Surface, A
 import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
+// First-time user instructions component
+const FirstTimeUserGuide = ({ onDismiss }: { onDismiss: () => void }) => {
+  const colors = {
+    primary: '#D4AF37',
+    text: '#000000',
+    background: '#FFFFFF',
+    goldLight: '#F5EFD9',
+  };
+
+  return (
+    <Surface style={styles.welcomeGuideContainer}>
+      <View style={styles.welcomeHeader}>
+        <Title style={{color: colors.primary}}>Welcome to Your Life Dashboard!</Title>
+        <IconButton
+          icon="close"
+          size={20}
+          iconColor={colors.text}
+          onPress={onDismiss}
+        />
+      </View>
+
+      <Paragraph style={styles.welcomeText}>
+        Your Life Dashboard helps you track and improve key areas of your life while working with your AI companion.
+      </Paragraph>
+
+      <View style={styles.welcomeItem}>
+        <MaterialIcons name="expand-more" size={18} color={colors.primary} />
+        <Text style={styles.welcomeItemText}>Tap section headers to expand or collapse</Text>
+      </View>
+
+      <View style={styles.welcomeItem}>
+        <MaterialIcons name="touch-app" size={18} color={colors.primary} />
+        <Text style={styles.welcomeItemText}>Tap on domains to see details and daily tasks</Text>
+      </View>
+
+      <View style={styles.welcomeItem}>
+        <MaterialIcons name="smart-toy" size={18} color={colors.primary} />
+        <Text style={styles.welcomeItemText}>Your AI companion provides personalized insights</Text>
+      </View>
+
+      <Button
+        mode="contained"
+        style={{backgroundColor: colors.primary, marginTop: 16}}
+        onPress={onDismiss}
+        labelStyle={{color: colors.background}}
+      >
+        Get Started
+      </Button>
+    </Surface>
+  );
+};
+
 const PlaceholderDashboardScreen: React.FC = () => {
   const theme = useTheme();
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -18,7 +70,7 @@ const PlaceholderDashboardScreen: React.FC = () => {
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [aiInput, setAiInput] = useState("");
-  const [quickChatVisible, setQuickChatVisible] = useState(false);
+  const [showWelcomeGuide, setShowWelcomeGuide] = useState(true);
   const [activeDomainChat, setActiveDomainChat] = useState<number | null>(null);
   
   // Color scheme
@@ -147,6 +199,10 @@ const PlaceholderDashboardScreen: React.FC = () => {
         })
       ])
     ).start();
+
+    // Check if it's the first time visiting
+    // In a real app, you'd use AsyncStorage or another storage method to persist this
+    // For demo purposes, we'll just show it on component mount
   }, []);
 
   const headerTranslateY = scrollY.interpolate({
@@ -188,7 +244,7 @@ const PlaceholderDashboardScreen: React.FC = () => {
     // Simulate AI response
     setTimeout(() => {
       setAiMessages(prev => [...prev, "I'll help you work on that! Let's break that down into smaller steps."]);
-      setQuickChatVisible(false);
+      toggleSection('chat');
     }, 500);
     
     setAiInput("");
@@ -209,6 +265,11 @@ const PlaceholderDashboardScreen: React.FC = () => {
         {useNativeDriver: true}
       )}
     >
+      {/* First-time welcome guide */}
+      {showWelcomeGuide && (
+        <FirstTimeUserGuide onDismiss={() => setShowWelcomeGuide(false)} />
+      )}
+      
       {/* Floating header */}
       <Animated.View 
         style={[
@@ -795,6 +856,35 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     margin: 0,
+  },
+  welcomeGuideContainer: {
+    margin: 16,
+    marginTop: 70,
+    borderRadius: 12,
+    padding: 16,
+    elevation: 3,
+    zIndex: 900,
+  },
+  welcomeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  welcomeText: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  welcomeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingVertical: 4,
+  },
+  welcomeItemText: {
+    marginLeft: 8,
+    fontSize: 14,
   },
 });
 

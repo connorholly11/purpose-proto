@@ -76,9 +76,11 @@ const MainTabNavigator = () => {
           },
           tabBarActiveTintColor: '#007bff',
           tabBarInactiveTintColor: 'gray',
-          header: () => isAdminMode ? <AppHeader /> : null,
+          // Show header for all users to maintain consistent UI
+          header: () => <AppHeader />,
+          // Always show tab bar
           tabBarStyle: { 
-            display: isAdminMode ? 'flex' : 'none' 
+            display: 'flex'
           },
         })}
       >
@@ -96,28 +98,32 @@ const MainTabNavigator = () => {
             title: 'Dashboard',
           }}
         />
-        <Tab.Screen
-          name="Prompts"
-          component={AdminPromptScreen}
-          options={{
-            title: 'System Prompts',
-          }}
-        />
-        <Tab.Screen
-          name="Admin"
-          component={AdminScreen}
-          options={{
-            title: 'Admin Tools',
-          }}
-        />
-        {/* NEW TESTING TAB */}
-        <Tab.Screen
-          name="Testing"
-          component={TestingScreen}
-          options={{
-            title: 'Testing',
-          }}
-        />
+        {/* Only show admin screens if in admin mode */}
+        {isAdminMode && (
+          <>
+            <Tab.Screen
+              name="Prompts"
+              component={AdminPromptScreen}
+              options={{
+                title: 'System Prompts',
+              }}
+            />
+            <Tab.Screen
+              name="Admin"
+              component={AdminScreen}
+              options={{
+                title: 'Admin Tools',
+              }}
+            />
+            <Tab.Screen
+              name="Testing"
+              component={TestingScreen}
+              options={{
+                title: 'Testing',
+              }}
+            />
+          </>
+        )}
       </Tab.Navigator>
       
       {/* Only show feedback button in admin mode */}
