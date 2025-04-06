@@ -1,28 +1,133 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Dimensions } from 'react-native';
-import { Card, Title, Paragraph, useTheme, Button, ProgressBar, Chip, Surface, Avatar, Badge } from 'react-native-paper';
+import { View, Text, StyleSheet, ScrollView, Animated, TouchableOpacity, Dimensions, TextInput } from 'react-native';
+import { Card, Title, Paragraph, useTheme, Button, ProgressBar, Chip, Surface, Avatar, Badge, IconButton, Divider } from 'react-native-paper';
 import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const PlaceholderDashboardScreen: React.FC = () => {
   const theme = useTheme();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
+    domains: true,
+    aiInsights: false,
+    tips: false,
+    chat: false
+  });
   const [activeCard, setActiveCard] = useState<number | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [aiInput, setAiInput] = useState("");
+  const [quickChatVisible, setQuickChatVisible] = useState(false);
+  const [activeDomainChat, setActiveDomainChat] = useState<number | null>(null);
+  
+  // Color scheme
+  const colors = {
+    primary: '#D4AF37', // Gold
+    secondary: '#000000', // Black
+    background: '#FFFFFF', // White
+    backgroundAlt: '#F8F8F8', // Light gray
+    text: '#000000', // Black
+    textSecondary: '#555555', // Dark gray
+    gold: '#D4AF37',
+    goldLight: '#F5EFD9',
+    goldDark: '#B8960B',
+    header: '#111111',
+  };
+  
+  // AI Companion messages simulation
+  const [aiMessages, setAiMessages] = useState([
+    "Based on your recent activity, your health habit streak is improving!",
+    "You might want to focus on the Meaning domain this week.",
+  ]);
+  
+  // Domain-specific AI advice
+  const domainAdvice = [
+    "I notice your health metrics are trending positively. A 10-minute morning stretch routine could help you reach the next level faster.",
+    "Your relationship connections are growing. Consider scheduling a regular check-in with your closest friends to strengthen these bonds.",
+    "For finding more meaning, try journaling about moments that felt significant to you this week.",
+    "To develop purpose, consider how your strengths could be applied to causes you care about."
+  ];
+  
+  // Sample AI insights
+  const aiInsight = "I've noticed you've been consistent with health tasks but might be neglecting the meaning domain. A balance across domains leads to better overall wellbeing.";
+  
+  // Domain data with levels and progress
+  const domains = [
+    { 
+      name: 'Health', 
+      icon: 'favorite' as keyof typeof MaterialIcons.glyphMap, 
+      level: 3, 
+      progress: 0.65, 
+      xp: 650, 
+      nextLevel: 1000,
+      achievement: 'Morning Workout Warrior',
+      dailyTask: 'Take a 10-minute walk',
+      streakDays: 5,
+      aiSuggestion: "Try adding a 5-minute stretch to your morning routine."
+    },
+    { 
+      name: 'Relationships', 
+      icon: 'people' as keyof typeof MaterialIcons.glyphMap, 
+      level: 4, 
+      progress: 0.42, 
+      xp: 420, 
+      nextLevel: 1000,
+      achievement: 'Active Listener',
+      dailyTask: 'Send a message to a friend',
+      streakDays: 3,
+      aiSuggestion: "Consider asking deeper questions in your next conversation."
+    },
+    { 
+      name: 'Meaning', 
+      icon: 'psychology' as keyof typeof MaterialIcons.glyphMap, 
+      level: 2, 
+      progress: 0.28, 
+      xp: 280, 
+      nextLevel: 1000,
+      achievement: 'Mindfulness Novice',
+      dailyTask: 'Meditate for 5 minutes',
+      streakDays: 1,
+      aiSuggestion: "Reflection on what brought you joy today can increase your sense of meaning."
+    },
+    { 
+      name: 'Purpose', 
+      icon: 'lightbulb' as keyof typeof MaterialIcons.glyphMap, 
+      level: 1, 
+      progress: 0.15, 
+      xp: 150, 
+      nextLevel: 1000,
+      achievement: 'Goal Setter',
+      dailyTask: 'Write down one goal',
+      streakDays: 2,
+      aiSuggestion: "What small step could you take today toward a long-term goal?"
+    }
+  ];
+  
+  const tips = [
+    "Small daily improvements lead to stunning results over time.",
+    "The quality of your life is determined by the quality of your habits.",
+    "Focus on progress, not perfection. Every step forward counts.",
+    "Your future self is watching you right now through memories."
+  ];
+  
+  const [currentTip, setCurrentTip] = useState(0);
+  
+  const nextTip = () => {
+    setCurrentTip((prev) => (prev + 1) % tips.length);
+  };
   
   useEffect(() => {
     // Entrance animation
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: 800,
         useNativeDriver: true,
       }),
       Animated.timing(scaleAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 600,
         useNativeDriver: true,
       })
     ]).start();
@@ -56,80 +161,18 @@ const PlaceholderDashboardScreen: React.FC = () => {
     extrapolate: 'clamp',
   });
   
-  // Domain data with fun levels and progress
-  const domains = [
-    { 
-      name: 'Health', 
-      icon: 'favorite' as keyof typeof MaterialIcons.glyphMap, 
-      color: '#FF5252', 
-      gradientColors: ['#FF5252', '#FF867f'],
-      level: 3, 
-      progress: 0.65, 
-      xp: 650, 
-      nextLevel: 1000,
-      achievement: 'Morning Workout Warrior',
-      dailyTask: 'Take a 10-minute walk',
-      streakDays: 5
-    },
-    { 
-      name: 'Relationships', 
-      icon: 'people' as keyof typeof MaterialIcons.glyphMap, 
-      color: '#448AFF', 
-      gradientColors: ['#448AFF', '#81D4FA'],
-      level: 4, 
-      progress: 0.42, 
-      xp: 420, 
-      nextLevel: 1000,
-      achievement: 'Active Listener',
-      dailyTask: 'Send a message to a friend',
-      streakDays: 3
-    },
-    { 
-      name: 'Meaning', 
-      icon: 'psychology' as keyof typeof MaterialIcons.glyphMap, 
-      color: '#9C27B0', 
-      gradientColors: ['#9C27B0', '#CE93D8'],
-      level: 2, 
-      progress: 0.28, 
-      xp: 280, 
-      nextLevel: 1000,
-      achievement: 'Mindfulness Novice',
-      dailyTask: 'Meditate for 5 minutes',
-      streakDays: 1
-    },
-    { 
-      name: 'Purpose', 
-      icon: 'lightbulb' as keyof typeof MaterialIcons.glyphMap, 
-      color: '#FFB300', 
-      gradientColors: ['#FFB300', '#FFE082'],
-      level: 1, 
-      progress: 0.15, 
-      xp: 150, 
-      nextLevel: 1000,
-      achievement: 'Goal Setter',
-      dailyTask: 'Write down one goal',
-      streakDays: 2
-    }
-  ];
-  
-  const tips = [
-    "Small daily improvements lead to stunning results over time. What tiny action could you take today?",
-    "The quality of your life is determined by the quality of your habits.",
-    "Focus on progress, not perfection. Every step forward counts.",
-    "Your future self is watching you right now through memories."
-  ];
-  
-  const [currentTip, setCurrentTip] = useState(0);
-  
-  const nextTip = () => {
-    setCurrentTip((prev) => (prev + 1) % tips.length);
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
   
   const renderBadge = (domain: any) => {
     if (domain.level >= 3) {
       return (
         <View style={{position: 'absolute', top: -5, right: -5, zIndex: 1}}>
-          <Badge size={22} style={{backgroundColor: domain.color}}>
+          <Badge size={22} style={{backgroundColor: colors.gold}}>
             ★
           </Badge>
         </View>
@@ -138,9 +181,27 @@ const PlaceholderDashboardScreen: React.FC = () => {
     return null;
   };
   
+  // Simulate sending a message to AI
+  const handleAiSend = () => {
+    if (aiInput.trim() === "") return;
+    
+    // Simulate AI response
+    setTimeout(() => {
+      setAiMessages(prev => [...prev, "I'll help you work on that! Let's break that down into smaller steps."]);
+      setQuickChatVisible(false);
+    }, 500);
+    
+    setAiInput("");
+  };
+  
+  // Handle domain-specific AI chat
+  const handleDomainAiChat = (index: number) => {
+    setActiveDomainChat(activeDomainChat === index ? null : index);
+  };
+  
   return (
     <Animated.ScrollView 
-      style={styles.container}
+      style={[styles.container, {backgroundColor: colors.background}]}
       contentContainerStyle={styles.contentContainer}
       scrollEventThrottle={16}
       onScroll={Animated.event(
@@ -153,214 +214,293 @@ const PlaceholderDashboardScreen: React.FC = () => {
         style={[
           styles.floatingHeader, 
           {
+            backgroundColor: colors.header,
             transform: [{translateY: headerTranslateY}],
             opacity: headerOpacity
           }
         ]}
       >
-        <View style={[styles.headerGradient, {backgroundColor: '#2196F3'}]}>
-          <View style={styles.headerContent}>
-            <MaterialIcons name="dashboard" size={28} color="white" />
-            <Text style={styles.floatingTitle}>Life Dashboard</Text>
-          </View>
+        <View style={styles.headerContent}>
+          <Text style={[styles.floatingTitle, {color: colors.gold}]}>Life Dashboard</Text>
         </View>
       </Animated.View>
       
-      {/* Main Header with Avatar */}
+      {/* Main Header */}
       <Animated.View 
         style={[
           styles.header, 
           {
+            backgroundColor: colors.header,
             opacity: fadeAnim,
             transform: [{scale: scaleAnim}]
           }
         ]}
       >
-        <View style={[styles.headerGradient, {backgroundColor: '#1E88E5'}]}>
-          <View style={styles.avatarContainer}>
-            <Avatar.Image 
-              size={80} 
-              source={{uri: 'https://ui-avatars.com/api/?name=Life+OS&background=0D8ABC&color=fff'}} 
-              style={styles.avatar}
-            />
-            <View style={styles.headerTextContainer}>
-              <Title style={styles.mainTitle}>Life Dashboard</Title>
-              <Text style={styles.subtitle}>Your personal growth tracker</Text>
-            </View>
+        <View style={styles.avatarContainer}>
+          <Avatar.Image 
+            size={70} 
+            source={{uri: 'https://ui-avatars.com/api/?name=Life+OS&background=111111&color=D4AF37'}} 
+            style={styles.avatar}
+          />
+          <View style={styles.headerTextContainer}>
+            <Title style={[styles.mainTitle, {color: colors.gold}]}>Life Dashboard</Title>
+            <Text style={[styles.subtitle, {color: '#AAAAAA'}]}>Level up your life</Text>
           </View>
-          
-          <View style={styles.statsContainer}>
-            <TouchableOpacity style={styles.statCard}>
-              <View style={styles.statIconContainer}>
-                <MaterialIcons name="local-fire-department" size={22} color="#FF9800" />
-              </View>
-              <Text style={styles.statNumber}>7</Text>
-              <Text style={styles.statLabel}>Day Streak</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.statCard}>
-              <View style={styles.statIconContainer}>
-                <MaterialIcons name="trending-up" size={22} color="#4CAF50" />
-              </View>
-              <Text style={styles.statNumber}>10</Text>
-              <Text style={styles.statLabel}>Total Level</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.statCard}>
-              <View style={styles.statIconContainer}>
-                <FontAwesome5 name="medal" size={18} color="#FFC107" />
-              </View>
-              <Text style={styles.statNumber}>3</Text>
-              <Text style={styles.statLabel}>Achievements</Text>
-            </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.aiButton, {backgroundColor: 'rgba(212,175,55,0.2)'}]}
+            onPress={() => toggleSection('chat')}
+          >
+            <MaterialIcons name="smart-toy" size={22} color={colors.gold} />
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={[styles.statNumber, {color: colors.gold}]}>10</Text>
+            <Text style={[styles.statLabel, {color: '#AAAAAA'}]}>Total Level</Text>
+          </View>
+          <Divider style={{height: 30, width: 1, backgroundColor: 'rgba(170,170,170,0.3)'}} />
+          <View style={styles.statItem}>
+            <Text style={[styles.statNumber, {color: colors.gold}]}>7</Text>
+            <Text style={[styles.statLabel, {color: '#AAAAAA'}]}>Day Streak</Text>
+          </View>
+          <Divider style={{height: 30, width: 1, backgroundColor: 'rgba(170,170,170,0.3)'}} />
+          <View style={styles.statItem}>
+            <Text style={[styles.statNumber, {color: colors.gold}]}>3</Text>
+            <Text style={[styles.statLabel, {color: '#AAAAAA'}]}>Achievements</Text>
           </View>
         </View>
       </Animated.View>
       
+      {/* AI Quick Chat */}
       <Animated.View 
         style={{
           opacity: fadeAnim,
           transform: [{scale: scaleAnim}]
         }}
       >
-        <Surface style={styles.welcomeCard}>
-          <Paragraph style={styles.paragraph}>
-            🎮 Welcome to your Life OS Dashboard! Track your progress across key life domains and level up as you go. Your AI companion will help you along the way!
-          </Paragraph>
-        </Surface>
+        {expandedSections.chat && (
+          <Surface style={[styles.sectionCard, {backgroundColor: colors.background}]}>
+            <View style={styles.aiChatHeader}>
+              <View style={styles.aiAvatarContainer}>
+                <Avatar.Icon 
+                  size={36} 
+                  icon="robot" 
+                  style={{backgroundColor: colors.gold}} 
+                  color={colors.header}
+                />
+                <Text style={[styles.aiTitle, {color: colors.text}]}>AI Companion</Text>
+              </View>
+              <IconButton 
+                icon="close" 
+                size={20} 
+                onPress={() => toggleSection('chat')}
+                iconColor={colors.textSecondary}
+              />
+            </View>
+            
+            <View style={[styles.aiMessageContainer, {backgroundColor: colors.goldLight}]}>
+              <Paragraph style={[styles.aiMessage, {color: colors.text}]}>
+                How can I help you with your personal growth today?
+              </Paragraph>
+            </View>
+            
+            <View style={[styles.aiInputContainer, {borderColor: '#E0E0E0'}]}>
+              <TextInput
+                style={[styles.aiInput, {color: colors.text}]}
+                placeholder="Ask me anything about your life domains..."
+                placeholderTextColor="#AAAAAA"
+                value={aiInput}
+                onChangeText={setAiInput}
+                multiline
+              />
+              <IconButton
+                icon="send"
+                size={22}
+                iconColor={colors.gold}
+                onPress={handleAiSend}
+                style={styles.sendButton}
+              />
+            </View>
+          </Surface>
+        )}
       
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="category" size={22} color="#555" />
-          <Text style={styles.sectionTitle}>Life Domains</Text>
-        </View>
-        
-        <View style={styles.cardsContainer}>
-          {domains.map((domain, index) => (
-            <Animated.View 
-              key={index} 
-              style={{
-                opacity: fadeAnim,
-                transform: [{
-                  scale: activeCard === index ? 1.02 : 1
-                }],
-                marginBottom: 16
-              }}
-            >
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={() => setActiveCard(activeCard === index ? null : index)}
-              >
-                <Card style={[styles.card]}>
+        {/* Collapsible section: Domains */}
+        <Surface style={[styles.sectionCard, {backgroundColor: colors.background}]}>
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => toggleSection('domains')}
+          >
+            <View style={styles.sectionTitleRow}>
+              <MaterialIcons name="category" size={20} color={colors.gold} />
+              <Text style={[styles.sectionTitle, {color: colors.text}]}>Life Domains</Text>
+            </View>
+            <MaterialIcons 
+              name={expandedSections.domains ? "expand-less" : "expand-more"} 
+              size={24} 
+              color={colors.textSecondary} 
+            />
+          </TouchableOpacity>
+          
+          {expandedSections.domains && (
+            <View style={styles.domainsContainer}>
+              {domains.map((domain, index) => (
+                <Card 
+                  key={index} 
+                  style={[
+                    styles.domainCard, 
+                    {
+                      backgroundColor: colors.background,
+                      borderColor: activeCard === index ? colors.gold : '#E0E0E0',
+                      marginBottom: 12
+                    }
+                  ]}
+                  onPress={() => setActiveCard(activeCard === index ? null : index)}
+                >
                   {renderBadge(domain)}
-                  <View style={[styles.cardHeader, {backgroundColor: domain.color}]}>
-                    <MaterialIcons name={domain.icon} size={22} color="white" />
-                    <Text style={styles.cardHeaderTitle}>{domain.name}</Text>
-                    <View style={styles.levelContainer}>
-                      <Text style={styles.levelBadge}>Lvl {domain.level}</Text>
-                    </View>
-                  </View>
-                  
-                  <Card.Content style={styles.cardContent}>
-                    <View style={styles.xpContainer}>
-                      <Text style={styles.xpText}>{domain.xp}/{domain.nextLevel} XP</Text>
-                      <View style={styles.streakBadge}>
-                        <MaterialIcons name="local-fire-department" size={14} color="#FF9800" />
-                        <Text style={styles.streakText}>{domain.streakDays}</Text>
+                  <Card.Content style={styles.domainCardContent}>
+                    <View style={styles.domainRow}>
+                      <View style={[styles.iconContainer, {backgroundColor: colors.goldLight}]}>
+                        <MaterialIcons name={domain.icon} size={20} color={colors.gold} />
+                      </View>
+                      <View style={styles.domainInfo}>
+                        <Text style={[styles.domainName, {color: colors.text}]}>{domain.name}</Text>
+                        <Text style={[styles.domainLevel, {color: colors.textSecondary}]}>Level {domain.level}</Text>
+                      </View>
+                      <View style={[styles.domainStreak, {backgroundColor: colors.goldLight}]}>
+                        <MaterialIcons name="local-fire-department" size={12} color={colors.gold} />
+                        <Text style={[styles.streakText, {color: colors.gold}]}>{domain.streakDays}</Text>
                       </View>
                     </View>
                     
                     <View style={styles.progressContainer}>
-                      <ProgressBar progress={domain.progress} color={domain.color} style={styles.progressBar} />
-                      <Text style={[styles.progressText, {color: domain.color}]}>
-                        {Math.floor(domain.progress * 100)}%
+                      <ProgressBar 
+                        progress={domain.progress} 
+                        color={colors.gold} 
+                        style={[styles.progressBar, {backgroundColor: colors.goldLight}]} 
+                      />
+                      <Text style={[styles.progressText, {color: colors.text}]}>
+                        {domain.xp}/{domain.nextLevel} XP
                       </Text>
                     </View>
                     
-                    <View style={styles.achievementContainer}>
-                      <FontAwesome5 name="medal" size={16} color={domain.color} />
-                      <Text style={styles.achievementText}>{domain.achievement}</Text>
-                    </View>
-                    
                     {activeCard === index && (
-                      <Animated.View 
-                        style={{
-                          opacity: fadeAnim,
-                          marginTop: 12
-                        }}
-                      >
-                        <View style={styles.dailyTaskContainer}>
-                          <Text style={styles.dailyTaskLabel}>Today's Task:</Text>
+                      <Animated.View>
+                        <Divider style={{backgroundColor: '#E0E0E0', marginVertical: 12}} />
+                        
+                        <View style={styles.achievementRow}>
+                          <FontAwesome5 name="medal" size={14} color={colors.gold} />
+                          <Text style={[styles.achievementText, {color: colors.text}]}>
+                            {domain.achievement}
+                          </Text>
+                        </View>
+                        
+                        <View style={[styles.taskContainer, {backgroundColor: colors.goldLight}]}>
+                          <Text style={[styles.taskLabel, {color: colors.text}]}>Today's Task:</Text>
                           <View style={styles.taskRow}>
-                            <MaterialIcons name="check-circle-outline" size={18} color="#4CAF50" />
-                            <Text style={styles.dailyTaskText}>{domain.dailyTask}</Text>
+                            <MaterialIcons name="check-circle-outline" size={16} color={colors.gold} />
+                            <Text style={[styles.taskText, {color: colors.text}]}>{domain.dailyTask}</Text>
                           </View>
                         </View>
+                        
+                        <View style={styles.aiSuggestionRow}>
+                          <MaterialIcons name="lightbulb" size={14} color={colors.gold} />
+                          <Text style={[styles.aiSuggestionText, {color: colors.textSecondary}]}>
+                            {domain.aiSuggestion}
+                          </Text>
+                        </View>
+                        
+                        <Button
+                          mode="contained"
+                          style={[styles.actionButton, {backgroundColor: colors.gold}]}
+                          labelStyle={{color: colors.header, fontSize: 14, fontWeight: 'bold'}}
+                        >
+                          Complete Task
+                        </Button>
                       </Animated.View>
                     )}
-                    
-                    <Button 
-                      mode="contained" 
-                      style={[styles.actionButton, {backgroundColor: domain.color}]} 
-                      labelStyle={{color: 'white', fontSize: 14}}
-                      onPress={() => {}}
-                    >
-                      {index < 2 ? 'Take Action' : 'Unlock Soon'}
-                    </Button>
                   </Card.Content>
                 </Card>
-              </TouchableOpacity>
-            </Animated.View>
-          ))}
-        </View>
-        
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="lightbulb" size={22} color="#555" />
-          <Text style={styles.sectionTitle}>Daily Inspiration</Text>
-        </View>
-        
-        <TouchableOpacity onPress={nextTip} activeOpacity={0.8}>
-          <Card style={styles.tipCard}>
-            <View style={[styles.tipGradient, {backgroundColor: '#FFF9C4'}]}>
-              <Card.Content>
-                <View style={styles.tipHeader}>
-                  <MaterialIcons name="lightbulb" size={24} color="#FFB300" />
-                  <Title style={styles.tipTitle}>Today's Tip</Title>
-                </View>
-                <Paragraph style={styles.tipText}>
-                  "{tips[currentTip]}"
-                </Paragraph>
-                <Text style={styles.tapHint}>Tap for more wisdom</Text>
-              </Card.Content>
+              ))}
             </View>
-          </Card>
-        </TouchableOpacity>
-        
-        <Surface style={[styles.footerCard]}>
-          <Paragraph style={styles.footerText}>
-            🤖 Your AI companion is learning from your dashboard progress to provide personalized guidance. Keep leveling up to unlock new insights and abilities!
-          </Paragraph>
+          )}
         </Surface>
         
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="rocket" size={22} color="#555" />
-          <Text style={styles.sectionTitle}>Coming Soon</Text>
-        </View>
+        {/* Collapsible section: AI Insights */}
+        <Surface style={[styles.sectionCard, {backgroundColor: colors.background}]}>
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => toggleSection('aiInsights')}
+          >
+            <View style={styles.sectionTitleRow}>
+              <MaterialIcons name="insights" size={20} color={colors.gold} />
+              <Text style={[styles.sectionTitle, {color: colors.text}]}>AI Insights</Text>
+            </View>
+            <MaterialIcons 
+              name={expandedSections.aiInsights ? "expand-less" : "expand-more"} 
+              size={24} 
+              color={colors.textSecondary} 
+            />
+          </TouchableOpacity>
+          
+          {expandedSections.aiInsights && (
+            <View style={styles.aiInsightsContainer}>
+              {aiMessages.map((message, index) => (
+                <View key={index} style={[styles.insightItem, {backgroundColor: colors.goldLight}]}>
+                  <MaterialIcons name="tips-and-updates" size={14} color={colors.gold} />
+                  <Text style={[styles.insightText, {color: colors.text}]}>{message}</Text>
+                </View>
+              ))}
+              
+              <Button
+                mode="outlined"
+                icon="message-text"
+                style={[styles.chatButton, {borderColor: colors.gold}]}
+                labelStyle={{color: colors.gold}}
+                onPress={() => toggleSection('chat')}
+              >
+                Chat with AI
+              </Button>
+            </View>
+          )}
+        </Surface>
         
-        <View style={styles.comingSoonContainer}>
-          <Chip 
-            icon="rocket" 
-            style={styles.comingSoonChip}
-            mode="outlined"
+        {/* Collapsible section: Daily Tip */}
+        <Surface style={[styles.sectionCard, {backgroundColor: colors.background}]}>
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => toggleSection('tips')}
           >
-            Daily Challenges
-          </Chip>
-          <Chip 
-            icon="trophy" 
-            style={styles.comingSoonChip}
-            mode="outlined"
-          >
-            Leaderboards
-          </Chip>
+            <View style={styles.sectionTitleRow}>
+              <MaterialIcons name="lightbulb" size={20} color={colors.gold} />
+              <Text style={[styles.sectionTitle, {color: colors.text}]}>Daily Wisdom</Text>
+            </View>
+            <MaterialIcons 
+              name={expandedSections.tips ? "expand-less" : "expand-more"} 
+              size={24} 
+              color={colors.textSecondary} 
+            />
+          </TouchableOpacity>
+          
+          {expandedSections.tips && (
+            <TouchableOpacity onPress={nextTip} activeOpacity={0.7}>
+              <View style={[styles.tipContainer, {backgroundColor: colors.goldLight}]}>
+                <Text style={[styles.tipText, {color: colors.text}]}>
+                  "{tips[currentTip]}"
+                </Text>
+                <Text style={[styles.tapHint, {color: colors.textSecondary}]}>
+                  Tap for more wisdom
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        </Surface>
+        
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={[styles.footerText, {color: colors.textSecondary}]}>
+            Life OS Dashboard • Version 1.0
+          </Text>
         </View>
       </Animated.View>
     </Animated.ScrollView>
@@ -372,7 +512,6 @@ const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   contentContainer: {
     paddingBottom: 24,
@@ -386,10 +525,6 @@ const styles = StyleSheet.create({
     zIndex: 999,
     height: 60,
   },
-  headerGradient: {
-    height: '100%',
-    width: '100%',
-  },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -399,157 +534,129 @@ const styles = StyleSheet.create({
   floatingTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'white',
     marginLeft: 8,
   },
   header: {
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
     overflow: 'hidden',
     marginBottom: 16,
     elevation: 4,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
   avatarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
   },
   avatar: {
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.7)',
+    borderWidth: 2,
+    borderColor: 'rgba(212,175,55,0.5)',
   },
   headerTextContainer: {
     marginLeft: 16,
+    flex: 1,
   },
   mainTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: 'white',
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
   },
-  statsContainer: {
+  aiButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    padding: 16,
-    paddingTop: 0,
-  },
-  statCard: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 12,
-    padding: 12,
-    minWidth: width / 4,
   },
-  statIconContainer: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    width: 36,
-    height: 36,
+  statItem: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
   },
   statNumber: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: 'white',
   },
   statLabel: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
   },
-  welcomeCard: {
-    margin: 16,
+  sectionCard: {
+    margin: 12,
     borderRadius: 12,
+    overflow: 'hidden',
     elevation: 2,
-  },
-  paragraph: {
-    fontSize: 16,
-    lineHeight: 24,
-    padding: 16,
-    backgroundColor: 'white',
-    borderRadius: 12,
   },
   sectionHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    marginTop: 16,
+    padding: 16,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginLeft: 8,
-    color: '#424242',
   },
-  cardsContainer: {
-    padding: 16,
-    paddingTop: 8,
+  domainsContainer: {
+    padding: 8,
   },
-  card: {
+  domainCard: {
     borderRadius: 12,
-    overflow: 'hidden',
-    elevation: 3,
+    borderWidth: 1,
+    elevation: 0,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  domainCardContent: {
     padding: 12,
   },
-  cardHeaderTitle: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 18,
-    marginLeft: 8,
-    flex: 1,
-  },
-  levelContainer: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  levelBadge: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  cardContent: {
-    paddingTop: 12,
-  },
-  xpContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  xpText: {
-    fontSize: 14,
-    color: '#757575',
-    fontWeight: '500',
-  },
-  streakBadge: {
+  domainRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,152,0,0.1)',
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  domainInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  domainName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  domainLevel: {
+    fontSize: 13,
+  },
+  domainStreak: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   streakText: {
     fontSize: 12,
-    color: '#FF9800',
     fontWeight: 'bold',
     marginLeft: 4,
   },
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 8,
+    marginTop: 12,
   },
   progressBar: {
     flex: 1,
@@ -557,95 +664,137 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   progressText: {
-    marginLeft: 8,
     fontSize: 12,
-    fontWeight: 'bold',
-    width: 40,
+    marginLeft: 8,
+    width: 70,
     textAlign: 'right',
   },
-  achievementContainer: {
+  achievementRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 8,
+    marginBottom: 12,
   },
   achievementText: {
-    marginLeft: 8,
     fontSize: 14,
+    marginLeft: 8,
     fontStyle: 'italic',
   },
-  dailyTaskContainer: {
-    backgroundColor: 'rgba(0,0,0,0.03)',
+  taskContainer: {
     borderRadius: 8,
-    padding: 10,
+    padding: 12,
+    marginBottom: 12,
   },
-  dailyTaskLabel: {
+  taskLabel: {
     fontSize: 13,
     fontWeight: '600',
-    marginBottom: 4,
-    color: '#616161',
+    marginBottom: 6,
   },
   taskRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  dailyTaskText: {
+  taskText: {
     marginLeft: 8,
     fontSize: 14,
   },
-  actionButton: {
-    marginTop: 12,
-    borderRadius: 8,
-    elevation: 0,
-  },
-  tipCard: {
-    margin: 16,
-    borderRadius: 12,
-    overflow: 'hidden',
-    elevation: 3,
-  },
-  tipGradient: {
-    borderRadius: 12,
-  },
-  tipHeader: {
+  aiSuggestionRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  aiSuggestionText: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    marginLeft: 8,
+    flex: 1,
+    lineHeight: 18,
+  },
+  actionButton: {
+    borderRadius: 8,
+  },
+  aiInsightsContainer: {
+    padding: 16,
+    paddingTop: 0,
+  },
+  insightItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 12,
+    borderRadius: 8,
     marginBottom: 8,
   },
-  tipTitle: {
+  insightText: {
+    fontSize: 14,
     marginLeft: 8,
-    fontSize: 18,
-    color: '#5D4037',
+    flex: 1,
+  },
+  chatButton: {
+    marginTop: 8,
+  },
+  tipContainer: {
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
   },
   tipText: {
+    fontSize: 16,
     fontStyle: 'italic',
-    lineHeight: 22,
-    color: '#5D4037',
+    lineHeight: 24,
+    textAlign: 'center',
   },
   tapHint: {
     fontSize: 12,
-    textAlign: 'right',
+    textAlign: 'center',
     marginTop: 8,
-    color: '#5D4037',
     opacity: 0.7,
   },
-  footerCard: {
-    margin: 16,
-    borderRadius: 12,
-    backgroundColor: '#E3F2FD',
-    elevation: 2,
+  footer: {
+    padding: 16,
+    alignItems: 'center',
   },
   footerText: {
-    padding: 16,
+    fontSize: 12,
   },
-  comingSoonContainer: {
+  aiChatHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingTop: 16,
   },
-  comingSoonChip: {
-    backgroundColor: 'transparent',
-    borderColor: '#9E9E9E',
+  aiAvatarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  aiTitle: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  aiMessageContainer: {
+    borderRadius: 12,
+    padding: 12,
+    margin: 16,
+  },
+  aiMessage: {
+    fontSize: 14,
+  },
+  aiInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 8,
+    margin: 16,
+    marginTop: 0,
+  },
+  aiInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 4,
+  },
+  sendButton: {
+    margin: 0,
   },
 });
 
