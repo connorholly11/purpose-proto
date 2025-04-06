@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  
+  <!-- Primary Meta Tags -->
+  <title>AI Companion App</title>
+  <meta name="title" content="AI Companion App">
+  <meta name="description" content="Your personal AI assistant">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicons/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./assets/favicons/favicon-192x192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="./assets/favicons/favicon-152x152.png">
+  
+  <!-- Main favicon fallback -->
+  <link rel="shortcut icon" href="./assets/favicon.png">
+  
+  <style>
+    /* Base styles for better loading experience */
+    html, body, #root {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    
+    #root {
+      display: flex;
+      flex-direction: column;
+      background-color: #F9FAFB;
+    }
+    
+    /* Loading state */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
+    }
+    
+    .loading-text {
+      margin-top: 20px;
+      font-size: 16px;
+      color: #6366F1;
+    }
+  </style>
+</head>
+<body>
+  <div id="root">
+    <div class="loading">
+      <img src="./assets/favicon.png" width="64" height="64" alt="Loading" />
+      <p class="loading-text">Loading AI Companion...</p>
+    </div>
+  </div>
+</body>
+</html> 
