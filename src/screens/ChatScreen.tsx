@@ -329,12 +329,7 @@ export const ChatScreen = () => {
           <View style={styles.headerContainer}>
             <View style={styles.headerContent}>
               <Text style={styles.headerText}>
-                {!loadingPrompts && activePrompt ? `${activePrompt.name} • ` : ''}
-                {!loadingPrompts && activePrompt?.modelName 
-                  ? (activePrompt.modelName.toLowerCase().includes('claude') 
-                      ? activePrompt.modelName 
-                      : 'ChatGPT-4o') 
-                  : 'AI Assistant'}
+                {!loadingPrompts && activePrompt ? `${activePrompt.name}` : 'AI Assistant'}
               </Text>
               
               <View style={styles.adminControls}>

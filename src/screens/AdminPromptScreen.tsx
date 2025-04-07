@@ -114,7 +114,9 @@ const AdminPromptScreen = () => {
       <Text style={styles.promptModel}>
         {item.modelName?.toLowerCase().includes('claude') 
           ? item.modelName 
-          : 'chatgpt-4o-latest'}
+          : item.modelName?.toLowerCase().includes('deepseek')
+            ? 'DeepSeek v3'
+            : 'chatgpt-4o-latest'}
       </Text>
       
       <View style={styles.promptActions}>
@@ -201,6 +203,7 @@ const AdminPromptScreen = () => {
               >
                 <ToggleButton icon={() => <Text>ChatGPT-4o Latest</Text>} value="chatgpt-4o-latest" style={styles.toggleButton} />
                 <ToggleButton icon={() => <Text>Sonnet 3.5</Text>} value="claude-3-5-sonnet-20241022" style={styles.toggleButton} />
+                <ToggleButton icon={() => <Text>DeepSeek v3</Text>} value="deepseek-chat" style={styles.toggleButton} />
               </ToggleButton.Row>
             </View>
             
