@@ -115,9 +115,18 @@ export function useEvalApi() {
       return resp.data;
     },
     
-    // Get the leaderboard data
-    async getLeaderboard() {
-      const resp = await evalApi.get('/leaderboard');
+    // Get the leaderboard data with optional persona filter
+    async getLeaderboard(personaId?: string) {
+      const params = personaId && personaId !== 'overall' 
+        ? { params: { personaId } }
+        : {};
+      const resp = await evalApi.get('/leaderboard', params);
+      return resp.data;
+    },
+    
+    // Delete an evaluation by ID
+    async deleteEvaluation(evaluationId: string) {
+      const resp = await evalApi.delete(`/evaluations/${evaluationId}`);
       return resp.data;
     },
   };

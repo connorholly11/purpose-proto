@@ -267,6 +267,59 @@ export const createApiService = (authenticatedApi: any) => ({
         throw error;
       }
     },
+
+    // Send AI-generated email to user
+    sendAiEmail: async (userId: string, email?: string) => {
+      try {
+        const response = await authenticatedApi.post('/api/admin/send-ai-email', {
+          userId,
+          email, // Include the override email if provided
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error sending AI email:', error);
+        throw error;
+      }
+    },
+
+    // Get email logs for all users (admin)
+    getEmailLogs: async () => {
+      try {
+        const response = await authenticatedApi.get('/api/admin/email-logs');
+        return response.data;
+      } catch (error) {
+        console.error('Error getting email logs:', error);
+        throw error;
+      }
+    },
+  },
+
+  // Email-related API endpoints
+  email: {
+    // Send AI-generated email
+    sendEmail: async (userId: string, email?: string) => {
+      try {
+        const response = await authenticatedApi.post('/api/email/send', {
+          userId,
+          email, // Include the override email if provided
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error sending email:', error);
+        throw error;
+      }
+    },
+
+    // Get email logs for a specific user
+    getUserEmailLogs: async (userId: string) => {
+      try {
+        const response = await authenticatedApi.get(`/api/email/logs/${userId}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error getting user email logs:', error);
+        throw error;
+      }
+    },
   }
 });
 

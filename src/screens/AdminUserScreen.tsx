@@ -8,8 +8,11 @@ import {
   ActivityIndicator,
   ScrollView,
   Platform,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Button, IconButton, Dialog, Portal, Snackbar } from 'react-native-paper';
 import { useApi } from '../hooks/useApi';
 
 // Type definitions
@@ -73,6 +76,13 @@ const AdminUserScreen = () => {
   const [loading, setLoading] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailModalVisible, setEmailModalVisible] = useState(false);
+  const [emailModalLoading, setEmailModalLoading] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [emailLogs, setEmailLogs] = useState<any[]>([]);
+  const [showEmailLogs, setShowEmailLogs] = useState(false);
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   
   // API instance
   const api = useApi();
@@ -106,6 +116,7 @@ const AdminUserScreen = () => {
     setError(null);
     setUserHistory([]);
     setUserSummary(null);
+    setUserEmail(user.email || '');
 
     try {
       // Fetch History
@@ -236,6 +247,63 @@ const AdminUserScreen = () => {
         console.error('Error triggering manual context update:', err);
       }
       setLoadingDetails(false);
+    }
+  };
+
+  // Handle opening email modal
+  const handleOpenEmailModal = () => {
+    if (!selectedUser) return;
+    setUserEmail(selectedUser.email || '');
+    setEmailModalVisible(true);
+    loadEmailLogs();
+  };
+
+  // Load email logs for the selected user
+  const loadEmailLogs = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      const logs = await api.email.getUserEmailLogs(selectedUser.clerkId);
+      setEmailLogs(logs);
+    } catch (err) {
+      console.error('Error loading email logs:', err);
+    }
+  };
+
+  // Handle sending an AI-generated email
+  const handleSendEmail = async () => {
+    if (!selectedUser) return;
+
+    // For dev environment, we'll allow sending without email
+    if (process.env.NODE_ENV !== 'development' && !selectedUser.email && !userEmail) {
+      Alert.alert('Missing Email', 'Please provide an email address for this user first.');
+      return;
+    }
+
+    if (!userSummary || !userSummary.summaryData) {
+      Alert.alert(
+        'Missing User Context', 
+        'This user does not have a structured summary yet. Please generate user context first.'
+      );
+      return;
+    }
+
+    try {
+      setEmailModalLoading(true);
+      // Pass the manually entered email address to the API
+      await api.admin.sendAiEmail(selectedUser.clerkId, userEmail);
+      setSnackbarMessage('Email sent successfully!');
+      setSnackbarVisible(true);
+      await loadEmailLogs();
+      setEmailModalLoading(false);
+    } catch (err: any) {
+      setEmailModalLoading(false);
+      if (err.response?.data?.error) {
+        Alert.alert('Error', `Failed to send email: ${err.response.data.error}`);
+      } else {
+        Alert.alert('Error', 'Failed to send email. See console for details.');
+      }
+      console.error('Error sending AI email:', err);
     }
   };
   
@@ -370,16 +438,27 @@ const AdminUserScreen = () => {
                 <Text style={styles.detailsTitle}>
                   Details for {selectedUser.email || selectedUser.username || selectedUser.clerkId.substring(5)}
                 </Text>
-                <Button
-                  mode="contained"
-                  onPress={handleGenerateSummary}
-                  style={styles.generateButton}
-                  disabled={loadingDetails}
-                  loading={loadingDetails && !userHistory.length}
-                  compact
-                >
-                  Update Context
-                </Button>
+                <View style={styles.buttonContainer}>
+                  <Button
+                    mode="contained"
+                    onPress={handleGenerateSummary}
+                    style={styles.actionButton}
+                    disabled={loadingDetails}
+                    loading={loadingDetails && !userHistory.length}
+                    compact
+                  >
+                    Update Context
+                  </Button>
+                  <Button
+                    mode="contained"
+                    onPress={handleOpenEmailModal}
+                    style={[styles.actionButton, styles.emailButton]}
+                    disabled={loadingDetails}
+                    compact
+                  >
+                    Email
+                  </Button>
+                </View>
               </View>
 
               {loadingDetails ? (
@@ -435,6 +514,74 @@ const AdminUserScreen = () => {
           )}
         </View>
       </View>
+
+      {/* Email Modal */}
+      <Portal>
+        <Dialog visible={emailModalVisible} onDismiss={() => setEmailModalVisible(false)}>
+          <Dialog.Title>AI-Generated Email</Dialog.Title>
+          <Dialog.Content>
+            <Text style={{ marginBottom: 10 }}>
+              Send an AI-generated personalized email to this user based on their conversation context.
+            </Text>
+
+            <Text style={styles.fieldLabel}>User Email:</Text>
+            <TextInput
+              style={styles.emailInput}
+              value={userEmail}
+              onChangeText={setUserEmail}
+              placeholder="Enter user's email address"
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+
+            {emailLogs.length > 0 && (
+              <View style={{ marginTop: 15 }}>
+                <Text style={styles.fieldLabel}>
+                  Email History ({emailLogs.length})
+                  <TouchableOpacity onPress={() => setShowEmailLogs(!showEmailLogs)}>
+                    <Text style={styles.toggleLink}>
+                      {showEmailLogs ? ' Hide' : ' Show'}
+                    </Text>
+                  </TouchableOpacity>
+                </Text>
+                
+                {showEmailLogs && (
+                  <View style={styles.logsContainer}>
+                    {emailLogs.map((log, index) => (
+                      <View key={log.id} style={styles.logEntry}>
+                        <Text style={styles.logDate}>{formatDate(log.createdAt)}</Text>
+                        <Text style={styles.logSubject}>{log.subject}</Text>
+                        <Text style={styles.logStatus}>Status: {log.status}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setEmailModalVisible(false)}>Cancel</Button>
+            <Button 
+              mode="contained"
+              onPress={handleSendEmail}
+              loading={emailModalLoading}
+              disabled={emailModalLoading || (!selectedUser?.email && !userEmail)}
+            >
+              Send Email
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      {/* Snackbar for success messages */}
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={3000}
+        style={styles.snackbar}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </View>
   );
 };
@@ -614,13 +761,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  generateButton: {
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  actionButton: {
     backgroundColor: '#e7f5ff',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 4,
     borderWidth: 1,
     borderColor: '#a5d8ff',
+    marginLeft: 8,
+  },
+  emailButton: {
+    backgroundColor: '#e7ffea',
+    borderColor: '#a5ffb8',
   },
   messageItem: {
     padding: 10,
@@ -656,6 +813,50 @@ const styles = StyleSheet.create({
   messageContent: {
     fontSize: 14,
     lineHeight: 20,
+  },
+  emailInput: {
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    borderRadius: 4,
+    padding: 10,
+    marginVertical: 8,
+    fontSize: 16,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 5,
+    color: '#495057',
+  },
+  toggleLink: {
+    color: '#4a7dff',
+    fontWeight: 'normal',
+  },
+  logsContainer: {
+    marginTop: 8,
+    maxHeight: 200,
+  },
+  logEntry: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  logDate: {
+    fontSize: 11,
+    color: '#6c757d',
+  },
+  logSubject: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginVertical: 2,
+  },
+  logStatus: {
+    fontSize: 11,
+    color: '#28a745',
+  },
+  snackbar: {
+    bottom: 20,
   },
 });
 

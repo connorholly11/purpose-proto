@@ -28,6 +28,9 @@ const EvalScreen = () => {
   // Tab state
   const [activeTab, setActiveTab] = useState<'results' | 'leaderboard'>('results');
   
+  // Leaderboard filter state
+  const [leaderboardPersonaId, setLeaderboardPersonaId] = useState<string | null>(null);
+  
   // Conversation modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<any[]>([]);
@@ -64,13 +67,26 @@ const EvalScreen = () => {
     }
   };
   
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = async (personaId?: string) => {
     try {
-      const data = await evalApi.getLeaderboard();
+      const data = await evalApi.getLeaderboard(personaId || leaderboardPersonaId || undefined);
       setLeaderboardData(data);
     } catch (err: any) {
       console.error('Error loading leaderboard', err);
       setError('Failed to load leaderboard');
+    }
+  };
+  
+  // Delete an evaluation
+  const deleteEvaluation = async (evaluationId: string) => {
+    try {
+      setError(null);
+      await evalApi.deleteEvaluation(evaluationId);
+      // Refresh the leaderboard after deletion
+      fetchLeaderboard(leaderboardPersonaId || undefined);
+    } catch (err: any) {
+      console.error('Error deleting evaluation', err);
+      setError('Failed to delete evaluation');
     }
   };
 
@@ -100,7 +116,7 @@ const EvalScreen = () => {
       setEvalResults(response.results || []);
       
       // Refresh leaderboard after running evaluations
-      fetchLeaderboard();
+      fetchLeaderboard(leaderboardPersonaId || undefined);
       
       // Switch to results tab to show new evaluations
       setActiveTab('results');
@@ -280,6 +296,15 @@ const EvalScreen = () => {
           <Text style={styles.subTitle}>
             2) Select Persona Scenarios to Test:
           </Text>
+          <View style={styles.promptRow}>
+            <Button
+              title="Select All Personas"
+              onPress={() => {
+                setSelectedPersonaIds(personas.map(p => p.id));
+              }}
+            />
+          </View>
+          
           {personas.map((p) => {
             const isSelected = selectedPersonaIds.includes(p.id);
             return (
@@ -467,7 +492,9 @@ const EvalScreen = () => {
                     {result.scores && result.scores.calculatedScores && (
                       <View style={styles.overallScoreContainer}>
                         <Text style={styles.overallScoreLabel}>Overall Score:</Text>
-                        {renderNumericScore(result.scores.calculatedScores.overallPercentage)}
+                        <Text style={styles.scoreValue}>
+                          {result.scores.calculatedScores.totalScore} / {result.scores.calculatedScores.maxPossibleScore}
+                        </Text>
                       </View>
                     )}
                   </View>
@@ -493,7 +520,9 @@ const EvalScreen = () => {
                                 <Text style={styles.calculatedScoreLabel}>
                                   {category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
                                 </Text>
-                                {renderNumericScore((data as any).percentage)}
+                                <Text style={styles.scoreValue}>
+                                  {(data as any).score} / {(data as any).maxPossible}
+                                </Text>
                               </View>
                             ))}
                           </View>
@@ -608,8 +637,45 @@ const EvalScreen = () => {
           <View style={styles.tabContent}>
             <Text style={styles.leaderboardTitle}>System Prompt Leaderboard</Text>
             <Text style={styles.leaderboardSubtitle}>
-              Prompts ranked by average evaluation score across all personas
+              Prompts ranked by total points (higher is better)
             </Text>
+            
+            {/* Persona Filter for Leaderboard */}
+            <View style={styles.filterControls}>
+              <Text style={styles.filterLabel}>Filter by persona:</Text>
+              <TouchableOpacity 
+                style={[styles.filterButton, !leaderboardPersonaId && styles.activeFilterButton]}
+                onPress={() => {
+                  setLeaderboardPersonaId(null);
+                  fetchLeaderboard('overall');
+                }}
+              >
+                <Text style={[styles.filterButtonText, !leaderboardPersonaId && styles.activeFilterText]}>
+                  Overall
+                </Text>
+              </TouchableOpacity>
+              
+              {personas.map(persona => (
+                <TouchableOpacity 
+                  key={`leaderboard-persona-${persona.id}`}
+                  style={[
+                    styles.filterButton, 
+                    leaderboardPersonaId === persona.id && styles.activeFilterButton
+                  ]}
+                  onPress={() => {
+                    setLeaderboardPersonaId(persona.id);
+                    fetchLeaderboard(persona.id);
+                  }}
+                >
+                  <Text style={[
+                    styles.filterButtonText, 
+                    leaderboardPersonaId === persona.id && styles.activeFilterText
+                  ]}>
+                    {persona.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
             
             <ScrollView style={styles.leaderboardScrollView}>
               {leaderboardData.length === 0 ? (
@@ -631,13 +697,13 @@ const EvalScreen = () => {
                         </Text>
                       </View>
                       <View style={styles.leaderboardScore}>
-                        <Text style={styles.leaderboardScoreText}>{entry.averageScore}%</Text>
+                        <Text style={styles.leaderboardScoreText}>{entry.totalPoints} / {entry.totalMaxScore}</Text>
                       </View>
                     </View>
                     
                     {/* Category scores */}
                     <View style={styles.leaderboardCategoryScores}>
-                      {Object.entries(entry.categoryPercentages).map(([category, score]) => (
+                      {Object.entries(entry.categoryTotals).map(([category, data]) => (
                         <View key={category} style={styles.leaderboardCategoryItem}>
                           <Text style={styles.leaderboardCategoryName}>
                             {category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
@@ -646,14 +712,16 @@ const EvalScreen = () => {
                             <View 
                               style={[
                                 styles.leaderboardCategoryBar, 
-                                { width: `${score}%` },
-                                score >= 80 ? styles.scoreHigh : 
-                                score >= 50 ? styles.scoreMedium : 
+                                { width: `${data.maxPossible > 0 ? (data.score / data.maxPossible) * 100 : 0}%` },
+                                data.maxPossible > 0 && (data.score / data.maxPossible) >= 0.8 ? styles.scoreHigh : 
+                                data.maxPossible > 0 && (data.score / data.maxPossible) >= 0.5 ? styles.scoreMedium : 
                                 styles.scoreLow
                               ]} 
                             />
                           </View>
-                          <Text style={styles.leaderboardCategoryScore}>{score}%</Text>
+                          <Text style={styles.leaderboardCategoryScore}>
+                            {data.score} / {data.maxPossible}
+                          </Text>
                         </View>
                       ))}
                     </View>
@@ -679,32 +747,71 @@ const EvalScreen = () => {
                                 Persona: {evaluation.persona?.name || 'Unknown'}
                               </Text>
                               <Text style={styles.expandedEvaluationDate}>
-                                {new Date(evaluation.createdAt).toLocaleDateString()}
+                                Date: {new Date(evaluation.createdAt).toLocaleString()}
                               </Text>
                               {evaluation.scores.calculatedScores && (
                                 <Text style={styles.expandedEvaluationScore}>
-                                  Score: {evaluation.scores.calculatedScores.overallPercentage}%
+                                  Score: {evaluation.scores.calculatedScores.totalScore} / {evaluation.scores.calculatedScores.maxPossibleScore}
                                 </Text>
                               )}
                             </View>
+
+                            {/* Overall Assessment */}
+                            {evaluation.scores.overallAssessment && (
+                              <View style={styles.overallAssessment}>
+                                <Text style={styles.overallAssessmentTitle}>Overall Assessment:</Text>
+                                <Text style={styles.overallAssessmentText}>{evaluation.scores.overallAssessment}</Text>
+                              </View>
+                            )}
                             
-                            {/* Button to view conversation */}
-                            <TouchableOpacity 
-                              style={styles.viewConversationButton}
-                              onPress={() => {
-                                if (evaluation.conversation) {
-                                  showConversation(
-                                    evaluation.conversation, 
-                                    entry.promptName,
-                                    evaluation.persona?.name || 'Unknown'
-                                  );
-                                }
-                              }}
-                            >
-                              <Text style={styles.viewConversationButtonText}>
-                                View Conversation
-                              </Text>
-                            </TouchableOpacity>
+                            {/* Category Scores */}
+                            {evaluation.scores.calculatedScores && evaluation.scores.calculatedScores.categoryScores && (
+                              <View style={styles.calculatedScoresContainer}>
+                                <Text style={styles.calculatedScoresTitle}>Category Scores:</Text>
+                                <View style={styles.calculatedScoresGrid}>
+                                  {Object.entries(evaluation.scores.calculatedScores.categoryScores).map(([category, data]) => (
+                                    <View key={category} style={styles.calculatedScoreItem}>
+                                      <Text style={styles.calculatedScoreLabel}>
+                                        {category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
+                                      </Text>
+                                      <Text style={styles.scoreValue}>
+                                        {(data as any).score} / {(data as any).maxPossible}
+                                      </Text>
+                                    </View>
+                                  ))}
+                                </View>
+                              </View>
+                            )}
+                            
+                            <View style={styles.evaluationButtonsRow}>
+                              {/* Button to view conversation */}
+                              <TouchableOpacity 
+                                style={styles.conversationButton}
+                                onPress={() => {
+                                  if (evaluation.conversation) {
+                                    showConversation(
+                                      evaluation.conversation, 
+                                      entry.promptName,
+                                      evaluation.persona?.name || 'Unknown'
+                                    );
+                                  }
+                                }}
+                              >
+                                <Text style={styles.conversationButtonText}>
+                                  View Conversation Transcript
+                                </Text>
+                              </TouchableOpacity>
+                              
+                              {/* Button to delete evaluation */}
+                              <TouchableOpacity 
+                                style={styles.deleteButton}
+                                onPress={() => deleteEvaluation(evaluation.id)}
+                              >
+                                <Text style={styles.deleteButtonText}>
+                                  Delete Evaluation
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
                           </View>
                         ))}
                       </View>
@@ -1263,15 +1370,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   expandedEvaluationItem: {
-    marginBottom: 12,
-    paddingBottom: 12,
+    marginBottom: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    backgroundColor: '#f9f9f9',
+    padding: 12,
+    borderRadius: 8,
   },
   expandedEvaluationHeader: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   expandedEvaluationPersona: {
     fontWeight: '500',
@@ -1294,6 +1404,24 @@ const styles = StyleSheet.create({
   viewConversationButtonText: {
     color: '#555',
     fontSize: 13,
+  },
+  evaluationButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    gap: 10,
+  },
+  deleteButton: {
+    backgroundColor: '#ffeeee',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ffcccc',
+  },
+  deleteButtonText: {
+    color: '#d32f2f',
+    fontWeight: '500',
   },
 });
 
