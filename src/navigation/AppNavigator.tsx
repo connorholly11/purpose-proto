@@ -91,16 +91,16 @@ const MainTabNavigator = () => {
             title: 'AI Companion',
           }}
         />
-        <Tab.Screen
-          name="Dashboard"
-          component={PlaceholderDashboardScreen}
-          options={{
-            title: 'Dashboard',
-          }}
-        />
         {/* Only show admin screens if in admin mode */}
         {isAdminMode && (
           <>
+            <Tab.Screen
+              name="Dashboard"
+              component={PlaceholderDashboardScreen}
+              options={{
+                title: 'Dashboard',
+              }}
+            />
             <Tab.Screen
               name="Prompts"
               component={AdminPromptScreen}
