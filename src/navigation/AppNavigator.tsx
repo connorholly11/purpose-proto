@@ -11,13 +11,12 @@ import {
   AdminUserScreen, 
   AdminScreen,
   SummarizationStatusScreen,
-  PlaceholderDashboardScreen
+  PlaceholderDashboardScreen,
+  TestingScreen,
+  EvalScreen
 } from '../screens';
 import AppHeader from '../components/AppHeader';
 import { FeedbackButton } from '../components';
-
-// Import our new TestingScreen
-import TestingScreen from '../screens/TestingScreen'; // <--- NEW IMPORT
 
 // Create a context to track admin mode state
 type AdminModeContextType = {
@@ -44,7 +43,8 @@ export type MainTabParamList = {
   Dashboard: undefined;
   Prompts: undefined;
   Admin: undefined;
-  Testing: undefined; // <--- NEW
+  Testing: undefined;
+  Eval: undefined;
 };
 
 // Create the stack navigator
@@ -69,7 +69,9 @@ const MainTabNavigator = () => {
             } else if (route.name === 'Admin') {
               iconName = 'admin-panel-settings';
             } else if (route.name === 'Testing') {
-              iconName = 'science'; // or any other icon
+              iconName = 'science';
+            } else if (route.name === 'Eval') {
+              iconName = 'score';
             }
 
             return <MaterialIcons name={iconName} size={size} color={color} />;
@@ -120,6 +122,13 @@ const MainTabNavigator = () => {
               component={TestingScreen}
               options={{
                 title: 'Testing',
+              }}
+            />
+            <Tab.Screen
+              name="Eval"
+              component={EvalScreen}
+              options={{
+                title: 'Evaluations',
               }}
             />
           </>

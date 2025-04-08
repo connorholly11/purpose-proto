@@ -6,3 +6,6 @@ export { default as AdminUserScreen } from './AdminUserScreen';
 export { default as AdminScreen } from './AdminScreen';
 export { default as SummarizationStatusScreen } from './SummarizationStatusScreen';
 export { default as PlaceholderDashboardScreen } from './PlaceholderDashboardScreen'; 
+export { default as TestingScreen } from './TestingScreen';
+export { default as FeedbackScreen } from './FeedbackScreen';
+export { default as EvalScreen } from './EvalScreen';
