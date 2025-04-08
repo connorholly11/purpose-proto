@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, SafeAreaView, Dimensions, TouchableOpacity } from 'react-native';
 import { LineChart, ProgressChart } from 'react-native-chart-kit';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Polygon, Line, Text as SvgText } from 'react-native-svg';
 
 interface GameLevelIndicatorProps {
   level: number;
@@ -538,31 +539,102 @@ const PlaceholderDashboardScreen = () => {
               ))}
             </View>
             
-            {/* Radar Chart (simplified as ProgressChart for RN compatibility) */}
-            <View style={{ height: 240, marginTop: 16, marginBottom: 16, alignItems: 'center' }}>
-              <ProgressChart
-                data={{
-                  labels: Object.keys(activeDomain.stats).map(key => key.charAt(0).toUpperCase() + key.slice(1)),
-                  data: Object.values(activeDomain.stats).map(val => val / 100)
-                }}
-                width={screenWidth * 0.5}
-                height={220}
-                strokeWidth={16}
-                radius={32}
-                chartConfig={{
-                  backgroundColor: '#1f2937',
-                  backgroundGradientFrom: '#1f2937',
-                  backgroundGradientTo: '#1f2937',
-                  decimalPlaces: 0,
-                  color: (opacity = 1) => activeDomain.color,
-                  labelColor: (opacity = 1) => `rgba(249, 250, 251, ${opacity})`,
-                }}
-                hideLegend={false}
-                style={{
-                  marginVertical: 8,
-                  borderRadius: 8
-                }}
-              />
+            {/* Triangular Radar Chart */}
+            <View style={{ height: 260, marginTop: 16, marginBottom: 16 }}>
+              <Text style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center', marginBottom: 8 }}>
+                Balance between your health dimensions
+              </Text>
+              <View style={{ 
+                flex: 1, 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                position: 'relative'
+              }}>
+                <Svg height={220} width={220}>
+                  {/* Outer Triangle */}
+                  <Polygon
+                    points="110,10 210,180 10,180"
+                    fill="none"
+                    stroke="#374151"
+                    strokeWidth="1"
+                  />
+                  
+                  {/* Inner Grid Lines */}
+                  <Polygon
+                    points="110,60 160,130 60,130"
+                    fill="none"
+                    stroke="#374151"
+                    strokeWidth="0.5"
+                  />
+                  
+                  <Polygon
+                    points="110,95 135,105 85,105"
+                    fill="none"
+                    stroke="#374151"
+                    strokeWidth="0.5"
+                  />
+                  
+                  {/* Data Triangle */}
+                  {(() => {
+                    const stats = Object.values(activeDomain.stats);
+                    // Convert percentage to position on the triangle
+                    const normalizeValue = (value: number) => {
+                      return 1 - (value / 100);
+                    };
+                    
+                    // Physical (top point)
+                    const physicalY = 10 + normalizeValue(stats[0]) * (180 - 10);
+                    // Mental (bottom right)
+                    const mentalX = 110 + normalizeValue(stats[1]) * (210 - 110);
+                    const mentalY = 180 - normalizeValue(stats[1]) * (180 - 130);
+                    // Sleep (bottom left)
+                    const sleepX = 110 - normalizeValue(stats[2]) * (110 - 10);
+                    const sleepY = 180 - normalizeValue(stats[2]) * (180 - 130);
+                    
+                    const dataPoints = `${110},${physicalY} ${mentalX},${mentalY} ${sleepX},${sleepY}`;
+                    
+                    return (
+                      <Polygon
+                        points={dataPoints}
+                        fill={`${activeDomain.color}80`}
+                        stroke={activeDomain.color}
+                        strokeWidth="2"
+                      />
+                    );
+                  })()}
+                  
+                  {/* Labels */}
+                  <SvgText
+                    x="110"
+                    y="5"
+                    fontSize="12"
+                    fill="#f9fafb"
+                    textAnchor="middle"
+                  >
+                    Physical
+                  </SvgText>
+                  
+                  <SvgText
+                    x="215"
+                    y="185"
+                    fontSize="12"
+                    fill="#f9fafb"
+                    textAnchor="middle"
+                  >
+                    Mental
+                  </SvgText>
+                  
+                  <SvgText
+                    x="5"
+                    y="185"
+                    fontSize="12"
+                    fill="#f9fafb"
+                    textAnchor="middle"
+                  >
+                    Sleep
+                  </SvgText>
+                </Svg>
+              </View>
             </View>
             
             {/* Next Level Information */}
