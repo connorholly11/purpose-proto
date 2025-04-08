@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, Button, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Modal } from 'react-native';
 import { useAuthContext } from '../context/AuthContext';
 import { useEvalApi } from '../services/evalApi';
 
@@ -12,6 +12,7 @@ const EvalScreen = () => {
   const [selectedPromptIds, setSelectedPromptIds] = useState<string[]>([]);
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<string[]>([]);
   const [evalResults, setEvalResults] = useState<any[]>([]);
+  const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   
   // State for tracking progress
@@ -23,11 +24,24 @@ const EvalScreen = () => {
   // Result filter state
   const [filteredPromptId, setFilteredPromptId] = useState<string | null>(null);
   const [filteredPersonaId, setFilteredPersonaId] = useState<string | null>(null);
-
+  
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'results' | 'leaderboard'>('results');
+  
+  // Conversation modal state
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState<any[]>([]);
+  const [selectedPromptName, setSelectedPromptName] = useState('');
+  const [selectedPersonaName, setSelectedPersonaName] = useState('');
+  
+  // Expanded prompts in leaderboard
+  const [expandedPromptId, setExpandedPromptId] = useState<string | null>(null);
+  
   // Load all system prompts and personas on mount
   useEffect(() => {
     fetchPrompts();
     fetchPersonas();
+    fetchLeaderboard();
   }, []);
 
   const fetchPrompts = async () => {
@@ -47,6 +61,16 @@ const EvalScreen = () => {
     } catch (err: any) {
       console.error('Error loading personas', err);
       setError('Failed to load personas');
+    }
+  };
+  
+  const fetchLeaderboard = async () => {
+    try {
+      const data = await evalApi.getLeaderboard();
+      setLeaderboardData(data);
+    } catch (err: any) {
+      console.error('Error loading leaderboard', err);
+      setError('Failed to load leaderboard');
     }
   };
 
@@ -74,6 +98,12 @@ const EvalScreen = () => {
       );
       
       setEvalResults(response.results || []);
+      
+      // Refresh leaderboard after running evaluations
+      fetchLeaderboard();
+      
+      // Switch to results tab to show new evaluations
+      setActiveTab('results');
     } catch (err: any) {
       console.error('Error running evaluations', err);
       setError('Failed to run evaluations');
@@ -93,7 +123,15 @@ const EvalScreen = () => {
     }
   };
 
-  // Toggles a prompt ID in the selectedPromptIds array
+  // Show the conversation modal
+  const showConversation = (conversation: any[], promptName: string, personaName: string) => {
+    setSelectedConversation(conversation);
+    setSelectedPromptName(promptName);
+    setSelectedPersonaName(personaName);
+    setModalVisible(true);
+  };
+
+  // Toggle a prompt ID in the selectedPromptIds array
   const togglePromptSelection = (promptId: string) => {
     setSelectedPromptIds((prev) =>
       prev.includes(promptId)
@@ -102,7 +140,7 @@ const EvalScreen = () => {
     );
   };
 
-  // Toggles a persona ID in the selectedPersonaIds array
+  // Toggle a persona ID in the selectedPersonaIds array
   const togglePersonaSelection = (personaId: string) => {
     setSelectedPersonaIds((prev) =>
       prev.includes(personaId)
@@ -165,6 +203,34 @@ const EvalScreen = () => {
         {value}
       </Text>
     );
+  };
+  
+  // Render a numeric score with appropriate color
+  const renderNumericScore = (value: number) => {
+    let color = '#666';
+    
+    if (value >= 80) {
+      color = '#4CAF50';
+    } else if (value >= 50) {
+      color = '#FF9800';
+    } else {
+      color = '#F44336';
+    }
+    
+    return (
+      <Text style={[styles.scoreValue, { color }]}>
+        {value}%
+      </Text>
+    );
+  };
+  
+  // Toggle expanded prompt in leaderboard
+  const toggleExpandedPrompt = (promptId: string) => {
+    if (expandedPromptId === promptId) {
+      setExpandedPromptId(null);
+    } else {
+      setExpandedPromptId(promptId);
+    }
   };
 
   if (!isAdmin) {
@@ -271,216 +337,428 @@ const EvalScreen = () => {
         </ScrollView>
       </View>
 
-      {/* Right panel - Evaluation Results */}
+      {/* Right panel - Tabs for Results and Leaderboard */}
       <View style={styles.rightPanel}>
-        <View style={styles.resultsHeader}>
-          <Text style={styles.resultsTitle}>
-            Evaluation Results:
-          </Text>
-          
-          {/* Filter controls */}
-          {evalResults.length > 0 && (
-            <View style={styles.filterControls}>
-              <Text style={styles.filterLabel}>Filter by prompt:</Text>
-              <TouchableOpacity 
-                style={[styles.filterButton, !filteredPromptId && styles.activeFilterButton]}
-                onPress={() => filterResults(null, filteredPersonaId)}
-              >
-                <Text style={[styles.filterButtonText, !filteredPromptId && styles.activeFilterText]}>
-                  All Prompts
-                </Text>
-              </TouchableOpacity>
-              
-              {/* Create a unique list of prompt IDs from evalResults */}
-              {Array.from(new Set(evalResults.map(r => r.promptId))).map(promptId => (
-                <TouchableOpacity 
-                  key={`prompt-${promptId}`}
-                  style={[
-                    styles.filterButton, 
-                    filteredPromptId === promptId && styles.activeFilterButton
-                  ]}
-                  onPress={() => filterResults(promptId as string, filteredPersonaId)}
-                >
-                  <Text style={[
-                    styles.filterButtonText, 
-                    filteredPromptId === promptId && styles.activeFilterText
-                  ]}>
-                    {getPromptNameById(promptId as string)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-              
-              <View style={styles.filterDivider} />
-              
-              <Text style={styles.filterLabel}>Filter by persona:</Text>
-              <TouchableOpacity 
-                style={[styles.filterButton, !filteredPersonaId && styles.activeFilterButton]}
-                onPress={() => filterResults(filteredPromptId, null)}
-              >
-                <Text style={[styles.filterButtonText, !filteredPersonaId && styles.activeFilterText]}>
-                  All Personas
-                </Text>
-              </TouchableOpacity>
-              
-              {/* Create a unique list of persona IDs from evalResults */}
-              {Array.from(new Set(evalResults.map(r => r.personaId))).map(personaId => (
-                <TouchableOpacity 
-                  key={`persona-${personaId}`}
-                  style={[
-                    styles.filterButton, 
-                    filteredPersonaId === personaId && styles.activeFilterButton
-                  ]}
-                  onPress={() => filterResults(filteredPromptId, personaId as string)}
-                >
-                  <Text style={[
-                    styles.filterButtonText, 
-                    filteredPersonaId === personaId && styles.activeFilterText
-                  ]}>
-                    {getPersonaNameById(personaId as string)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
+        {/* Tab navigation */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              activeTab === 'results' && styles.activeTabButton
+            ]}
+            onPress={() => setActiveTab('results')}
+          >
+            <Text style={[
+              styles.tabButtonText,
+              activeTab === 'results' && styles.activeTabText
+            ]}>
+              Evaluation Results
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              activeTab === 'leaderboard' && styles.activeTabButton
+            ]}
+            onPress={() => setActiveTab('leaderboard')}
+          >
+            <Text style={[
+              styles.tabButtonText,
+              activeTab === 'leaderboard' && styles.activeTabText
+            ]}>
+              Leaderboard
+            </Text>
+          </TouchableOpacity>
         </View>
         
-        <ScrollView style={styles.resultsScrollView}>
-          {getFilteredResults().map((result, i) => (
-            <View
-              key={`${result.id || `${result.promptId}-${result.personaId}-${i}`}`}
-              style={styles.resultCard}
-            >
-              <View style={styles.resultHeader}>
-                <Text style={styles.resultPromptName}>
-                  Prompt: {getPromptNameById(result.promptId)} (ID: {result.promptId?.substring(0, 8)})
-                </Text>
-                <Text style={styles.resultPersonaName}>
-                  Persona: {result.persona?.name || getPersonaNameById(result.personaId)} 
-                  (ID: {result.personaId?.substring(0, 8)})
-                </Text>
-                <Text style={styles.resultDate}>
-                  Date: {new Date(result.createdAt).toLocaleString()}
-                </Text>
-              </View>
+        {/* Results Tab Content */}
+        {activeTab === 'results' && (
+          <View style={styles.tabContent}>
+            <View style={styles.resultsHeader}>
+              <Text style={styles.resultsTitle}>
+                Evaluation Results:
+              </Text>
               
-              {/* Scores Section */}
-              {result.scores && (
-                <View style={styles.scoresContainer}>
-                  {/* Overall Assessment */}
-                  {result.scores.overallAssessment && (
-                    <View style={styles.overallAssessment}>
-                      <Text style={styles.overallAssessmentTitle}>Overall Assessment:</Text>
-                      <Text style={styles.overallAssessmentText}>{result.scores.overallAssessment}</Text>
-                    </View>
-                  )}
+              {/* Filter controls */}
+              {evalResults.length > 0 && (
+                <View style={styles.filterControls}>
+                  <Text style={styles.filterLabel}>Filter by prompt:</Text>
+                  <TouchableOpacity 
+                    style={[styles.filterButton, !filteredPromptId && styles.activeFilterButton]}
+                    onPress={() => filterResults(null, filteredPersonaId)}
+                  >
+                    <Text style={[styles.filterButtonText, !filteredPromptId && styles.activeFilterText]}>
+                      All Prompts
+                    </Text>
+                  </TouchableOpacity>
                   
-                  {/* Engagement Section */}
-                  {result.scores.engagement && (
-                    <View style={styles.scoreSection}>
-                      <Text style={styles.scoreSectionTitle}>Engagement & Interaction Quality</Text>
-                      <View style={styles.scoreGrid}>
-                        {Object.entries(result.scores.engagement).map(([key, value]) => (
-                          <View key={key} style={styles.scoreItem}>
-                            <Text style={styles.scoreLabel}>
-                              {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
-                            </Text>
-                            {renderScore(value as string)}
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                  )}
+                  {/* Create a unique list of prompt IDs from evalResults */}
+                  {Array.from(new Set(evalResults.map(r => r.promptId))).map(promptId => (
+                    <TouchableOpacity 
+                      key={`prompt-${promptId}`}
+                      style={[
+                        styles.filterButton, 
+                        filteredPromptId === promptId && styles.activeFilterButton
+                      ]}
+                      onPress={() => filterResults(promptId as string, filteredPersonaId)}
+                    >
+                      <Text style={[
+                        styles.filterButtonText, 
+                        filteredPromptId === promptId && styles.activeFilterText
+                      ]}>
+                        {getPromptNameById(promptId as string)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                   
-                  {/* Emotional Intelligence Section */}
-                  {result.scores.emotionalIntelligence && (
-                    <View style={styles.scoreSection}>
-                      <Text style={styles.scoreSectionTitle}>Emotional Intelligence & Relational Depth</Text>
-                      <View style={styles.scoreGrid}>
-                        {Object.entries(result.scores.emotionalIntelligence).map(([key, value]) => (
-                          <View key={key} style={styles.scoreItem}>
-                            <Text style={styles.scoreLabel}>
-                              {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
-                            </Text>
-                            {renderScore(value as string)}
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                  )}
+                  <View style={styles.filterDivider} />
                   
-                  {/* Insights & Advice Section */}
-                  {result.scores.insightsAndAdvice && (
-                    <View style={styles.scoreSection}>
-                      <Text style={styles.scoreSectionTitle}>Insights & Advice Quality</Text>
-                      <View style={styles.scoreGrid}>
-                        {Object.entries(result.scores.insightsAndAdvice).map(([key, value]) => (
-                          <View key={key} style={styles.scoreItem}>
-                            <Text style={styles.scoreLabel}>
-                              {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
-                            </Text>
-                            {renderScore(value as string)}
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                  )}
+                  <Text style={styles.filterLabel}>Filter by persona:</Text>
+                  <TouchableOpacity 
+                    style={[styles.filterButton, !filteredPersonaId && styles.activeFilterButton]}
+                    onPress={() => filterResults(filteredPromptId, null)}
+                  >
+                    <Text style={[styles.filterButtonText, !filteredPersonaId && styles.activeFilterText]}>
+                      All Personas
+                    </Text>
+                  </TouchableOpacity>
                   
-                  {/* Failures & Safety Section */}
-                  {result.scores.failuresAndSafety && (
-                    <View style={styles.scoreSection}>
-                      <Text style={styles.scoreSectionTitle}>Failures & Safety</Text>
-                      <View style={styles.scoreGrid}>
-                        {Object.entries(result.scores.failuresAndSafety).map(([key, value]) => (
-                          <View key={key} style={styles.scoreItem}>
-                            <Text style={styles.scoreLabel}>
-                              {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
-                            </Text>
-                            {renderScore(value as string)}
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                  )}
+                  {/* Create a unique list of persona IDs from evalResults */}
+                  {Array.from(new Set(evalResults.map(r => r.personaId))).map(personaId => (
+                    <TouchableOpacity 
+                      key={`persona-${personaId}`}
+                      style={[
+                        styles.filterButton, 
+                        filteredPersonaId === personaId && styles.activeFilterButton
+                      ]}
+                      onPress={() => filterResults(filteredPromptId, personaId as string)}
+                    >
+                      <Text style={[
+                        styles.filterButtonText, 
+                        filteredPersonaId === personaId && styles.activeFilterText
+                      ]}>
+                        {getPersonaNameById(personaId as string)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               )}
-              
-              {/* Conversation Preview Button */}
-              <TouchableOpacity 
-                style={styles.conversationButton}
-                onPress={() => {
-                  // Show the conversation in an alert for now
-                  // In a production app, you would show this in a proper modal dialog
-                  if (result.conversation) {
-                    // Format the conversation for display
-                    const transcript = result.conversation
-                      .filter((msg: any) => msg.role !== 'system')
-                      .map((msg: any) => `${msg.role.toUpperCase()}: ${msg.content}`)
-                      .join('\n\n');
+            </View>
+            
+            <ScrollView style={styles.resultsScrollView}>
+              {getFilteredResults().map((result, i) => (
+                <View
+                  key={`${result.id || `${result.promptId}-${result.personaId}-${i}`}`}
+                  style={styles.resultCard}
+                >
+                  <View style={styles.resultHeader}>
+                    <Text style={styles.resultPromptName}>
+                      Prompt: {getPromptNameById(result.promptId)} (ID: {result.promptId?.substring(0, 8)})
+                    </Text>
+                    <Text style={styles.resultPersonaName}>
+                      Persona: {result.persona?.name || getPersonaNameById(result.personaId)} 
+                      (ID: {result.personaId?.substring(0, 8)})
+                    </Text>
+                    <Text style={styles.resultDate}>
+                      Date: {new Date(result.createdAt).toLocaleString()}
+                    </Text>
                     
-                    alert(`CONVERSATION TRANSCRIPT:\n\n${transcript}`);
-                  } else {
-                    alert('No conversation transcript available');
-                  }
-                }}
+                    {/* Overall Score Display */}
+                    {result.scores && result.scores.calculatedScores && (
+                      <View style={styles.overallScoreContainer}>
+                        <Text style={styles.overallScoreLabel}>Overall Score:</Text>
+                        {renderNumericScore(result.scores.calculatedScores.overallPercentage)}
+                      </View>
+                    )}
+                  </View>
+                  
+                  {/* Scores Section */}
+                  {result.scores && (
+                    <View style={styles.scoresContainer}>
+                      {/* Overall Assessment */}
+                      {result.scores.overallAssessment && (
+                        <View style={styles.overallAssessment}>
+                          <Text style={styles.overallAssessmentTitle}>Overall Assessment:</Text>
+                          <Text style={styles.overallAssessmentText}>{result.scores.overallAssessment}</Text>
+                        </View>
+                      )}
+                      
+                      {/* Calculated Scores Summary */}
+                      {result.scores.calculatedScores && result.scores.calculatedScores.categoryScores && (
+                        <View style={styles.calculatedScoresContainer}>
+                          <Text style={styles.calculatedScoresTitle}>Category Scores:</Text>
+                          <View style={styles.calculatedScoresGrid}>
+                            {Object.entries(result.scores.calculatedScores.categoryScores).map(([category, data]) => (
+                              <View key={category} style={styles.calculatedScoreItem}>
+                                <Text style={styles.calculatedScoreLabel}>
+                                  {category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
+                                </Text>
+                                {renderNumericScore((data as any).percentage)}
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+                      
+                      {/* Engagement Section */}
+                      {result.scores.engagement && (
+                        <View style={styles.scoreSection}>
+                          <Text style={styles.scoreSectionTitle}>Engagement & Interaction Quality</Text>
+                          <View style={styles.scoreGrid}>
+                            {Object.entries(result.scores.engagement).map(([key, value]) => (
+                              <View key={key} style={styles.scoreItem}>
+                                <Text style={styles.scoreLabel}>
+                                  {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
+                                </Text>
+                                {renderScore(value as string)}
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+                      
+                      {/* Emotional Intelligence Section */}
+                      {result.scores.emotionalIntelligence && (
+                        <View style={styles.scoreSection}>
+                          <Text style={styles.scoreSectionTitle}>Emotional Intelligence & Relational Depth</Text>
+                          <View style={styles.scoreGrid}>
+                            {Object.entries(result.scores.emotionalIntelligence).map(([key, value]) => (
+                              <View key={key} style={styles.scoreItem}>
+                                <Text style={styles.scoreLabel}>
+                                  {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
+                                </Text>
+                                {renderScore(value as string)}
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+                      
+                      {/* Insights & Advice Section */}
+                      {result.scores.insightsAndAdvice && (
+                        <View style={styles.scoreSection}>
+                          <Text style={styles.scoreSectionTitle}>Insights & Advice Quality</Text>
+                          <View style={styles.scoreGrid}>
+                            {Object.entries(result.scores.insightsAndAdvice).map(([key, value]) => (
+                              <View key={key} style={styles.scoreItem}>
+                                <Text style={styles.scoreLabel}>
+                                  {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
+                                </Text>
+                                {renderScore(value as string)}
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+                      
+                      {/* Failures & Safety Section */}
+                      {result.scores.failuresAndSafety && (
+                        <View style={styles.scoreSection}>
+                          <Text style={styles.scoreSectionTitle}>Failures & Safety</Text>
+                          <View style={styles.scoreGrid}>
+                            {Object.entries(result.scores.failuresAndSafety).map(([key, value]) => (
+                              <View key={key} style={styles.scoreItem}>
+                                <Text style={styles.scoreLabel}>
+                                  {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
+                                </Text>
+                                {renderScore(value as string)}
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                  
+                  {/* Conversation Preview Button */}
+                  <TouchableOpacity 
+                    style={styles.conversationButton}
+                    onPress={() => {
+                      if (result.conversation) {
+                        showConversation(
+                          result.conversation, 
+                          getPromptNameById(result.promptId),
+                          result.persona?.name || getPersonaNameById(result.personaId)
+                        );
+                      }
+                    }}
+                  >
+                    <Text style={styles.conversationButtonText}>View Conversation Transcript</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+              
+              {evalResults.length > 0 && getFilteredResults().length === 0 && (
+                <Text style={styles.noResultsText}>
+                  No results match the current filter.
+                </Text>
+              )}
+              
+              {evalResults.length === 0 && (
+                <Text style={styles.noResultsText}>
+                  No evaluation results available. Run an evaluation or load existing results.
+                </Text>
+              )}
+            </ScrollView>
+          </View>
+        )}
+        
+        {/* Leaderboard Tab Content */}
+        {activeTab === 'leaderboard' && (
+          <View style={styles.tabContent}>
+            <Text style={styles.leaderboardTitle}>System Prompt Leaderboard</Text>
+            <Text style={styles.leaderboardSubtitle}>
+              Prompts ranked by average evaluation score across all personas
+            </Text>
+            
+            <ScrollView style={styles.leaderboardScrollView}>
+              {leaderboardData.length === 0 ? (
+                <Text style={styles.noResultsText}>
+                  No leaderboard data available. Run evaluations to populate the leaderboard.
+                </Text>
+              ) : (
+                leaderboardData.map((entry, index) => (
+                  <View key={entry.promptId} style={styles.leaderboardCard}>
+                    <View style={styles.leaderboardHeader}>
+                      <View style={styles.rankContainer}>
+                        <Text style={styles.rankText}>{index + 1}</Text>
+                      </View>
+                      <View style={styles.leaderboardHeaderContent}>
+                        <Text style={styles.leaderboardPromptName}>{entry.promptName}</Text>
+                        <Text style={styles.leaderboardModelName}>Model: {entry.modelName}</Text>
+                        <Text style={styles.leaderboardEvalCount}>
+                          {entry.evaluationCount} evaluation{entry.evaluationCount !== 1 ? 's' : ''}
+                        </Text>
+                      </View>
+                      <View style={styles.leaderboardScore}>
+                        <Text style={styles.leaderboardScoreText}>{entry.averageScore}%</Text>
+                      </View>
+                    </View>
+                    
+                    {/* Category scores */}
+                    <View style={styles.leaderboardCategoryScores}>
+                      {Object.entries(entry.categoryPercentages).map(([category, score]) => (
+                        <View key={category} style={styles.leaderboardCategoryItem}>
+                          <Text style={styles.leaderboardCategoryName}>
+                            {category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                          </Text>
+                          <View style={styles.leaderboardCategoryBarContainer}>
+                            <View 
+                              style={[
+                                styles.leaderboardCategoryBar, 
+                                { width: `${score}%` },
+                                score >= 80 ? styles.scoreHigh : 
+                                score >= 50 ? styles.scoreMedium : 
+                                styles.scoreLow
+                              ]} 
+                            />
+                          </View>
+                          <Text style={styles.leaderboardCategoryScore}>{score}%</Text>
+                        </View>
+                      ))}
+                    </View>
+                    
+                    {/* Expand button to show evaluations */}
+                    <TouchableOpacity
+                      style={styles.expandButton}
+                      onPress={() => toggleExpandedPrompt(entry.promptId)}
+                    >
+                      <Text style={styles.expandButtonText}>
+                        {expandedPromptId === entry.promptId ? 'Hide Details' : 'View Evaluation Details'}
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    {/* Expanded evaluations */}
+                    {expandedPromptId === entry.promptId && (
+                      <View style={styles.expandedEvaluationsContainer}>
+                        <Text style={styles.expandedEvaluationsTitle}>Individual Evaluations:</Text>
+                        {entry.evaluations.map((evaluation: any) => (
+                          <View key={evaluation.id} style={styles.expandedEvaluationItem}>
+                            <View style={styles.expandedEvaluationHeader}>
+                              <Text style={styles.expandedEvaluationPersona}>
+                                Persona: {evaluation.persona?.name || 'Unknown'}
+                              </Text>
+                              <Text style={styles.expandedEvaluationDate}>
+                                {new Date(evaluation.createdAt).toLocaleDateString()}
+                              </Text>
+                              {evaluation.scores.calculatedScores && (
+                                <Text style={styles.expandedEvaluationScore}>
+                                  Score: {evaluation.scores.calculatedScores.overallPercentage}%
+                                </Text>
+                              )}
+                            </View>
+                            
+                            {/* Button to view conversation */}
+                            <TouchableOpacity 
+                              style={styles.viewConversationButton}
+                              onPress={() => {
+                                if (evaluation.conversation) {
+                                  showConversation(
+                                    evaluation.conversation, 
+                                    entry.promptName,
+                                    evaluation.persona?.name || 'Unknown'
+                                  );
+                                }
+                              }}
+                            >
+                              <Text style={styles.viewConversationButtonText}>
+                                View Conversation
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        )}
+      </View>
+      
+      {/* Conversation Modal */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Conversation Transcript</Text>
+              <Text style={styles.modalSubtitle}>
+                Prompt: {selectedPromptName} • Persona: {selectedPersonaName}
+              </Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.conversationButtonText}>View Conversation Transcript</Text>
+                <Text style={styles.closeButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
-          ))}
-          
-          {evalResults.length > 0 && getFilteredResults().length === 0 && (
-            <Text style={styles.noResultsText}>
-              No results match the current filter.
-            </Text>
-          )}
-          
-          {evalResults.length === 0 && (
-            <Text style={styles.noResultsText}>
-              No evaluation results available. Run an evaluation or load existing results.
-            </Text>
-          )}
-        </ScrollView>
-      </View>
+            
+            <ScrollView style={styles.conversationScrollView}>
+              {selectedConversation
+                .filter(msg => msg.role !== 'system')
+                .map((msg, index) => (
+                  <View 
+                    key={index} 
+                    style={[
+                      styles.messageContainer,
+                      msg.role === 'user' ? styles.userMessage : styles.assistantMessage
+                    ]}
+                  >
+                    <Text style={styles.messageRole}>{msg.role.toUpperCase()}</Text>
+                    <Text style={styles.messageContent}>{msg.content}</Text>
+                  </View>
+                ))
+              }
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -580,6 +858,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
+  overallScoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    padding: 4,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  overallScoreLabel: {
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
   progressContainer: {
     marginTop: 16,
     marginBottom: 24,
@@ -661,6 +952,31 @@ const styles = StyleSheet.create({
   scoresContainer: {
     marginTop: 12,
   },
+  calculatedScoresContainer: {
+    marginBottom: 16,
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+  },
+  calculatedScoresTitle: {
+    fontWeight: 'bold',
+    marginBottom: 8,
+    fontSize: 15,
+  },
+  calculatedScoresGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  calculatedScoreItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '50%',
+    paddingRight: 16,
+    marginBottom: 8,
+  },
+  calculatedScoreLabel: {
+    fontWeight: '500',
+  },
   overallAssessment: {
     marginBottom: 16,
     backgroundColor: '#f0f8ff',
@@ -720,6 +1036,264 @@ const styles = StyleSheet.create({
   conversationButtonText: {
     color: '#333',
     fontWeight: '500',
+  },
+  
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    width: '90%',
+    maxWidth: 800,
+    maxHeight: '90%',
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    padding: 8,
+  },
+  closeButtonText: {
+    color: '#007bff',
+    fontWeight: '500',
+  },
+  conversationScrollView: {
+    padding: 16,
+    maxHeight: 500,
+  },
+  messageContainer: {
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 8,
+  },
+  userMessage: {
+    backgroundColor: '#f0f0f0',
+    alignSelf: 'flex-start',
+  },
+  assistantMessage: {
+    backgroundColor: '#e6f7ff',
+    alignSelf: 'flex-end',
+  },
+  messageRole: {
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  messageContent: {
+    lineHeight: 20,
+  },
+  
+  // Tab styles
+  tabContainer: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  tabButton: {
+    padding: 16,
+    flex: 1,
+    alignItems: 'center',
+  },
+  activeTabButton: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#4CAF50',
+  },
+  tabButtonText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#666',
+  },
+  activeTabText: {
+    color: '#4CAF50',
+    fontWeight: 'bold',
+  },
+  tabContent: {
+    flex: 1,
+  },
+  
+  // Leaderboard styles
+  leaderboardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginLeft: 16,
+  },
+  leaderboardSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 16,
+    marginBottom: 8,
+  },
+  leaderboardScrollView: {
+    padding: 16,
+  },
+  leaderboardCard: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  leaderboardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rankContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  rankText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  leaderboardHeaderContent: {
+    flex: 1,
+  },
+  leaderboardPromptName: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  leaderboardModelName: {
+    fontSize: 14,
+    color: '#555',
+  },
+  leaderboardEvalCount: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
+  },
+  leaderboardScore: {
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  leaderboardScoreText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#4CAF50',
+  },
+  leaderboardCategoryScores: {
+    marginTop: 16,
+  },
+  leaderboardCategoryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  leaderboardCategoryName: {
+    width: 160,
+    fontSize: 14,
+  },
+  leaderboardCategoryBarContainer: {
+    flex: 1,
+    height: 10,
+    backgroundColor: '#eee',
+    borderRadius: 5,
+    overflow: 'hidden',
+    marginHorizontal: 10,
+  },
+  leaderboardCategoryBar: {
+    height: '100%',
+  },
+  scoreHigh: {
+    backgroundColor: '#4CAF50',
+  },
+  scoreMedium: {
+    backgroundColor: '#FF9800',
+  },
+  scoreLow: {
+    backgroundColor: '#F44336',
+  },
+  leaderboardCategoryScore: {
+    width: 40,
+    textAlign: 'right',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  expandButton: {
+    marginTop: 12,
+    padding: 8,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  expandButtonText: {
+    color: '#4CAF50',
+    fontWeight: '500',
+  },
+  expandedEvaluationsContainer: {
+    marginTop: 16,
+    backgroundColor: '#f9f9f9',
+    padding: 12,
+    borderRadius: 8,
+  },
+  expandedEvaluationsTitle: {
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  expandedEvaluationItem: {
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  expandedEvaluationHeader: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 8,
+  },
+  expandedEvaluationPersona: {
+    fontWeight: '500',
+    marginRight: 12,
+  },
+  expandedEvaluationDate: {
+    color: '#888',
+    marginRight: 12,
+  },
+  expandedEvaluationScore: {
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  viewConversationButton: {
+    backgroundColor: '#eee',
+    padding: 8,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  viewConversationButtonText: {
+    color: '#555',
+    fontSize: 13,
   },
 });
 

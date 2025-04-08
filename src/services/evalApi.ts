@@ -114,6 +114,12 @@ export function useEvalApi() {
       const resp = await evalApi.get('/results', { params });
       return resp.data;
     },
+    
+    // Get the leaderboard data
+    async getLeaderboard() {
+      const resp = await evalApi.get('/leaderboard');
+      return resp.data;
+    },
   };
 }
 
