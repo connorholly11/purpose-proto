@@ -26,12 +26,13 @@ export const useApi = () => {
       console.warn('[useApi] Production environment detected, but EXPO_PUBLIC_API_URL is not set!');
     }
     
-    // Create a new axios instance
+    // Create a new axios instance with timeout
     const axiosInstance = axios.create({
       baseURL: normalizedBaseUrl,
       headers: {
         'Content-Type': 'application/json',
       },
+      timeout: 30000, // 30 second timeout for LLM requests
     });
     
     // Add auth token to requests
@@ -47,6 +48,17 @@ export const useApi = () => {
         return config;
       }
     });
+    
+    // Add global error handler for network errors
+    axiosInstance.interceptors.response.use(
+      response => response,
+      error => {
+        if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
+          console.log('[API] Network connection issue detected');
+        }
+        return Promise.reject(error);
+      }
+    );
     
     // Create and return the API service
     return createApiService(axiosInstance);

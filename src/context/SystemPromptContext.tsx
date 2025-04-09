@@ -60,8 +60,17 @@ export const SystemPromptProvider = ({ children }: SystemPromptProviderProps) =>
       setLoadingPrompts(true);
       setError(null);
       
-      // Fetch all available prompts
-      const fetchedPrompts = await api.admin.getSystemPrompts();
+      // Fetch all available prompts with a timeout
+      let fetchedPrompts;
+      try {
+        fetchedPrompts = await api.admin.getSystemPrompts();
+      } catch (err) {
+        console.log('Backend connection issue, using empty prompts list');
+        // Use empty array if we can't connect
+        fetchedPrompts = [];
+        // Rethrow to skip the rest of the function
+        throw err;
+      }
       setPrompts(fetchedPrompts);
       
       // If we have a userId, get the user-specific active prompt
@@ -92,7 +101,14 @@ export const SystemPromptProvider = ({ children }: SystemPromptProviderProps) =>
   // Load prompts when user authentication is loaded or userId changes
   useEffect(() => {
     if (isLoaded) {
-      loadPrompts();
+      loadPrompts().catch(error => {
+        // Silence network errors to avoid console clutter when backend is not available
+        if (error?.message === 'Network Error') {
+          console.log('Backend not available, system prompts will not be loaded');
+        } else {
+          console.error('Error loading system prompts:', error);
+        }
+      });
     }
   }, [isLoaded, userId]);
   

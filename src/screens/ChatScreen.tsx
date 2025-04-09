@@ -222,7 +222,7 @@ const MessageBubble = ({ message }: { message: Message }) => {
 // Main chat screen component
 export const ChatScreen = () => {
   // Get state and functions from ChatContext
-  const { messages, loading, error, sendMessage } = useChatContext();
+  const { messages, loading, error, sendMessage, startNewConversation, conversationId, currentModel, conversationCost } = useChatContext();
   
   // Get system prompts from context
   const { activePrompt, loadingPrompts } = useSystemPrompts();
@@ -246,10 +246,16 @@ export const ChatScreen = () => {
   // Function to handle sending a message using the context
   const handleSend = async () => {
     if (inputText.trim() && !loading) {
+      console.log('[ChatScreen] Send button pressed');
+      console.log(`[ChatScreen] Message to send: "${inputText.substring(0, 30)}${inputText.length > 30 ? '...' : ''}"`);
+      console.log(`[ChatScreen] User context enabled: ${useUserContext}`);
+      console.log(`[ChatScreen] Current conversation ID: ${conversationId || 'New conversation'}`);
+      
       const messageText = inputText;
       setInputText(''); // Clear input immediately
 
       try {
+        console.log('[ChatScreen] Calling ChatContext.sendMessage()');
         // Call the context's sendMessage function with just the message and user context
         await sendMessage(
           messageText,
@@ -257,10 +263,15 @@ export const ChatScreen = () => {
           false,
           useUserContext
         );
+        console.log('[ChatScreen] Message sent and response received successfully');
       } catch (err) {
         // Error is handled within the context, but you could add extra UI feedback if needed
-        console.error('Error sending message (from ChatScreen):', err);
+        console.error('[ChatScreen] Error sending message:', err);
       }
+    } else {
+      console.log(`[ChatScreen] Send attempted but conditions not met:
+      - Has text: ${Boolean(inputText.trim())}
+      - Not loading: ${!loading}`);
     }
   };
   
@@ -273,12 +284,37 @@ export const ChatScreen = () => {
     }
   };
   
-  // Scroll to the bottom when new messages arrive
+  // Only scroll to the bottom when new messages arrive, don't force re-renders during typing
+  const previousMessageCount = useRef(0);
+  
   useEffect(() => {
-    if (messages.length > 0) {
+    // Only log and take action if the message count actually changed
+    if (messages.length !== previousMessageCount.current) {
+      console.log(`[ChatScreen] Message count changed to: ${messages.length}`);
+      if (messages.length >= 5) {
+        console.log(`[ChatScreen] We now have ${messages.length} messages (5+ threshold reached)`);
+      }
+      
+      // Always scroll to bottom regardless of message count
+      // Use immediate scroll for larger message counts to prevent animation glitches
+      const shouldUseAnimation = messages.length < 50;
+      
+      // Scroll to bottom with a short delay to ensure layout is complete
       setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100); // Short delay ensures layout is complete
+        if (flatListRef.current) {
+          flatListRef.current.scrollToEnd({ animated: shouldUseAnimation });
+          
+          // For large message counts, double-check scrolling with a second attempt
+          if (messages.length > 30) {
+            setTimeout(() => {
+              flatListRef.current?.scrollToEnd({ animated: false });
+            }, 200);
+          }
+        }
+      }, 100);
+      
+      // Update the previous count
+      previousMessageCount.current = messages.length;
     }
   }, [messages]);
 
@@ -286,10 +322,35 @@ export const ChatScreen = () => {
   const toggleAdminMode = () => setIsAdminMode(!isAdminMode);
 
   // Combined data for FlatList to include typing indicator when loading
-  const renderData = useMemo(() => [
-    ...messages, 
-    ...(loading ? [{ id: 'typing-indicator', role: 'typing', content: '', createdAt: '' }] : [])
-  ], [messages, loading]);
+  // Return to using useMemo for renderData to prevent unnecessary re-renders
+  // This avoids the flashing when typing in the input field
+  // Extract messagesToDisplay outside of useMemo to use as a dependency
+  const messagesToDisplay = useMemo(() => {
+    // Show all messages instead of limiting to 100
+    return messages;
+  }, [messages]);
+  
+  // Combined data for FlatList to include typing indicator when loading
+  const renderData = useMemo(() => {
+    // Generate a stable typing indicator object that doesn't change on every render
+    const typingIndicator = { 
+      id: 'typing-indicator', 
+      role: 'typing', 
+      content: '', 
+      createdAt: loading ? new Date().toISOString() : '' 
+    };
+        
+    // Make a copy of the messages array to ensure proper re-rendering
+    const result = [
+      ...messagesToDisplay.map(msg => ({...msg})),
+      ...(loading ? [typingIndicator] : [])
+    ];
+    
+    // Only log when messages or loading state changes
+    console.log(`[ChatScreen] Render data prepared with ${result.length} items (${messagesToDisplay.length} messages of ${messages.length} total + ${loading ? '1 typing indicator' : '0 typing indicators'})`);
+    
+    return result;
+  }, [messagesToDisplay, loading, messages.length]); // Include messages.length in dependencies
   
   // Optimize FlatList rendering
   const renderMessageItem = useCallback(({ item }: { item: Message | { id: string; role: string; content: string; createdAt: string } }) => {
@@ -299,7 +360,10 @@ export const ChatScreen = () => {
     return <MessageBubble message={item as Message} />;
   }, []);
   
-  const keyExtractor = useCallback((item: Message | { id: string; role: string; content: string; createdAt: string }) => item.id, []);
+  // Simplified key extractor that's stable across renders
+  const keyExtractor = useCallback((item: Message | { id: string; role: string; content: string; createdAt: string }) => {
+    return `${item.id}`;
+  }, []);
   
   // Function to handle scrolling to bottom
   const scrollToBottom = () => {
@@ -330,6 +394,16 @@ export const ChatScreen = () => {
             <View style={styles.headerContent}>
               <Text style={styles.headerText}>
                 {!loadingPrompts && activePrompt ? `${activePrompt.name}` : 'AI Assistant'}
+                {currentModel && <Text style={styles.modelIndicator}> - {currentModel}</Text>}
+                {!currentModel && <Text style={styles.modelIndicator}> - Default model</Text>}
+                {conversationId && <Text style={styles.conversationIndicator}> (Conversation in progress)</Text>}
+              </Text>
+              
+              {/* Display estimated conversation cost */}
+              <Text style={styles.costIndicator}>
+                {isNaN(conversationCost) 
+                  ? 'Cost: Calculating...' 
+                  : `Estimated cost: $${conversationCost.toFixed(6)}`}
               </Text>
               
               <View style={styles.adminControls}>
@@ -337,11 +411,26 @@ export const ChatScreen = () => {
                   <Text style={styles.contextToggleLabel}>User Context:</Text>
                   <Switch
                     value={useUserContext}
-                    onValueChange={() => setUseUserContext(!useUserContext)}
+                    onValueChange={() => {
+                      const newValue = !useUserContext;
+                      console.log(`[ChatScreen] User context toggle changed to: ${newValue}`);
+                      setUseUserContext(newValue);
+                    }}
                     trackColor={{ false: COLORS.switchTrackInactive, true: COLORS.switchTrackActive }}
                     thumbColor="#FFFFFF"
                   />
                 </View>
+                
+                {/* Start a new conversation - this is a true reset */}
+                <TouchableOpacity 
+                  style={styles.newChatButton}
+                  onPress={() => {
+                    console.log('[ChatScreen] New Chat button pressed');
+                    startNewConversation();
+                  }}
+                >
+                  <Text style={styles.newChatText}>New Chat</Text>
+                </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={styles.logoutButton}
@@ -381,13 +470,19 @@ export const ChatScreen = () => {
             !isAdminMode && styles.userModeMessagesList
           ]}
           style={styles.messagesContainer}
-          initialNumToRender={10}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          showsVerticalScrollIndicator={false}
-          removeClippedSubviews={Platform.OS === 'android'}
+          initialNumToRender={100} // Increased further to handle more messages
+          maxToRenderPerBatch={100} // Increased for better performance
+          windowSize={41} // Increased to ensure more messages remain in memory
+          updateCellsBatchingPeriod={50} // Faster updates
+          removeClippedSubviews={false} // Critical: Keep all messages in memory
+          showsVerticalScrollIndicator={true}
           onScroll={handleScroll}
           scrollEventThrottle={400}
+          maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+          extraData={renderData.length} // Use length to force re-render when messages change
+          onContentSizeChange={() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }}
         />
         
         {/* Error message display */}
@@ -470,6 +565,22 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 8,
   },
+  conversationIndicator: {
+    fontSize: 12,
+    color: '#007AFF', // iOS blue
+    fontStyle: 'italic',
+  },
+  modelIndicator: {
+    fontSize: 12,
+    color: '#0066CC', // Darker blue for model info
+    fontWeight: '500',
+  },
+  costIndicator: {
+    fontSize: 11,
+    color: '#34C759', // Green for cost
+    marginTop: 2,
+    marginBottom: 4,
+  },
   adminToggleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -509,6 +620,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.headerText,
     marginRight: 8,
+  },
+  newChatButton: {
+    padding: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#4CAF50',  // Green color for new chat
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  newChatText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
   logoutButton: {
     padding: 6,

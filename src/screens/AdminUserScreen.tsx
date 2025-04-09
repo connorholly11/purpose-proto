@@ -56,7 +56,6 @@ interface UserContextData {
   };
 
   // Technical necessities
-  latest_interactions: string[];      // Recent messages for immediate context
   last_update: string;               // When understanding was last deepened
 }
 
@@ -386,17 +385,6 @@ const AdminUserScreen = () => {
           </>
         )}
 
-        {contextData.latest_interactions && contextData.latest_interactions.length > 0 && (
-          <>
-            <Text style={styles.summarySectionTitle}>Recent Exchanges</Text>
-            {contextData.latest_interactions.map((msg, index) => (
-              <Text key={`latest-${index}`} style={styles.summaryLatestMsg}>
-                "{msg}"
-              </Text>
-            ))}
-          </>
-        )}
-        
         {contextData.last_update && (
           <Text style={styles.summaryUpdateTime}>
             Last updated: {formatDate(contextData.last_update)}
@@ -720,13 +708,6 @@ const styles = StyleSheet.create({
   summaryConvKey: {
     fontWeight: '500',
     textTransform: 'capitalize',
-  },
-  summaryLatestMsg: {
-    fontSize: 12,
-    color: '#6c757d',
-    marginBottom: 5,
-    marginLeft: 10,
-    fontStyle: 'italic',
   },
   summaryUpdateTime: {
     fontSize: 10,

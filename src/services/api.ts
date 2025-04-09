@@ -39,19 +39,45 @@ export const createAuthenticatedApi = () => {
 export const createApiService = (authenticatedApi: any) => ({
   chat: {
     // Send a message to the AI and get a response
-    sendMessage: async (message: string, overridePromptId?: string, requestDebugInfo = false, useContext = true) => {
+    sendMessage: async (message: string, overridePromptId?: string, requestDebugInfo = false, useContext = true, conversationId?: string | null) => {
       try {
-        console.log('Sending chat message...');
+        console.log('===== AI COMPANION API CALL START =====');
+        console.log(`Request details:
+- Message length: ${message.length} chars
+- First few words: "${message.substring(0, 30)}${message.length > 30 ? '...' : ''}"
+- Override prompt ID: ${overridePromptId || 'None'}
+- Request debug info: ${requestDebugInfo}
+- Use context: ${useContext}
+- Conversation ID: ${conversationId || 'New conversation'}`);
+        
+        const startTime = Date.now();
         const response = await authenticatedApi.post('/api/chat', {
           message,
           overridePromptId,
           requestDebugInfo,
           useContext,
+          conversationId, // Pass conversationId to backend
         });
-        console.log('Chat message sent successfully');
+        const requestTime = Date.now() - startTime;
+        
+        console.log(`Response received in ${requestTime}ms:
+- Status: ${response.status}
+- Response type: ${typeof response.data}
+- Reply length: ${response.data.reply?.length || 0} chars
+- Conversation ID: ${response.data.conversationId}
+- Is new conversation: ${response.data.isNewConversation}
+- Debug info included: ${Boolean(response.data.debugInfo)}`);
+        console.log('===== AI COMPANION API CALL COMPLETE =====');
+        
         return response.data;
       } catch (error) {
+        console.error('===== AI COMPANION API CALL ERROR =====');
         console.error('Error sending message:', error);
+        if (axios.isAxiosError(error)) {
+          console.error(`Status: ${error.response?.status}`);
+          console.error(`Response data:`, error.response?.data);
+        }
+        console.error('===== AI COMPANION API CALL ERROR END =====');
         throw error;
       }
     },
