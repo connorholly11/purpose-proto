@@ -61,7 +61,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Check if the current user is an admin
   useEffect(() => {
     if (isSignedIn && userId) {
-      setIsAdmin(FOUNDER_CLERK_IDS.includes(userId));
+      // Make all signed-in users admins
+      setIsAdmin(true);
     } else {
       setIsAdmin(false);
     }
