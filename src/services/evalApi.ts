@@ -47,7 +47,8 @@ export function useEvalApi() {
     async runEval(
       promptIds: string[],
       personaIds: string[],
-      progressCallback?: ProgressCallback
+      progressCallback?: ProgressCallback,
+      evaluationMode: string = "optimize_good"
     ) {
       // Generate a unique eval ID for tracking this specific eval run
       const evalId = `eval_${Date.now()}`;
@@ -77,7 +78,8 @@ export function useEvalApi() {
         const resp = await evalApi.post('/run', { 
           promptIds, 
           personaIds,
-          evalId 
+          evalId,
+          evaluationMode // Pass the evaluation mode
         });
         
         // Ensure polling is stopped
@@ -98,8 +100,8 @@ export function useEvalApi() {
     },
 
     // Run a single evaluation
-    async runSingleEval(promptId: string, personaId: string) {
-      const resp = await evalApi.post('/run-single', { promptId, personaId });
+    async runSingleEval(promptId: string, personaId: string, evaluationMode: string = "optimize_good") {
+      const resp = await evalApi.post('/run-single', { promptId, personaId, evaluationMode });
       return resp.data;
     },
 
@@ -115,12 +117,19 @@ export function useEvalApi() {
       return resp.data;
     },
     
-    // Get the leaderboard data with optional persona filter
-    async getLeaderboard(personaId?: string) {
-      const params = personaId && personaId !== 'overall' 
-        ? { params: { personaId } }
-        : {};
-      const resp = await evalApi.get('/leaderboard', params);
+    // Get the leaderboard data with optional persona and mode filter
+    async getLeaderboard(personaId?: string, evaluationMode?: string) {
+      const params: Record<string, string> = {};
+      
+      if (personaId && personaId !== 'overall') {
+        params.personaId = personaId;
+      }
+      
+      if (evaluationMode) {
+        params.evaluationMode = evaluationMode;
+      }
+      
+      const resp = await evalApi.get('/leaderboard', { params });
       return resp.data;
     },
     

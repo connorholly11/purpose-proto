@@ -31,6 +31,10 @@ const EvalScreen = () => {
   // Leaderboard filter state
   const [leaderboardPersonaId, setLeaderboardPersonaId] = useState<string | null>(null);
   
+  // Evaluation mode state (for both running evals and viewing leaderboard)
+  const [evaluationMode, setEvaluationMode] = useState<"optimize_good" | "avoid_bad">("optimize_good");
+  const [leaderboardMode, setLeaderboardMode] = useState<"optimize_good" | "avoid_bad">("optimize_good");
+  
   // Conversation modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<any[]>([]);
@@ -44,7 +48,7 @@ const EvalScreen = () => {
   useEffect(() => {
     fetchPrompts();
     fetchPersonas();
-    fetchLeaderboard();
+    fetchLeaderboard(undefined, leaderboardMode);
   }, []);
 
   const fetchPrompts = async () => {
@@ -67,9 +71,13 @@ const EvalScreen = () => {
     }
   };
   
-  const fetchLeaderboard = async (personaId?: string) => {
+  const fetchLeaderboard = async (personaId?: string, mode?: string) => {
     try {
-      const data = await evalApi.getLeaderboard(personaId || leaderboardPersonaId || undefined);
+      const evaluationModeToUse = mode || leaderboardMode;
+      const data = await evalApi.getLeaderboard(
+        personaId || leaderboardPersonaId || undefined,
+        evaluationModeToUse
+      );
       setLeaderboardData(data);
     } catch (err: any) {
       console.error('Error loading leaderboard', err);
@@ -110,13 +118,16 @@ const EvalScreen = () => {
         (completed) => {
           setCompletedEvalRuns(completed);
           setProgress(completed / totalRuns);
-        }
+        },
+        evaluationMode // Pass the current evaluation mode
       );
       
       setEvalResults(response.results || []);
       
       // Refresh leaderboard after running evaluations
-      fetchLeaderboard(leaderboardPersonaId || undefined);
+      // Use the same mode for the leaderboard as was used for the evaluation
+      setLeaderboardMode(evaluationMode);
+      fetchLeaderboard(leaderboardPersonaId || undefined, evaluationMode);
       
       // Switch to results tab to show new evaluations
       setActiveTab('results');
@@ -326,6 +337,49 @@ const EvalScreen = () => {
 
           <View style={styles.divider} />
 
+          <Text style={styles.subTitle}>
+            3) Select Evaluation Mode:
+          </Text>
+          <View style={styles.modeContainer}>
+            <TouchableOpacity
+              style={[
+                styles.modeButton,
+                evaluationMode === "optimize_good" && styles.activeModeButton
+              ]}
+              onPress={() => setEvaluationMode("optimize_good")}
+            >
+              <Text style={[
+                styles.modeButtonText,
+                evaluationMode === "optimize_good" && styles.activeModeText
+              ]}>
+                Optimize Good
+              </Text>
+              <Text style={styles.modeDescription}>
+                Higher scores are better
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.modeButton,
+                evaluationMode === "avoid_bad" && styles.activeModeButton
+              ]}
+              onPress={() => setEvaluationMode("avoid_bad")}
+            >
+              <Text style={[
+                styles.modeButtonText,
+                evaluationMode === "avoid_bad" && styles.activeModeText
+              ]}>
+                Avoid Bad
+              </Text>
+              <Text style={styles.modeDescription}>
+                Lower scores are better
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.divider} />
+
           <Button
             title="Run Evaluations"
             onPress={runEvaluations}
@@ -518,7 +572,7 @@ const EvalScreen = () => {
                             {Object.entries(result.scores.calculatedScores.categoryScores).map(([category, data]) => (
                               <View key={category} style={styles.calculatedScoreItem}>
                                 <Text style={styles.calculatedScoreLabel}>
-                                  {category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
+                                  {category.replace(/([A-Z])/g, ' $1').replace(/^./, (str: string) => str.toUpperCase())}:
                                 </Text>
                                 <Text style={styles.scoreValue}>
                                   {(data as any).score} / {(data as any).maxPossible}
@@ -637,17 +691,46 @@ const EvalScreen = () => {
           <View style={styles.tabContent}>
             <Text style={styles.leaderboardTitle}>System Prompt Leaderboard</Text>
             <Text style={styles.leaderboardSubtitle}>
-              Prompts ranked by total points (higher is better)
+              {leaderboardMode === "optimize_good" 
+                ? "Prompts ranked by total points (higher is better)" 
+                : "Prompts ranked by avoiding problems (lower is better)"}
             </Text>
             
-            {/* Persona Filter for Leaderboard */}
+            {/* Mode + Persona Filters for Leaderboard */}
             <View style={styles.filterControls}>
+              <Text style={styles.filterLabel}>Evaluation Mode:</Text>
+              <TouchableOpacity 
+                style={[styles.filterButton, leaderboardMode === "optimize_good" && styles.activeFilterButton]}
+                onPress={() => {
+                  setLeaderboardMode("optimize_good");
+                  fetchLeaderboard(leaderboardPersonaId || undefined, "optimize_good");
+                }}
+              >
+                <Text style={[styles.filterButtonText, leaderboardMode === "optimize_good" && styles.activeFilterText]}>
+                  Optimize Good
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.filterButton, leaderboardMode === "avoid_bad" && styles.activeFilterButton]}
+                onPress={() => {
+                  setLeaderboardMode("avoid_bad");
+                  fetchLeaderboard(leaderboardPersonaId || undefined, "avoid_bad");
+                }}
+              >
+                <Text style={[styles.filterButtonText, leaderboardMode === "avoid_bad" && styles.activeFilterText]}>
+                  Avoid Bad
+                </Text>
+              </TouchableOpacity>
+              
+              <View style={styles.filterDivider} />
+              
               <Text style={styles.filterLabel}>Filter by persona:</Text>
               <TouchableOpacity 
                 style={[styles.filterButton, !leaderboardPersonaId && styles.activeFilterButton]}
                 onPress={() => {
                   setLeaderboardPersonaId(null);
-                  fetchLeaderboard('overall');
+                  fetchLeaderboard('overall', leaderboardMode);
                 }}
               >
                 <Text style={[styles.filterButtonText, !leaderboardPersonaId && styles.activeFilterText]}>
@@ -664,7 +747,7 @@ const EvalScreen = () => {
                   ]}
                   onPress={() => {
                     setLeaderboardPersonaId(persona.id);
-                    fetchLeaderboard(persona.id);
+                    fetchLeaderboard(persona.id, leaderboardMode);
                   }}
                 >
                   <Text style={[
@@ -712,15 +795,15 @@ const EvalScreen = () => {
                             <View 
                               style={[
                                 styles.leaderboardCategoryBar, 
-                                { width: `${data.maxPossible > 0 ? (data.score / data.maxPossible) * 100 : 0}%` },
-                                data.maxPossible > 0 && (data.score / data.maxPossible) >= 0.8 ? styles.scoreHigh : 
-                                data.maxPossible > 0 && (data.score / data.maxPossible) >= 0.5 ? styles.scoreMedium : 
+                                { width: `${(data as any).maxPossible > 0 ? ((data as any).score / (data as any).maxPossible) * 100 : 0}%` },
+                                (data as any).maxPossible > 0 && ((data as any).score / (data as any).maxPossible) >= 0.8 ? styles.scoreHigh : 
+                                (data as any).maxPossible > 0 && ((data as any).score / (data as any).maxPossible) >= 0.5 ? styles.scoreMedium : 
                                 styles.scoreLow
                               ]} 
                             />
                           </View>
                           <Text style={styles.leaderboardCategoryScore}>
-                            {data.score} / {data.maxPossible}
+                            {(data as any).score} / {(data as any).maxPossible}
                           </Text>
                         </View>
                       ))}
@@ -772,7 +855,7 @@ const EvalScreen = () => {
                                   {Object.entries(evaluation.scores.calculatedScores.categoryScores).map(([category, data]) => (
                                     <View key={category} style={styles.calculatedScoreItem}>
                                       <Text style={styles.calculatedScoreLabel}>
-                                        {category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
+                                        {category.replace(/([A-Z])/g, ' $1').replace(/^./, (str: string) => str.toUpperCase())}:
                                       </Text>
                                       <Text style={styles.scoreValue}>
                                         {(data as any).score} / {(data as any).maxPossible}
@@ -884,6 +967,39 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: 'red',
     zIndex: 1,
+  },
+  modeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  modeButton: {
+    flex: 1,
+    padding: 12,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    alignItems: 'center',
+  },
+  activeModeButton: {
+    backgroundColor: '#e0f7fa',
+    borderColor: '#00838f',
+  },
+  modeButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#555',
+  },
+  activeModeText: {
+    color: '#00838f',
+  },
+  modeDescription: {
+    fontSize: 12,
+    color: '#777',
+    marginTop: 4,
   },
   leftPanel: {
     flex: 1,
