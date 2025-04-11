@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Switch, TouchableOpacity, Animated, ImageBackground } from 'react-native';
-import { TextInput, Button, Text, Surface, IconButton, FAB, useTheme, MD3Theme } from 'react-native-paper';
+import { TextInput, Button, Text, Surface, IconButton, FAB, useTheme } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChatContext, Message } from '../context/ChatContext';
@@ -12,7 +12,7 @@ import { Row, Column } from '../components';
 import { createPlatformStyleSheet, spacing, createShadow, keyboardBehavior, keyboardVerticalOffset, platformSelect } from '../theme';
 
 // Theme colors that will pull from the global theme
-const getThemeColors = (theme: MD3Theme) => ({
+const getThemeColors = (theme) => ({
   background: theme.colors.background,
   userBubble: theme.colors.primary,
   assistantBubble: theme.colors.surfaceVariant,

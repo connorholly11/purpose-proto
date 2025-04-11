@@ -1,53 +1,54 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { SegmentedButtons } from 'react-native-paper';
+import { StyleSheet } from 'react-native';
+import { SegmentedButtons, useTheme } from 'react-native-paper';
 import AdminUserScreen from './AdminUserScreen';
-import SummarizationStatusScreen from './SummarizationStatusScreen'; // Will create later
+import SummarizationStatusScreen from './SummarizationStatusScreen';
 import FeedbackScreen from './FeedbackScreen';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Column } from '../components';
+import { spacing } from '../theme';
 
 const AdminScreen = () => {
   const [activeView, setActiveView] = useState<'users' | 'status' | 'feedback'>('users');
+  const theme = useTheme();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <SegmentedButtons
-          value={activeView}
-          onValueChange={(value) => setActiveView(value as 'users' | 'status' | 'feedback')}
-          buttons={[
-            { value: 'users', label: 'User Inspector' },
-            { value: 'status', label: 'Summarization Status' },
-            { value: 'feedback', label: 'Feedback' },
-          ]}
-          style={styles.segmentedButtons}
-        />
-      </View>
-      <View style={styles.content}>
-        {activeView === 'users' && <AdminUserScreen />}
-        {activeView === 'status' && <SummarizationStatusScreen />}
-        {activeView === 'feedback' && <FeedbackScreen />}
-      </View>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Column spacing="md" fullHeight>
+        <Column spacing="sm" style={styles.header}>
+          <SegmentedButtons
+            value={activeView}
+            onValueChange={(value) => setActiveView(value as 'users' | 'status' | 'feedback')}
+            buttons={[
+              { value: 'users', label: 'User Inspector' },
+              { value: 'status', label: 'Summarization Status' },
+              { value: 'feedback', label: 'Feedback' },
+            ]}
+          />
+        </Column>
+        
+        <Column style={styles.content}>
+          {activeView === 'users' && <AdminUserScreen />}
+          {activeView === 'status' && <SummarizationStatusScreen />}
+          {activeView === 'feedback' && <FeedbackScreen />}
+        </Column>
+      </Column>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { 
-    flex: 1, 
-    backgroundColor: '#f8f9fa' 
+    flex: 1,
   },
   header: { 
-    paddingHorizontal: 16, 
-    paddingTop: 16, 
-    paddingBottom: 8 
-  },
-  segmentedButtons: {
-    // Add any specific styling needed
+    paddingHorizontal: spacing.md, 
+    paddingTop: spacing.md, 
+    paddingBottom: spacing.sm,
   },
   content: { 
-    flex: 1 
+    flex: 1,
   },
 });
 
-export default AdminScreen; 
+export default AdminScreen;

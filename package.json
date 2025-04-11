@@ -10,7 +10,10 @@
     "build:web": "node web-build.js",
     "deploy:web": "node web-build.js && vercel deploy dist",
     "vercel-build": "expo export",
-    "test": "jest"
+    "test": "jest",
+    "test:snapshot": "jest src/tests/snapshot.test.tsx",
+    "test:platform": "jest src/tests/platformConsistency.test.ts",
+    "lint:platform": "node scripts/find-platform-checks.js"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.9.6",

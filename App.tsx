@@ -8,6 +8,7 @@ import { ChatProvider } from './src/context/ChatContext';
 import { SystemPromptProvider } from './src/context/SystemPromptContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { theme } from './src/theme';
 
 export default function App() {
   const clerkPubKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -39,7 +40,7 @@ export default function App() {
   
   return (
     <SafeAreaProvider>
-      <PaperProvider>
+      <PaperProvider theme={theme}>
         <ClerkProvider publishableKey={clerkPubKey || ''} tokenCache={tokenCache}>
           <AuthProvider>
             <SystemPromptProvider>
