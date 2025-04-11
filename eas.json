@@ -6,13 +6,22 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://localhost:3001"
+      }
     },
     "preview": {
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://purpose-proto-686c3a7f1440.herokuapp.com/",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_YWNjZXB0ZWQtdGVycmFwaW4tNjAuY2xlcmsuYWNjb3VudHMuZGV2JA",
+        "EXPO_PUBLIC_CLERK_REDIRECT_URL": "https://auth.clerk.accounts.dev/oauth/callback",
+        "EXPO_PUBLIC_FOUNDER_CLERK_IDS": "user_2v0kHfelRcU1cBqg5o47ZymuGvM,user_2v0kJwxV4JT2PaJKmaXZabSjFgM,user_2v0kIR1s6RI1tzMU0dF2HhH5LgG,user_2v0kMGsms1l0HxWxbtY3SRkSK9A,user_2v0kLICcJO5KHQhEOlFm9c3ojYn,user_2v0kKj7nLBrJBVE2vtLUburjVm6"
+      }
     }
   },
   "submit": {
