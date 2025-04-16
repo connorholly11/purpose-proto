@@ -1,6 +1,9 @@
 // Re-export all screen components for easier imports
 export { default as SignInScreen } from './SignInScreen';
 export { default as ChatScreen } from './ChatScreen';
+export { default as AiCompanionScreen } from './AiCompanionScreen';
+export { default as QuestsScreen } from './QuestsScreen';
+export { default as ProfileScreen } from './ProfileScreen';
 export { default as AdminPromptScreen } from './AdminPromptScreen';
 export { default as AdminUserScreen } from './AdminUserScreen';
 export { default as AdminScreen } from './AdminScreen';

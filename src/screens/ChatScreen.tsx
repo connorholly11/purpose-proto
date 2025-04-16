@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChatContext, Message } from '../context/ChatContext';
 import { useSystemPrompts } from '../context/SystemPromptContext';
-import { useAdminMode } from '../navigation/AppNavigator';
+import { useAdminMode } from '../components/AppHeader';
 import { useAuthContext } from '../context/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Row, Column } from '../components';
@@ -306,7 +306,13 @@ export const ChatScreen = () => {
   }, [messages]);
 
   // Helper to toggle admin mode
-  const toggleAdminMode = () => setIsAdminMode(!isAdminMode);
+  const toggleAdminMode = () => {
+    if (setIsAdminMode) {
+      setIsAdminMode(!isAdminMode);
+    } else {
+      console.warn("[ChatScreen] setIsAdminMode is not available (likely on iOS)");
+    }
+  };
 
   // Combined data for FlatList to include typing indicator when loading
   // Return to using useMemo for renderData to prevent unnecessary re-renders
@@ -430,12 +436,13 @@ export const ChatScreen = () => {
           </Surface>
         )}
         
-        {/* User/Admin toggle - always visible but positioned differently based on mode */}
-        <View style={[
-          styles.adminToggleContainer,
-          isAdminMode ? styles.adminToggleAdmin : styles.adminToggleUser,
-          { backgroundColor: COLORS.header }
-        ]}>
+        {/* User/Admin toggle - only shown if not on iOS */}
+        {Platform.OS !== 'ios' && (
+          <View style={[
+            styles.adminToggleContainer,
+            isAdminMode ? styles.adminToggleAdmin : styles.adminToggleUser,
+            { backgroundColor: COLORS.header }
+          ]}>
           <Text style={[styles.toggleLabel, { color: COLORS.headerText }]}>User</Text>
           <Switch
             value={isAdminMode}
@@ -445,7 +452,8 @@ export const ChatScreen = () => {
             style={styles.switch}
           />
           <Text style={[styles.toggleLabel, { color: COLORS.headerText }]}>Admin</Text>
-        </View>
+          </View>
+        )}
         
         {/* Messages list */}
         <FlatList
@@ -455,7 +463,7 @@ export const ChatScreen = () => {
           renderItem={renderMessageItem}
           contentContainerStyle={[
             styles.messagesList,
-            !isAdminMode && styles.userModeMessagesList
+            (!isAdminMode || Platform.OS === 'ios') && styles.userModeMessagesList
           ]}
           style={[styles.messagesContainer, { backgroundColor: COLORS.background }]}
           initialNumToRender={100} // Increased further to handle more messages
@@ -632,7 +640,7 @@ const styles = createPlatformStyleSheet({
     paddingBottom: 16,
   },
   userModeMessagesList: {
-    paddingTop: 60, // Extra padding for the toggle in user mode
+    paddingTop: Platform.OS === 'ios' ? 20 : 60, // Extra padding for the toggle in user mode (less on iOS)
   },
   messageBubble: {
     padding: 12,

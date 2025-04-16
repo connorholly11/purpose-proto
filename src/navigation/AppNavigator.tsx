@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -13,23 +14,16 @@ import {
   SummarizationStatusScreen,
   PlaceholderDashboardScreen,
   TestingScreen,
-  EvalScreen
+  EvalScreen,
+  AiCompanionScreen,
+  QuestsScreen,
+  ProfileScreen
 } from '../screens';
 import AppHeader from '../components/AppHeader';
 import { FeedbackButton } from '../components';
 
-// Create a context to track admin mode state
-type AdminModeContextType = {
-  isAdminMode: boolean;
-  setIsAdminMode: (value: boolean) => void;
-};
-
-export const AdminModeContext = createContext<AdminModeContextType>({
-  isAdminMode: false,
-  setIsAdminMode: () => {},
-});
-
-export const useAdminMode = () => useContext(AdminModeContext);
+// Import useAdminMode from AppHeader instead of declaring it here
+import { AdminContext, useAdminMode } from '../components/AppHeader';
 
 // Define the stack navigator parameter types
 export type AppStackParamList = {
@@ -39,7 +33,9 @@ export type AppStackParamList = {
 
 // Define the bottom tab navigator parameter types
 export type MainTabParamList = {
-  Chat: undefined;
+  AICompanion: undefined;
+  Quests: undefined;
+  Profile: undefined;
   Dashboard: undefined;
   Prompts: undefined;
   Admin: undefined;
@@ -62,7 +58,13 @@ const MainTabNavigator = () => {
           tabBarIcon: ({ color, size }) => {
             let iconName: keyof typeof MaterialIcons.glyphMap = 'chat-bubble';
 
-            if (route.name === 'Dashboard') {
+            if (route.name === 'AICompanion') {
+              iconName = 'chat-bubble';
+            } else if (route.name === 'Quests') {
+              iconName = 'emoji-events';
+            } else if (route.name === 'Profile') {
+              iconName = 'person';
+            } else if (route.name === 'Dashboard') {
               iconName = 'dashboard';
             } else if (route.name === 'Prompts') {
               iconName = 'settings';
@@ -86,15 +88,31 @@ const MainTabNavigator = () => {
           },
         })}
       >
+        {/* User tabs - always show these three tabs regardless of mode */}
         <Tab.Screen
-          name="Chat"
-          component={ChatScreen}
+          name="AICompanion"
+          component={AiCompanionScreen}
           options={{
             title: 'AI Companion',
           }}
         />
-        {/* Only show admin screens if in admin mode */}
-        {isAdminMode && (
+        <Tab.Screen
+          name="Quests"
+          component={QuestsScreen}
+          options={{
+            title: 'Quests',
+          }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{
+            title: 'Profile',
+          }}
+        />
+        
+        {/* Admin tabs - show only in admin mode and not on iOS */}
+        {(Platform.OS !== 'ios' && isAdminMode) && (
           <>
             <Tab.Screen
               name="Dashboard"
@@ -135,8 +153,8 @@ const MainTabNavigator = () => {
         )}
       </Tab.Navigator>
       
-      {/* Only show feedback button in admin mode */}
-      {isAdminMode && <FeedbackButton />}
+      {/* Only show feedback button in admin mode and not on iOS */}
+      {(Platform.OS !== 'ios' && isAdminMode) && <FeedbackButton />}
     </>
   );
 };
@@ -144,6 +162,7 @@ const MainTabNavigator = () => {
 // Main App Navigator
 export const AppNavigator = () => {
   const { isSignedIn, isLoaded } = useAuthContext();
+  // Force isAdminMode to always be false on iOS
   const [isAdminMode, setIsAdminMode] = useState(false);
 
   // Show nothing while auth is loading
@@ -152,7 +171,7 @@ export const AppNavigator = () => {
   }
 
   return (
-    <AdminModeContext.Provider value={{ isAdminMode, setIsAdminMode }}>
+    <AdminContext.Provider value={{ isAdminMode, setIsAdminMode }}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {isSignedIn ? (
@@ -171,7 +190,7 @@ export const AppNavigator = () => {
           )}
         </Stack.Navigator>
       </NavigationContainer>
-    </AdminModeContext.Provider>
+    </AdminContext.Provider>
   );
 };
 

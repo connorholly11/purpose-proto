@@ -6,9 +6,10 @@ import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import { AuthProvider } from './src/context/AuthContext';
 import { ChatProvider } from './src/context/ChatContext';
 import { SystemPromptProvider } from './src/context/SystemPromptContext';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { theme } from './src/theme';
+import { theme as defaultTheme } from './src/theme';
 
 export default function App() {
   const clerkPubKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -40,18 +41,29 @@ export default function App() {
   
   return (
     <SafeAreaProvider>
-      <PaperProvider theme={theme}>
-        <ClerkProvider publishableKey={clerkPubKey || ''} tokenCache={tokenCache}>
-          <AuthProvider>
-            <SystemPromptProvider>
-              <ChatProvider>
-                <AppNavigator />
-              </ChatProvider>
-            </SystemPromptProvider>
-          </AuthProvider>
-        </ClerkProvider>
-      </PaperProvider>
+      <ThemeProvider>
+        <ThemedApp clerkPubKey={clerkPubKey || ''} />
+      </ThemeProvider>
     </SafeAreaProvider>
+  );
+}
+
+// Component that uses the theme
+function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
+  const { paperTheme } = useTheme();
+  
+  return (
+    <PaperProvider theme={paperTheme}>
+      <ClerkProvider publishableKey={clerkPubKey} tokenCache={tokenCache}>
+        <AuthProvider>
+          <SystemPromptProvider>
+            <ChatProvider>
+              <AppNavigator />
+            </ChatProvider>
+          </SystemPromptProvider>
+        </AuthProvider>
+      </ClerkProvider>
+    </PaperProvider>
   );
 }
 
