@@ -15,8 +15,8 @@ type ChatMessage = {
   timestamp: Date;
 };
 
-// UserChatScreen component - used for both iOS and web "/user" path
-const UserChatScreen = () => {
+// UserScreen component that works on both iOS and web
+const UserScreen = () => {
   // Navigation
   const navigation = useNavigation();
   
@@ -124,7 +124,13 @@ const UserChatScreen = () => {
 
   // Navigate to settings
   const navigateToSettings = () => {
-    navigation.navigate('Settings' as never);
+    // On iOS, navigate to the Settings screen in the stack
+    if (Platform.OS === 'ios') {
+      navigation.navigate('Settings' as never);
+    } else {
+      // On web, we could show a modal or implement settings differently
+      console.log('Settings clicked on web - implement as needed');
+    }
   };
 
   // Choose which messages to display - prefer backend messages, fall back to local
@@ -155,17 +161,14 @@ const UserChatScreen = () => {
     }
   }, [displayMessages]);
 
-  const isWeb = Platform.OS === 'web';
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={64}
     >
-      {/* Header - shown on all platforms */}
+      {/* iOS-style header */}
       <View style={styles.header}>
-        {/* On mobile, show settings icon */}
         <TouchableOpacity onPress={navigateToSettings}>
           <MaterialIcons name="person-outline" size={24} color={paperTheme.colors.primary} />
         </TouchableOpacity>
@@ -261,12 +264,8 @@ const UserChatScreen = () => {
           </View>
         )}
         
-        {/* Message Input with camera and mic icons */}
+        {/* iOS-style Message Input */}
         <View style={styles.inputContainer}>
-          <TouchableOpacity style={styles.mediaButton} onPress={() => console.log('Camera tapped')}>
-            <MaterialIcons name="camera-alt" size={24} color="#999" />
-          </TouchableOpacity>
-          
           <TextInput 
             ref={inputRef}
             style={styles.input}
@@ -292,6 +291,7 @@ const UserChatScreen = () => {
           )}
         </View>
       </View>
+      
     </KeyboardAvoidingView>
   );
 };
@@ -434,4 +434,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default UserChatScreen;
+export default UserScreen;

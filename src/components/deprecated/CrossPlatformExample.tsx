@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import { Text, Button, Surface, useTheme } from 'react-native-paper';
-import { Row, Column, Card, Section } from './layout';
-import { createPlatformStyleSheet, spacing, shadows } from '../theme';
+import { Row, Column, Card, Section } from '../layout';
+import { createPlatformStyleSheet, spacing, shadows } from '../../theme';
 
 /**
  * This is an example component showcasing cross-platform styling best practices.

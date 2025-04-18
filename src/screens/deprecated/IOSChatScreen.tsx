@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, View, ScrollView, Text, TextInput, TouchableOpacity, Platform, KeyboardAvoidingView } from 'react-native';
+import { StyleSheet, View, ScrollView, Text, TextInput, TouchableOpacity, Platform, KeyboardAvoidingView, ActivityIndicator, Image } from 'react-native';
 import { Avatar, useTheme as usePaperTheme } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useChatContext, Message } from '../context/ChatContext';
 import { useSystemPrompts } from '../context/SystemPromptContext';
 import { useNavigation } from '@react-navigation/native';
+// import useSpeechRecognition from '../hooks/useSpeechRecognition';
 
 // For local-only chats, define a simple message type
 type ChatMessage = {
@@ -15,8 +16,8 @@ type ChatMessage = {
   timestamp: Date;
 };
 
-// UserScreen component that works on both iOS and web
-const UserScreen = () => {
+// IOSChatScreen component
+const IOSChatScreen = () => {
   // Navigation
   const navigation = useNavigation();
   
@@ -56,6 +57,10 @@ const UserScreen = () => {
   
   const inputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+  
+  // Speech-to-text integration
+  // const { transcript, isRecording, startRecording, stopRecording } = useSpeechRecognition();
+  const isRecording = false;
   
   // Sample suggestion chips for new conversations
   const suggestionChips = [
@@ -124,13 +129,7 @@ const UserScreen = () => {
 
   // Navigate to settings
   const navigateToSettings = () => {
-    // On iOS, navigate to the Settings screen in the stack
-    if (Platform.OS === 'ios') {
-      navigation.navigate('Settings' as never);
-    } else {
-      // On web, we could show a modal or implement settings differently
-      console.log('Settings clicked on web - implement as needed');
-    }
+    navigation.navigate('Settings' as never);
   };
 
   // Choose which messages to display - prefer backend messages, fall back to local
@@ -151,6 +150,13 @@ const UserScreen = () => {
   useEffect(() => {
     setHasConversation(contextMessages.length > 0 || localMessages.length > 1);
   }, [contextMessages, localMessages]);
+  
+  // Effect to update input text when transcript changes
+  // useEffect(() => {
+  //   if (transcript && isRecording === false) {
+  //     setInputText(transcript);
+  //   }
+  // }, [transcript, isRecording]);
   
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -264,12 +270,8 @@ const UserScreen = () => {
           </View>
         )}
         
-        {/* iOS-style Message Input with camera and mic icons */}
+        {/* iOS-style Message Input with mic icon */}
         <View style={styles.inputContainer}>
-          <TouchableOpacity style={styles.mediaButton} onPress={() => console.log('Camera tapped')}>
-            <MaterialIcons name="camera-alt" size={24} color="#999" />
-          </TouchableOpacity>
-          
           <TextInput 
             ref={inputRef}
             style={styles.input}
@@ -281,7 +283,7 @@ const UserScreen = () => {
           />
           
           {!inputText.trim() ? (
-            <TouchableOpacity style={styles.mediaButton} onPress={() => console.log('Microphone tapped')}>
+            <TouchableOpacity style={styles.mediaButton}>
               <MaterialIcons name="mic" size={24} color="#999" />
             </TouchableOpacity>
           ) : (
@@ -310,7 +312,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 50 : 20, // Adjusted for iOS status bar
+    paddingTop: 50, // Adjusted for iOS status bar
     paddingBottom: 10,
     backgroundColor: '#f5f5f5',
     borderBottomWidth: 1,
@@ -438,4 +440,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default UserScreen;
+export default IOSChatScreen;

@@ -1,8 +1,8 @@
 import React from 'react';
 import { Platform } from 'react-native';
-import { ChatPage } from '../chat';
+import { ChatPage } from '../../chat';
 
-export const ChatScreen = () => {
+export const UserChat = () => {
   return (
     <ChatPage 
       admin={false}
@@ -11,4 +11,4 @@ export const ChatScreen = () => {
   );
 };
 
-export default ChatScreen;
+export default UserChat;

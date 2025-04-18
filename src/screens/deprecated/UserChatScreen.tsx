@@ -15,8 +15,8 @@ type ChatMessage = {
   timestamp: Date;
 };
 
-// IOSChatScreen component
-const IOSChatScreen = () => {
+// UserChatScreen component - used for both iOS and web "/user" path
+const UserChatScreen = () => {
   // Navigation
   const navigation = useNavigation();
   
@@ -155,14 +155,17 @@ const IOSChatScreen = () => {
     }
   }, [displayMessages]);
 
+  const isWeb = Platform.OS === 'web';
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={64}
     >
-      {/* iOS-style header */}
+      {/* Header - shown on all platforms */}
       <View style={styles.header}>
+        {/* On mobile, show settings icon */}
         <TouchableOpacity onPress={navigateToSettings}>
           <MaterialIcons name="person-outline" size={24} color={paperTheme.colors.primary} />
         </TouchableOpacity>
@@ -258,12 +261,8 @@ const IOSChatScreen = () => {
           </View>
         )}
         
-        {/* iOS-style Message Input with camera and mic icons */}
+        {/* Message Input with mic icon */}
         <View style={styles.inputContainer}>
-          <TouchableOpacity style={styles.mediaButton} onPress={() => console.log('Camera tapped')}>
-            <MaterialIcons name="camera-alt" size={24} color="#999" />
-          </TouchableOpacity>
-          
           <TextInput 
             ref={inputRef}
             style={styles.input}
@@ -289,7 +288,6 @@ const IOSChatScreen = () => {
           )}
         </View>
       </View>
-      
     </KeyboardAvoidingView>
   );
 };
@@ -304,7 +302,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 50, // Adjusted for iOS status bar
+    paddingTop: Platform.OS === 'ios' ? 50 : 20, // Adjusted for iOS status bar
     paddingBottom: 10,
     backgroundColor: '#f5f5f5',
     borderBottomWidth: 1,
@@ -432,4 +430,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default IOSChatScreen;
+export default UserChatScreen;

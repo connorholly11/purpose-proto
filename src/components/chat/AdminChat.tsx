@@ -1,14 +1,14 @@
 import React from 'react';
 import { Platform } from 'react-native';
-import { ChatPage } from '../chat';
+import { ChatPage } from '../../chat';
 
-export const ChatScreen = () => {
+export const AdminChat = () => {
   return (
     <ChatPage 
-      admin={false}
+      admin={true}
       platform={Platform.OS as 'ios' | 'android' | 'web'}
     />
   );
 };
 
-export default ChatScreen;
+export default AdminChat;

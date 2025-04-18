@@ -7,6 +7,7 @@ export type Message = {
   content: string;
   role: 'user' | 'assistant';
   createdAt: string;
+  type: 'text';
   // Optional token estimates for cost calculation
   tokenCount?: {
     input?: number;
@@ -160,6 +161,7 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
         content,
         role: 'user',
         createdAt: new Date().toISOString(),
+        type: 'text',
         tokenCount: {
           input: estimatedUserTokens
         },
@@ -236,6 +238,7 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
         content: response.reply,
         role: 'assistant',
         createdAt: new Date().toISOString(),
+        type: 'text', // Default to text type for AI messages
         tokenCount: {
           output: estimatedOutputTokens
         },

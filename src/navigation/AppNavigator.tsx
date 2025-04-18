@@ -11,15 +11,14 @@ import {
   AdminUserScreen, 
   AdminScreen,
   SummarizationStatusScreen,
-  PlaceholderDashboardScreen,
   TestingScreen,
   EvalScreen,
-  AiCompanionScreen,
   QuestsScreen,
   ProfileScreen,
-  UserChatScreen,
   SettingsScreen
 } from '../screens';
+
+import { AdminChat, UserChat } from '../components';
 import AppHeader from '../components/AppHeader';
 import { FeedbackButton } from '../components';
 
@@ -44,7 +43,7 @@ export type AdminTabParamList = {
   AICompanion: undefined;
   Quests: undefined;
   Profile: undefined;
-  Dashboard: undefined;
+  // Dashboard removed and deprecated
   Prompts: undefined;
   Admin: undefined;
   Testing: undefined;
@@ -60,7 +59,7 @@ const AdminTabs = createBottomTabNavigator<AdminTabParamList>();
 const UserStack = () => (
   <AdminContext.Provider value={{ isAdminMode: false, isAdminSection: false }}>
     <UserStackNav.Navigator screenOptions={{ headerShown: false }}>
-      <UserStackNav.Screen name="Chat" component={UserChatScreen} />
+      <UserStackNav.Screen name="Chat" component={UserChat} />
       <UserStackNav.Screen name="Settings" component={SettingsScreen} />
     </UserStackNav.Navigator>
   </AdminContext.Provider>
@@ -91,8 +90,7 @@ const AdminTabNavigator = () => {
                   iconName = 'emoji-events';
                 } else if (route.name === 'Profile') {
                   iconName = 'person';
-                } else if (route.name === 'Dashboard') {
-                  iconName = 'dashboard';
+                // Dashboard tab removed and deprecated
                 } else if (route.name === 'Prompts') {
                   iconName = 'settings';
                 } else if (route.name === 'Admin') {
@@ -113,7 +111,7 @@ const AdminTabNavigator = () => {
             {/* User tabs */}
             <AdminTabs.Screen
               name="AICompanion"
-              component={AiCompanionScreen}
+              component={AdminChat}
               options={{ title: 'AI Companion' }}
             />
             <AdminTabs.Screen
@@ -127,12 +125,7 @@ const AdminTabNavigator = () => {
               options={{ title: 'Profile' }}
             />
             
-            {/* Admin tabs */}
-            <AdminTabs.Screen
-              name="Dashboard"
-              component={PlaceholderDashboardScreen}
-              options={{ title: 'Dashboard' }}
-            />
+            {/* Admin tabs - Dashboard removed and deprecated */}
             <AdminTabs.Screen
               name="Prompts"
               component={AdminPromptScreen}
@@ -166,7 +159,7 @@ const AdminTabNavigator = () => {
         }}>
           <UserStackNav.Screen 
             name="Chat" 
-            component={UserChatScreen} 
+            component={UserChat} 
           />
           <UserStackNav.Screen 
             name="Settings" 
