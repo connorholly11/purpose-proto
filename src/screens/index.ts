@@ -12,3 +12,8 @@ export { default as PlaceholderDashboardScreen } from './PlaceholderDashboardScr
 export { default as TestingScreen } from './TestingScreen';
 export { default as FeedbackScreen } from './FeedbackScreen';
 export { default as EvalScreen } from './EvalScreen';
+export { default as IOSChatScreen } from './IOSChatScreen';
+export { default as IOSSettingsScreen } from './IOSSettingsScreen';
+// New universal screen components
+export { default as UserChatScreen } from './UserChatScreen';
+export { default as SettingsScreen } from './SettingsScreen';

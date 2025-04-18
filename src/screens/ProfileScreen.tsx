@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, ScrollView, Text, TouchableOpacity, Platform } from 'react-native';
 import { Card, Title, Paragraph, Button, Divider, Chip, ProgressBar, List, useTheme as usePaperTheme } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -46,6 +46,11 @@ const ThemePicker = ({ selectedTheme, onThemeChange }: {
 
 // Profile Screen component
 const ProfileScreen = () => {
+  // On iOS, we should just return null since we're using a separate settings screen
+  if (Platform.OS === 'ios') {
+    return null;
+  }
+  
   const [activeSection, setActiveSection] = useState('profile');
   const paperTheme = usePaperTheme();
   const { colorTheme, setColorTheme } = useTheme();

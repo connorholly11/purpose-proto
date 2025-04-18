@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React from 'react';
 import { Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -7,7 +7,6 @@ import { useAuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { 
   SignInScreen, 
-  ChatScreen, 
   AdminPromptScreen, 
   AdminUserScreen, 
   AdminScreen,
@@ -17,22 +16,31 @@ import {
   EvalScreen,
   AiCompanionScreen,
   QuestsScreen,
-  ProfileScreen
+  ProfileScreen,
+  UserChatScreen,
+  SettingsScreen
 } from '../screens';
 import AppHeader from '../components/AppHeader';
 import { FeedbackButton } from '../components';
 
 // Import useAdminMode from AppHeader instead of declaring it here
-import { AdminContext, useAdminMode } from '../components/AppHeader';
+import { AdminContext } from '../components/AppHeader';
 
 // Define the stack navigator parameter types
 export type AppStackParamList = {
   SignIn: undefined;
-  Main: undefined;
+  UserRoot: undefined;
+  AdminRoot: undefined;
+};
+
+// Define the user stack navigator parameter types
+export type UserStackParamList = {
+  Chat: undefined;
+  Settings: undefined;
 };
 
 // Define the bottom tab navigator parameter types
-export type MainTabParamList = {
+export type AdminTabParamList = {
   AICompanion: undefined;
   Quests: undefined;
   Profile: undefined;
@@ -43,127 +51,150 @@ export type MainTabParamList = {
   Eval: undefined;
 };
 
-// Create the stack navigator
+// Create the stack navigators
 const Stack = createNativeStackNavigator<AppStackParamList>();
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const UserStackNav = createNativeStackNavigator<UserStackParamList>();
+const AdminTabs = createBottomTabNavigator<AdminTabParamList>();
 
-// Main Tab Navigator component (used when authenticated)
-const MainTabNavigator = () => {
-  const { isAdminMode } = useAdminMode();
+// User Stack Navigator - single screen with settings
+const UserStack = () => (
+  <AdminContext.Provider value={{ isAdminMode: false, isAdminSection: false }}>
+    <UserStackNav.Navigator screenOptions={{ headerShown: false }}>
+      <UserStackNav.Screen name="Chat" component={UserChatScreen} />
+      <UserStackNav.Screen name="Settings" component={SettingsScreen} />
+    </UserStackNav.Navigator>
+  </AdminContext.Provider>
+);
+
+// Admin Tab Navigator component (only shown at /admin on web)
+const AdminTabNavigator = () => {
+  // Add state for toggling between admin and user views
+  const [isAdminMode, setIsAdminMode] = React.useState(true);
   
   return (
-    <>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ color, size }) => {
-            let iconName: keyof typeof MaterialIcons.glyphMap = 'chat-bubble';
+    <AdminContext.Provider value={{ 
+      isAdminMode, 
+      setIsAdminMode, 
+      isAdminSection: true // This indicates we're in the admin section
+    }}>
+      {isAdminMode ? (
+        // Show admin view with all tabs
+        <>
+          <AdminTabs.Navigator
+            screenOptions={({ route }) => ({
+              tabBarIcon: ({ color, size }) => {
+                let iconName: keyof typeof MaterialIcons.glyphMap = 'chat-bubble';
 
-            if (route.name === 'AICompanion') {
-              iconName = 'chat-bubble';
-            } else if (route.name === 'Quests') {
-              iconName = 'emoji-events';
-            } else if (route.name === 'Profile') {
-              iconName = 'person';
-            } else if (route.name === 'Dashboard') {
-              iconName = 'dashboard';
-            } else if (route.name === 'Prompts') {
-              iconName = 'settings';
-            } else if (route.name === 'Admin') {
-              iconName = 'admin-panel-settings';
-            } else if (route.name === 'Testing') {
-              iconName = 'science';
-            } else if (route.name === 'Eval') {
-              iconName = 'score';
-            }
+                if (route.name === 'AICompanion') {
+                  iconName = 'chat-bubble';
+                } else if (route.name === 'Quests') {
+                  iconName = 'emoji-events';
+                } else if (route.name === 'Profile') {
+                  iconName = 'person';
+                } else if (route.name === 'Dashboard') {
+                  iconName = 'dashboard';
+                } else if (route.name === 'Prompts') {
+                  iconName = 'settings';
+                } else if (route.name === 'Admin') {
+                  iconName = 'admin-panel-settings';
+                } else if (route.name === 'Testing') {
+                  iconName = 'science';
+                } else if (route.name === 'Eval') {
+                  iconName = 'score';
+                }
 
-            return <MaterialIcons name={iconName} size={size} color={color} />;
-          },
-          tabBarActiveTintColor: '#007bff',
-          tabBarInactiveTintColor: 'gray',
-          // Show header for all users to maintain consistent UI
-          header: () => <AppHeader />,
-          // Always show tab bar
-          tabBarStyle: { 
-            display: 'flex'
-          },
-        })}
-      >
-        {/* User tabs - always show these three tabs regardless of mode */}
-        <Tab.Screen
-          name="AICompanion"
-          component={AiCompanionScreen}
-          options={{
-            title: 'AI Companion',
-          }}
-        />
-        <Tab.Screen
-          name="Quests"
-          component={QuestsScreen}
-          options={{
-            title: 'Quests',
-          }}
-        />
-        <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{
-            title: 'Profile',
-          }}
-        />
-        
-        {/* Admin tabs - show only in admin mode and not on iOS */}
-        {(Platform.OS !== 'ios' && isAdminMode) && (
-          <>
-            <Tab.Screen
+                return <MaterialIcons name={iconName} size={size} color={color} />;
+              },
+              tabBarActiveTintColor: '#007bff',
+              tabBarInactiveTintColor: 'gray',
+              header: () => <AppHeader />,
+            })}
+          >
+            {/* User tabs */}
+            <AdminTabs.Screen
+              name="AICompanion"
+              component={AiCompanionScreen}
+              options={{ title: 'AI Companion' }}
+            />
+            <AdminTabs.Screen
+              name="Quests"
+              component={QuestsScreen}
+              options={{ title: 'Quests' }}
+            />
+            <AdminTabs.Screen
+              name="Profile"
+              component={ProfileScreen}
+              options={{ title: 'Profile' }}
+            />
+            
+            {/* Admin tabs */}
+            <AdminTabs.Screen
               name="Dashboard"
               component={PlaceholderDashboardScreen}
-              options={{
-                title: 'Dashboard',
-              }}
+              options={{ title: 'Dashboard' }}
             />
-            <Tab.Screen
+            <AdminTabs.Screen
               name="Prompts"
               component={AdminPromptScreen}
-              options={{
-                title: 'System Prompts',
-              }}
+              options={{ title: 'System Prompts' }}
             />
-            <Tab.Screen
+            <AdminTabs.Screen
               name="Admin"
               component={AdminScreen}
-              options={{
-                title: 'Admin Tools',
-              }}
+              options={{ title: 'Admin Tools' }}
             />
-            <Tab.Screen
+            <AdminTabs.Screen
               name="Testing"
               component={TestingScreen}
-              options={{
-                title: 'Testing',
-              }}
+              options={{ title: 'Testing' }}
             />
-            <Tab.Screen
+            <AdminTabs.Screen
               name="Eval"
               component={EvalScreen}
-              options={{
-                title: 'Evaluations',
-              }}
+              options={{ title: 'Evaluations' }}
             />
-          </>
-        )}
-      </Tab.Navigator>
-      
-      {/* Only show feedback button in admin mode and not on iOS */}
-      {(Platform.OS !== 'ios' && isAdminMode) && <FeedbackButton />}
-    </>
+          </AdminTabs.Navigator>
+          
+          {/* Show feedback button in admin mode */}
+          <FeedbackButton />
+        </>
+      ) : (
+        // Show user view - no tabs, just the chat screen
+        <UserStackNav.Navigator screenOptions={{ 
+          headerShown: true, 
+          header: () => <AppHeader /> 
+        }}>
+          <UserStackNav.Screen 
+            name="Chat" 
+            component={UserChatScreen} 
+          />
+          <UserStackNav.Screen 
+            name="Settings" 
+            component={SettingsScreen} 
+          />
+        </UserStackNav.Navigator>
+      )}
+    </AdminContext.Provider>
   );
 };
 
+// Define the linking configuration for web
+const linking = {
+  prefixes: [Platform.OS === 'web' ? window.location.origin : 'myapp://'],
+  config: {
+    screens: {
+      AdminRoot: {
+        path: 'admin',
+        // nested tab paths optional
+      },
+      UserRoot: '*',  // everything else = user chat
+    },
+  },
+};
+
 // Main App Navigator
-export const AppNavigator = () => {
+const AppNavigator = () => {
   const { isSignedIn, isLoaded } = useAuthContext();
-  // Force isAdminMode to always be false on iOS
-  const [isAdminMode, setIsAdminMode] = useState(false);
 
   // Show nothing while auth is loading
   if (!isLoaded) {
@@ -171,27 +202,39 @@ export const AppNavigator = () => {
   }
 
   return (
-    <AdminContext.Provider value={{ isAdminMode, setIsAdminMode }}>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {isSignedIn ? (
-            // Authenticated screens
+    <NavigationContainer linking={Platform.OS !== 'ios' ? linking : undefined}>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!isSignedIn ? (
+          // Authentication screens
+          <Stack.Screen
+            name="SignIn"
+            component={SignInScreen}
+            options={{ headerShown: false }}
+          />
+        ) : Platform.OS === 'ios' ? (
+          // iOS shows only the user stack
+          <Stack.Screen
+            name="UserRoot"
+            component={UserStack}
+          />
+        ) : (
+          // Web has both user and admin routes
+          <>
             <Stack.Screen
-              name="Main"
-              component={MainTabNavigator}
+              name="UserRoot"
+              component={UserStack}
             />
-          ) : (
-            // Authentication screens
             <Stack.Screen
-              name="SignIn"
-              component={SignInScreen}
-              options={{ headerShown: false }}
+              name="AdminRoot"
+              component={AdminTabNavigator}
             />
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-    </AdminContext.Provider>
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 };
+
+export { AppNavigator };
 
 export default AppNavigator;

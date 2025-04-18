@@ -95,7 +95,7 @@ export const keyboardBehavior = Platform.select({
  * Platform-specific keyboard offset
  */
 export const keyboardVerticalOffset = Platform.select({
-  ios: 90,
+  ios: 0,
   android: 0,
   default: 0,
 });
