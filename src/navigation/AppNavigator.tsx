@@ -16,7 +16,8 @@ import {
   EvalScreen,
   QuestsScreen,
   ProfileScreen,
-  SettingsScreen
+  SettingsScreen,
+  ProfileSheet
 } from '../screens';
 
 import { AdminChat, UserChat } from '../components';
@@ -37,6 +38,7 @@ export type AppStackParamList = {
 export type UserStackParamList = {
   Chat: undefined;
   Settings: undefined;
+  ProfileSheet: undefined;
 };
 
 // Define the bottom tab navigator parameter types
@@ -60,8 +62,19 @@ const AdminTabs = createBottomTabNavigator<AdminTabParamList>();
 const UserStack = () => (
   <AdminContext.Provider value={{ isAdminMode: false, isAdminSection: false }}>
     <UserStackNav.Navigator screenOptions={{ headerShown: false }}>
-      <UserStackNav.Screen name="Chat" component={UserChat} />
-      <UserStackNav.Screen name="Settings" component={SettingsScreen} />
+      <UserStackNav.Group>
+        <UserStackNav.Screen name="Chat" component={UserChat} />
+        <UserStackNav.Screen name="Settings" component={SettingsScreen} />
+      </UserStackNav.Group>
+      {Platform.OS === 'ios' && (
+        <UserStackNav.Group screenOptions={{ presentation: 'modal' }}>
+          <UserStackNav.Screen 
+            name="ProfileSheet" 
+            component={ProfileSheet} 
+            options={{ headerShown: false }}
+          />
+        </UserStackNav.Group>
+      )}
     </UserStackNav.Navigator>
   </AdminContext.Provider>
 );

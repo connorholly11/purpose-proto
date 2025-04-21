@@ -1,96 +1,125 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Platform } from 'react-native';
+import { Platform, Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MD3LightTheme, MD3Theme } from 'react-native-paper';
+import { MD3LightTheme, MD3DarkTheme, MD3Theme } from 'react-native-paper';
 import { ThemeKey, themeOptions } from '../theme/colors';
+import { getThemeForColor } from '../theme/theme';
+
+// Storage keys
+const THEME_KEY = 'userTheme';
+const DARK_MODE_KEY = 'userDarkMode';
 
 // Theme context type
 type ThemeContextType = {
   colorTheme: ThemeKey;
   setColorTheme: (theme: ThemeKey) => void;
+  darkMode: boolean;
+  setDarkMode: (isDark: boolean) => void;
   paperTheme: MD3Theme;
 };
 
-// Create modified theme based on selected color
-const getThemeForColor = (themeKey: ThemeKey): MD3Theme => {
-  const baseColor = themeOptions[themeKey].color;
-  
-  return {
-    ...MD3LightTheme,
-    colors: {
-      ...MD3LightTheme.colors,
-      primary: baseColor,
-      primaryContainer: themeOptions[themeKey].color + '20', // 20% opacity
-      secondary: themeOptions[themeKey].color,
-      error: themeKey === 'red' ? '#991b1b' : '#dc2626',
-      background: '#FFFFFF',
-    },
-  };
-};
-
 // Create context with default value
+const defaultThemeKey: ThemeKey = 'blue';
+const defaultIsDark = Appearance.getColorScheme() === 'dark';
 const ThemeContext = createContext<ThemeContextType>({
-  colorTheme: 'blue',
+  colorTheme: defaultThemeKey,
   setColorTheme: () => {},
-  paperTheme: getThemeForColor('blue'),
+  darkMode: defaultIsDark,
+  setDarkMode: () => {},
+  paperTheme: getThemeForColor(defaultThemeKey, defaultIsDark),
 });
 
 // Theme provider component
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [colorTheme, setColorTheme] = useState<ThemeKey>('blue');
-  const [paperTheme, setPaperTheme] = useState<MD3Theme>(getThemeForColor('blue'));
+  const [colorTheme, setColorThemeState] = useState<ThemeKey>(defaultThemeKey);
+  const [darkMode, setDarkModeState] = useState<boolean>(defaultIsDark);
+  const [paperTheme, setPaperTheme] = useState<MD3Theme>(
+    getThemeForColor(defaultThemeKey, defaultIsDark)
+  );
   
-  // Load saved theme on mount
+  // Load saved theme and dark mode on mount
   useEffect(() => {
-    const loadTheme = async () => {
+    const loadSettings = async () => {
       try {
-        const savedTheme = await AsyncStorage.getItem('userTheme');
-        if (savedTheme && isValidThemeKey(savedTheme)) {
-          const themeKey = savedTheme as ThemeKey;
-          setColorTheme(themeKey);
-          setPaperTheme(getThemeForColor(themeKey));
+        const savedTheme = await AsyncStorage.getItem(THEME_KEY);
+        const savedDarkMode = await AsyncStorage.getItem(DARK_MODE_KEY);
+
+        const currentThemeKey = savedTheme && isValidThemeKey(savedTheme) ? savedTheme : defaultThemeKey;
+        const currentIsDark = savedDarkMode !== null ? savedDarkMode === 'true' : defaultIsDark;
+        
+        setColorThemeState(currentThemeKey);
+        setDarkModeState(currentIsDark);
+        setPaperTheme(getThemeForColor(currentThemeKey, currentIsDark));
+        
+        // Apply theme class for web on initial load
+        if (Platform.OS === 'web') {
+          applyWebTheme(currentThemeKey, currentIsDark);
         }
       } catch (error) {
-        console.error('Error loading theme:', error);
+        console.error('Error loading theme settings:', error);
       }
     };
     
-    loadTheme();
+    loadSettings();
   }, []);
-  
-  // Save theme when it changes
+
+  // Update and Save theme
   const handleSetColorTheme = async (newTheme: ThemeKey) => {
     try {
-      // Update state
-      setColorTheme(newTheme);
-      setPaperTheme(getThemeForColor(newTheme));
-      
-      // Save to storage
-      await AsyncStorage.setItem('userTheme', newTheme);
-      
-      // Apply theme class to html element in web
+      setColorThemeState(newTheme);
+      const newPaperTheme = getThemeForColor(newTheme, darkMode);
+      setPaperTheme(newPaperTheme);
+      await AsyncStorage.setItem(THEME_KEY, newTheme);
       if (Platform.OS === 'web') {
-        // Remove all theme classes
-        document.documentElement.classList.remove(
-          'theme-blue', 'theme-purple', 'theme-red', 
-          'theme-green', 'theme-yellow', 'theme-teal', 'theme-pink'
-        );
-        
-        // Add new theme class
-        document.documentElement.classList.add(`theme-${newTheme}`);
-        
-        // Update CSS variables for web
-        const root = document.documentElement;
-        root.style.setProperty('--primary-color', themeOptions[newTheme].color);
-        root.style.setProperty('--primary-gradient', themeOptions[newTheme].gradient);
+        applyWebTheme(newTheme, darkMode);
       }
     } catch (error) {
-      console.error('Error saving theme:', error);
+      console.error('Error saving color theme:', error);
     }
+  };
+
+  // Update and Save dark mode
+  const handleSetDarkMode = async (newIsDark: boolean) => {
+    try {
+      setDarkModeState(newIsDark);
+      const newPaperTheme = getThemeForColor(colorTheme, newIsDark);
+      setPaperTheme(newPaperTheme);
+      await AsyncStorage.setItem(DARK_MODE_KEY, String(newIsDark));
+      if (Platform.OS === 'web') {
+        applyWebTheme(colorTheme, newIsDark);
+      }
+    } catch (error) {
+      console.error('Error saving dark mode setting:', error);
+    }
+  };
+
+  // Apply theme class and CSS variables to html element in web
+  const applyWebTheme = (themeKey: ThemeKey, isDark: boolean) => {
+    // Remove all theme classes
+    document.documentElement.classList.remove(
+      'theme-blue', 'theme-purple', 'theme-red', 
+      'theme-green', 'theme-yellow', 'theme-teal', 'theme-pink'
+    );
+    // Add new theme class
+    document.documentElement.classList.add(`theme-${themeKey}`);
+    // Toggle dark class
+    document.documentElement.classList.toggle('dark', isDark);
+
+    // Update CSS variables for web - simplified
+    const root = document.documentElement;
+    root.style.setProperty('--primary-color', themeOptions[themeKey].color);
+    root.style.setProperty('--primary-gradient', themeOptions[themeKey].gradient);
+    // Add more variables if needed for dark mode specifics on web
   };
   
   return (
-    <ThemeContext.Provider value={{ colorTheme, setColorTheme: handleSetColorTheme, paperTheme }}>
+    <ThemeContext.Provider value={{
+      colorTheme,
+      setColorTheme: handleSetColorTheme,
+      darkMode,
+      setDarkMode: handleSetDarkMode,
+      paperTheme
+    }}>
       {children}
     </ThemeContext.Provider>
   );

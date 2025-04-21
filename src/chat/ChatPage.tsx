@@ -58,9 +58,10 @@ export const ChatPage = ({
     scrollToBottom 
   } = useAutoScroll(messages);
   
-  // Navigate to settings
-  const navigateToSettings = () => {
-    navigation.navigate('Settings' as never);
+  // Navigate to the profile sheet modal on iOS
+  const navigateToProfileSheet = () => {
+    // Type assertion needed for stack navigator
+    navigation.navigate('ProfileSheet' as never); 
   };
   
   // Handle starting a new chat
@@ -81,7 +82,7 @@ export const ChatPage = ({
         {/* iOS-style header - only on iOS */}
         {platform === 'ios' && !admin && (
           <IosHeader 
-            onProfilePress={navigateToSettings}
+            onProfilePress={navigateToProfileSheet}
             onNewChatPress={handleNewChat}
           />
         )}

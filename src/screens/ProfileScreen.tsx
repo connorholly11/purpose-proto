@@ -4,8 +4,10 @@ import { Card, Title, Paragraph, Button, Divider, Chip, ProgressBar, List, useTh
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { ThemeKey, themeOptions } from '../theme/colors';
+import ThemePicker from '../components/ThemePicker';
 
 // Theme Picker component
+/*
 const ThemePicker = ({ selectedTheme, onThemeChange }: { 
   selectedTheme: ThemeKey, 
   onThemeChange: (theme: ThemeKey) => void
@@ -43,6 +45,7 @@ const ThemePicker = ({ selectedTheme, onThemeChange }: {
     </Card>
   );
 };
+*/
 
 // Profile Screen component
 const ProfileScreen = () => {
@@ -475,11 +478,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     elevation: 2,
   },
-  themeCard: {
-    marginBottom: 16,
-    borderRadius: 12,
-    elevation: 2,
-  },
   sectionTitle: {
     fontSize: 18,
     marginBottom: 12,
@@ -512,36 +510,6 @@ const styles = StyleSheet.create({
   },
   addButton: {
     borderRadius: 8,
-  },
-  themeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  themeOptionContainer: {
-    width: '25%',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  themeCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    marginBottom: 4,
-  },
-  selectedThemeCircle: {
-    borderWidth: 3,
-    borderColor: 'white',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-  },
-  themeLabel: {
-    fontSize: 12,
-    color: '#666',
   },
   chartContainer: {
     height: 180,

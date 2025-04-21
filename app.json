@@ -16,14 +16,21 @@
       "supportsTablet": true,
       "bundleIdentifier": "proto.purpose.vercel.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone."
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "proto.purpose.vercel.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,6 +39,9 @@
       "eas": {
         "projectId": "323c4da1-bb75-4970-83f2-142070b9535b"
       }
-    }
+    },
+    "plugins": [
+      "expo-speech-recognition"
+    ]
   }
 }

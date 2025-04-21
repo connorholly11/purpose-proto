@@ -3,46 +3,44 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { ClerkProvider } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
+import Constants from 'expo-constants';
 import { AuthProvider } from './src/context/AuthContext';
 import { ChatProvider } from './src/context/ChatContext';
 import { SystemPromptProvider } from './src/context/SystemPromptContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { HapticsProvider } from './src/context/HapticsContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { theme as defaultTheme } from './src/theme';
+
+// Get the Clerk key from the embedded Expo config
+const clerkPubKey = Constants.expoConfig?.extra?.clerkPublishableKey as string;
+
+// A simple screen to show if the key is missing
+const MissingKeyScreen = () => (
+  <View style={styles.errorContainer}>
+    <Text style={styles.errorTitle}>Configuration Error</Text>
+    <Text style={styles.errorMessage}>
+      Clerk publishable key is missing.
+    </Text>
+    <Text style={styles.errorDetails}>
+      Please ensure EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is set in your .env file and rebuild the app if necessary.
+    </Text>
+  </View>
+);
 
 export default function App() {
-  const clerkPubKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  const [clerkError, setClerkError] = useState(false);
-  
-  useEffect(() => {
-    if (!clerkPubKey || clerkPubKey.length < 50) {
-      console.error('Missing or invalid Clerk Publishable Key!');
-      setClerkError(true);
-    }
-  }, [clerkPubKey]);
-  
-  if (clerkError) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>Authentication Error</Text>
-        <Text style={styles.errorMessage}>
-          Invalid or missing Clerk authentication key. Please check your environment variables.
-        </Text>
-        {Platform.OS === 'web' && (
-          <Text style={styles.errorDetails}>
-            This app requires a valid Clerk Publishable Key to function properly.
-            Please add a valid key to your .env file.
-          </Text>
-        )}
-      </View>
-    );
+  // Add a guard clause: If the key wasn't embedded correctly, show an error screen
+  if (!clerkPubKey) {
+    return <MissingKeyScreen />;
   }
-  
+
+  // Key is present, proceed with the app structure
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <ThemedApp clerkPubKey={clerkPubKey || ''} />
+        <HapticsProvider>
+          <ThemedApp clerkPubKey={clerkPubKey} />
+        </HapticsProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
