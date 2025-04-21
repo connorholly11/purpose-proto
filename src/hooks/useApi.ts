@@ -15,7 +15,8 @@ export const useApi = () => {
     const productionApiUrl = process.env.EXPO_PUBLIC_API_URL; // From env vars
     
     // Use __DEV__ global provided by Expo to check environment
-    const resolvedBaseUrl = __DEV__ ? localApiUrl : productionApiUrl;
+    const resolvedBaseUrl =
+      process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
     
     // Remove trailing slash if present to prevent double-slash issues
     const normalizedBaseUrl = resolvedBaseUrl?.endsWith('/') 
