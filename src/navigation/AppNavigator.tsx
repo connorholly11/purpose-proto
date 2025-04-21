@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, InitialState } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { 
@@ -178,24 +179,81 @@ const linking = {
     screens: {
       AdminRoot: {
         path: 'admin',
-        // nested tab paths optional
+        screens: { // <-- Define nested screens for AdminTabs
+          AICompanion: 'AICompanion',
+          Quests: 'Quests',
+          Profile: 'Profile',
+          Prompts: 'Prompts',
+          Admin: 'Admin',
+          Testing: 'Testing',
+          Eval: 'Eval',
+        }
       },
-      UserRoot: '*',  // everything else = user chat
+      UserRoot: { 
+        path: '', 
+        screens: { 
+          Chat: 'chat',
+          Settings: 'settings',
+        },
+      },
+      // Consider adding a NotFound screen for unhandled paths
     },
   },
 };
 
+const NAV_STATE_KEY = 'NAVIGATION_STATE';
+
 // Main App Navigator
 const AppNavigator = () => {
   const { isSignedIn, isLoaded } = useAuthContext();
+  const [initialState, setInitialState] = useState<InitialState | undefined>();
+  const [isStateLoaded, setIsStateLoaded] = useState(false);
 
-  // Show nothing while auth is loading
-  if (!isLoaded) {
+  useEffect(() => {
+    const restoreState = async () => {
+      try {
+        const savedStateString = Platform.OS === 'web'
+          ? localStorage.getItem(NAV_STATE_KEY)
+          : await AsyncStorage.getItem(NAV_STATE_KEY);
+
+        if (savedStateString) {
+          setInitialState(JSON.parse(savedStateString));
+        }
+      } catch (e) {
+        console.error("Failed to load navigation state", e);
+      } finally {
+        setIsStateLoaded(true);
+      }
+    };
+
+    if (!isStateLoaded) {
+      restoreState();
+    }
+  }, [isStateLoaded]);
+
+  const saveState = async (state: any) => {
+    try {
+      const jsonState = JSON.stringify(state);
+      if (Platform.OS === 'web') {
+        localStorage.setItem(NAV_STATE_KEY, jsonState);
+      } else {
+        await AsyncStorage.setItem(NAV_STATE_KEY, jsonState);
+      }
+    } catch (e) {
+      console.error("Failed to save navigation state", e);
+    }
+  };
+
+  if (!isLoaded || !isStateLoaded) {
     return null;
   }
 
   return (
-    <NavigationContainer linking={Platform.OS !== 'ios' ? linking : undefined}>
+    <NavigationContainer
+      linking={Platform.OS !== 'ios' ? linking : undefined}
+      initialState={initialState}
+      onStateChange={saveState}
+    >
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isSignedIn ? (
           // Authentication screens
