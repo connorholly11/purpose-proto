@@ -6,6 +6,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 import { 
   SignInScreen, 
   AdminPromptScreen, 
@@ -219,6 +220,7 @@ const NAV_STATE_KEY = 'NAVIGATION_STATE';
 // Main App Navigator
 const AppNavigator = () => {
   const { isSignedIn, isLoaded } = useAuthContext();
+  const { paperTheme } = useTheme();
   const [initialState, setInitialState] = useState<InitialState | undefined>();
   const [isStateLoaded, setIsStateLoaded] = useState(false);
 
@@ -267,7 +269,15 @@ const AppNavigator = () => {
       initialState={initialState}
       onStateChange={saveState}
     >
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator 
+        screenOptions={{ 
+          headerShown: false,
+          /* 🔑 dark‑aware colours */
+          headerStyle: { backgroundColor: (paperTheme.colors as any).surfaceHeader },
+          headerTitleStyle: { color: paperTheme.colors.onSurface },
+          headerTintColor: paperTheme.colors.onSurface,  // back chevron & icons
+        }}
+      >
         {!isSignedIn ? (
           // Authentication screens
           <Stack.Screen

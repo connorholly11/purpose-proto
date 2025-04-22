@@ -10,7 +10,7 @@ import { SystemPromptProvider } from './src/context/SystemPromptContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { HapticsProvider } from './src/context/HapticsContext';
 import AppNavigator from './src/navigation/AppNavigator';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform, StatusBar } from 'react-native';
 
 // Get the Clerk key from the embedded Expo config
 const clerkPubKey = Constants.expoConfig?.extra?.clerkPublishableKey as string;
@@ -48,7 +48,7 @@ export default function App() {
 
 // Component that uses the theme
 function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
-  const { paperTheme } = useTheme();
+  const { paperTheme, darkMode } = useTheme();
   
   return (
     <PaperProvider theme={paperTheme}>
@@ -61,6 +61,12 @@ function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
           </SystemPromptProvider>
         </AuthProvider>
       </ClerkProvider>
+      
+      {/* status‑bar font/icon colour + background */}
+      <StatusBar
+        barStyle={darkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={(paperTheme.colors as any).surfaceHeader}
+      />
     </PaperProvider>
   );
 }

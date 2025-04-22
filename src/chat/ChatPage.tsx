@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, KeyboardAvoidingView, Platform, StyleSheet, Text } from 'react-native';
 import { FAB, Surface, useTheme } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useChatContext } from '../context/ChatContext';
+import { useChatContext, Message } from '../context/ChatContext';
 import { useNavigation } from '@react-navigation/native';
+import { useHaptics } from '../context/HapticsContext';
+import * as Haptics from 'expo-haptics';
 
 // Import components from extracted files
 import { MessageList } from './list';
@@ -22,6 +24,13 @@ type ChatPageProps = {
   admin?: boolean;
   platform?: 'ios' | 'android' | 'web';
 };
+
+// Helper hook to get the previous value
+function usePrevious<T>(value: T): T | undefined {
+  const ref = useRef<T>();
+  useEffect(() => { ref.current = value; }, [value]);
+  return ref.current;
+}
 
 export const ChatPage = ({ 
   admin = false,
@@ -57,6 +66,25 @@ export const ChatPage = ({
     showScrollButton, 
     scrollToBottom 
   } = useAutoScroll(messages);
+  
+  // Haptics logic
+  const { trigger, hapticsEnabled } = useHaptics();
+  const prevMessages = usePrevious(messages);
+
+  useEffect(() => {
+    if (!hapticsEnabled) return;
+
+    if (
+      prevMessages &&                             // have a prior snapshot
+      messages.length > prevMessages.length       // a new message appended
+    ) {
+      const newMsg = messages[messages.length - 1];
+      // Assuming Message type has a 'role' property
+      if (newMsg.role === 'assistant') {          // AI only
+        trigger(Haptics.ImpactFeedbackStyle.Light);
+      }
+    }
+  }, [messages, prevMessages, hapticsEnabled, trigger]);
   
   // Navigate to the profile sheet modal on iOS
   const navigateToProfileSheet = () => {

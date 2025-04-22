@@ -2,9 +2,10 @@ import React from 'react';
 import { View, TextInput, TouchableOpacity, Platform, StyleSheet } from 'react-native';
 import { Surface, IconButton } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useTheme } from 'react-native-paper';
+import { useTheme as usePaperTheme } from 'react-native-paper';
 import { getThemeColors } from '../styles';
 import { createPlatformStyleSheet, spacing, createShadow, platformSelect } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
 
 type ComposerProps = {
   inputText: string;
@@ -23,8 +24,9 @@ export const Composer = ({
   loading,
   platform,
 }: ComposerProps) => {
-  const theme = useTheme();
-  const COLORS = getThemeColors(theme);
+  const paperTheme = usePaperTheme();
+  const { keyboardAppearance, colorTheme, darkMode } = useTheme();
+  const COLORS = getThemeColors(paperTheme);
   const isIOS = platform === 'ios';
 
   return (
@@ -32,13 +34,15 @@ export const Composer = ({
       {isIOS ? (
         <>
           <TextInput 
-            style={styles.input}
+            style={[styles.input, { color: paperTheme.colors.onSurface }]}
             placeholder="Message"
-            placeholderTextColor="#999"
+            placeholderTextColor={paperTheme.colors.onSurfaceVariant + '99'}
             value={inputText}
             onChangeText={onChangeText}
             onSubmitEditing={onSend}
             multiline
+            keyboardAppearance={keyboardAppearance}
+            selectionColor={paperTheme.colors.primary}
           />
           
           {!inputText.trim() ? (
@@ -47,7 +51,7 @@ export const Composer = ({
             </TouchableOpacity>
           ) : (
             <TouchableOpacity 
-              style={[styles.sendButton, { backgroundColor: theme.colors.primary }]}
+              style={[styles.sendButton, { backgroundColor: COLORS.sendButton }]}
               onPress={onSend}
               disabled={loading}
             >
@@ -57,10 +61,11 @@ export const Composer = ({
         </>
       ) : (
         <>
-          <Surface style={[styles.inputSurface, { backgroundColor: '#FFFFFF' }]} elevation={1}>
+          <Surface style={[styles.inputSurface, { backgroundColor: paperTheme.colors.surface }]} elevation={1}>
             <TextInput
-              style={[styles.input, { backgroundColor: COLORS.inputBackground }]}
+              style={[styles.input, { backgroundColor: COLORS.inputBackground, color: paperTheme.colors.onSurface }]}
               placeholder="Message"
+              placeholderTextColor={paperTheme.colors.onSurfaceVariant + '99'}
               value={inputText}
               onChangeText={onChangeText}
               multiline
@@ -68,6 +73,8 @@ export const Composer = ({
               onKeyPress={onKeyPress}
               onSubmitEditing={onSend}
               blurOnSubmit={false}
+              keyboardAppearance={keyboardAppearance}
+              selectionColor={paperTheme.colors.primary}
             />
           </Surface>
           <IconButton
@@ -96,7 +103,7 @@ const styles = createPlatformStyleSheet({
       android: spacing.lg,
       default: spacing.md
     }),
-    backgroundColor: Platform.OS === 'ios' ? 'white' : 'transparent',
+    backgroundColor: 'transparent', // Will use parent background color
     borderTopWidth: Platform.OS === 'ios' ? 1 : 0,
     borderTopColor: '#e0e0e0',
   },
@@ -109,7 +116,6 @@ const styles = createPlatformStyleSheet({
   },
   input: {
     flex: 1,
-    backgroundColor: Platform.OS === 'ios' ? '#f5f5f5' : undefined,
     borderRadius: 20,
     paddingHorizontal: Platform.OS === 'ios' ? 16 : undefined,
     paddingVertical: Platform.OS === 'ios' ? 10 : undefined,

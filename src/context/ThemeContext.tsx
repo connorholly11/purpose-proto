@@ -4,10 +4,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MD3LightTheme, MD3DarkTheme, MD3Theme } from 'react-native-paper';
 import { ThemeKey, themeOptions } from '../theme/colors';
 import { getThemeForColor } from '../theme/theme';
+import tinycolor from 'tinycolor2';
 
 // Storage keys
 const THEME_KEY = 'userTheme';
 const DARK_MODE_KEY = 'userDarkMode';
+
+// AI primary color palette type
+export type AiPrimaryColors = {
+  main: string;
+  pressed: string;
+  textOn: string;
+};
 
 // Theme context type
 type ThemeContextType = {
@@ -16,6 +24,18 @@ type ThemeContextType = {
   darkMode: boolean;
   setDarkMode: (isDark: boolean) => void;
   paperTheme: MD3Theme;
+  keyboardAppearance: 'light' | 'dark';
+  getAiPrimary: (colorTheme?: ThemeKey, isDark?: boolean) => AiPrimaryColors;
+};
+
+// Helper to get AI primary color palette based on theme and dark mode
+export const getAiPrimary = (k: ThemeKey, dark: boolean): AiPrimaryColors => {
+  const base = themeOptions[k].color;
+  return {
+    main: base,
+    pressed: tinycolor(base).darken(dark ? 5 : 15).toHexString(),
+    textOn: '#FFFFFF',
+  };
 };
 
 // Create context with default value
@@ -27,6 +47,8 @@ const ThemeContext = createContext<ThemeContextType>({
   darkMode: defaultIsDark,
   setDarkMode: () => {},
   paperTheme: getThemeForColor(defaultThemeKey, defaultIsDark),
+  keyboardAppearance: defaultIsDark ? 'dark' : 'light',
+  getAiPrimary: (t = defaultThemeKey, d = defaultIsDark) => getAiPrimary(t, d),
 });
 
 // Theme provider component
@@ -118,7 +140,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setColorTheme: handleSetColorTheme,
       darkMode,
       setDarkMode: handleSetDarkMode,
-      paperTheme
+      paperTheme,
+      keyboardAppearance: darkMode ? 'dark' : 'light',
+      getAiPrimary: (t = colorTheme, d = darkMode) => getAiPrimary(t, d)
     }}>
       {children}
     </ThemeContext.Provider>

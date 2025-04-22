@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, Text, TouchableOpacity, Switch, Platform } from 'react-native';
 import { Card, Title, List, Divider, useTheme as usePaperTheme } from 'react-native-paper';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme as useContextTheme } from '../context/ThemeContext';
 import { ThemeKey, themeOptions } from '../theme/colors';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useHaptics } from '../context/HapticsContext';
 
 // Theme Picker component
 const ThemePicker = ({ selectedTheme, onThemeChange }: { 
@@ -49,20 +50,17 @@ const ThemePicker = ({ selectedTheme, onThemeChange }: {
 const SettingsScreen = () => {
   const navigation = useNavigation();
   const paperTheme = usePaperTheme();
-  const { colorTheme, setColorTheme } = useTheme();
-  
-  // State for toggles
-  const [darkMode, setDarkMode] = useState(false);
-  const [hapticsEnabled, setHapticsEnabled] = useState(true);
+  const { colorTheme, setColorTheme, darkMode, setDarkMode } = useContextTheme();
+  const { hapticsEnabled, setHapticsEnabled } = useHaptics();
 
   // Toggle handlers
   const toggleDarkMode = () => setDarkMode(!darkMode);
   const toggleHaptics = () => setHapticsEnabled(!hapticsEnabled);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: paperTheme.colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: paperTheme.colors.surfaceVariant }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <MaterialIcons name="arrow-back-ios" size={24} color={paperTheme.colors.primary} />
         </TouchableOpacity>
@@ -152,7 +150,6 @@ const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
     flexDirection: 'row',
@@ -161,7 +158,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 50 : 20, // Adjusted for status bar
     paddingBottom: 10,
-    backgroundColor: '#f5f5f5',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },

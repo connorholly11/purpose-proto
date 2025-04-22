@@ -34,7 +34,7 @@ export const ChatHeader = ({
   if (!admin) return null;
 
   return (
-    <Surface style={styles.headerContainer} elevation={1}>
+    <Surface style={[styles.headerContainer, { backgroundColor: COLORS.header }]} elevation={1}>
       <View style={styles.headerContent}>
         <Text style={[styles.headerText, { color: COLORS.headerText }]}>
           {!loadingPrompts && activePrompt ? `${activePrompt.name}` : 'AI Assistant'}
@@ -85,7 +85,6 @@ export const ChatHeader = ({
 
 const styles = createPlatformStyleSheet({
   headerContainer: {
-    backgroundColor: '#FFFFFF',
     paddingTop: 12,
     paddingBottom: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
