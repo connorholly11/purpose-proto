@@ -67,6 +67,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsAdmin(false);
     }
   }, [isSignedIn, userId]);
+  
+  // We've moved push notification registration to App.tsx using proper hooks
 
   // --- Add Logging ---
   useEffect(() => {

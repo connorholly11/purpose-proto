@@ -8,6 +8,7 @@ export type SystemPrompt = {
   name: string;
   promptText: string;
   isActive: boolean;
+  isFavorite: boolean;
   modelName?: string;
   createdAt: string;
   updatedAt: string;
@@ -21,8 +22,9 @@ type SystemPromptContextType = {
   error: string | null;
   loadPrompts: () => Promise<void>;
   activatePrompt: (id: string) => Promise<void>;
-  createPrompt: (name: string, promptText: string, modelName: string) => Promise<void>;
-  updatePrompt: (id: string, data: { name?: string; promptText?: string; modelName?: string }) => Promise<void>;
+  createPrompt: (name: string, promptText: string, modelName: string, isFavorite?: boolean) => Promise<void>;
+  updatePrompt: (id: string, data: { name?: string; promptText?: string; modelName?: string; isFavorite?: boolean }) => Promise<void>;
+  toggleFavorite: (id: string, current: boolean) => Promise<void>;
   deletePrompt: (id: string) => Promise<void>;
 };
 
@@ -36,6 +38,7 @@ const SystemPromptContext = createContext<SystemPromptContextType>({
   activatePrompt: async () => {},
   createPrompt: async () => {},
   updatePrompt: async () => {},
+  toggleFavorite: async () => {},
   deletePrompt: async () => {},
 });
 
@@ -148,11 +151,11 @@ export const SystemPromptProvider = ({ children }: SystemPromptProviderProps) =>
   };
   
   // Create a new prompt
-  const createPrompt = async (name: string, promptText: string, modelName: string) => {
+  const createPrompt = async (name: string, promptText: string, modelName: string, isFavorite?: boolean) => {
     try {
       setLoadingPrompts(true);
       setError(null);
-      await api.admin.createSystemPrompt(name, promptText, modelName);
+      await api.admin.createSystemPrompt(name, promptText, modelName, isFavorite);
       await loadPrompts(); // Reload all prompts to get the new one
     } catch (err) {
       console.error('Failed to create prompt:', err);
@@ -163,7 +166,7 @@ export const SystemPromptProvider = ({ children }: SystemPromptProviderProps) =>
   };
   
   // Update an existing prompt
-  const updatePrompt = async (id: string, data: { name?: string; promptText?: string; modelName?: string }) => {
+  const updatePrompt = async (id: string, data: { name?: string; promptText?: string; modelName?: string; isFavorite?: boolean }) => {
     try {
       setLoadingPrompts(true);
       setError(null);
@@ -174,6 +177,16 @@ export const SystemPromptProvider = ({ children }: SystemPromptProviderProps) =>
       setError('Failed to update prompt');
     } finally {
       setLoadingPrompts(false);
+    }
+  };
+
+  // Toggle favorite status for a prompt
+  const toggleFavorite = async (id: string, current: boolean) => {
+    try {
+      await updatePrompt(id, { isFavorite: !current });
+    } catch (err) {
+      console.error('Failed to toggle favorite status:', err);
+      setError('Failed to toggle favorite status');
     }
   };
   
@@ -202,6 +215,7 @@ export const SystemPromptProvider = ({ children }: SystemPromptProviderProps) =>
     activatePrompt,
     createPrompt,
     updatePrompt,
+    toggleFavorite,
     deletePrompt,
   };
   

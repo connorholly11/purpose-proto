@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { ClerkProvider } from '@clerk/clerk-expo';
@@ -50,12 +50,47 @@ export default function App() {
 function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
   const { paperTheme, darkMode } = useTheme();
   
+  // Hook to register for notifications - will be called when user context changes
+  const PushNotificationSetup = () => {
+    // Using require to import to avoid circular dependencies
+    const { useRegisterForPush, setupNotifications } = require('./src/services/push');
+    const registerForPush = useRegisterForPush();
+    const [isRegistered, setIsRegistered] = useState(false);
+    
+    // Use React's useEffect for the setup
+    useEffect(() => {
+      // Set up notification handlers immediately (doesn't require auth)
+      const { cleanup } = setupNotifications();
+      
+      // Register for push notifications and track completion
+      (async () => {
+        try {
+          console.log('[PUSH DEBUG] Starting push registration from App.tsx');
+          // Makes sure we wait for registration to complete before showing UI
+          await registerForPush();
+          setIsRegistered(true);
+          console.log('[PUSH DEBUG] Push registration completed successfully');
+        } catch (error) {
+          console.error('[PUSH DEBUG] Error registering for push notifications:', error);
+          setIsRegistered(true); // Still mark as completed so UI shows
+        }
+      })();
+      
+      return cleanup;
+    }, [registerForPush]);
+    
+    // This is a "headless" component that just registers effects
+    return null;
+  };
+  
   return (
     <PaperProvider theme={paperTheme}>
       <ClerkProvider publishableKey={clerkPubKey} tokenCache={tokenCache}>
         <AuthProvider>
           <SystemPromptProvider>
             <ChatProvider>
+              {/* Register for push notifications */}
+              <PushNotificationSetup />
               <AppNavigator />
             </ChatProvider>
           </SystemPromptProvider>

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, Text, TouchableOpacity, Switch, Platform } from 'react-native';
-import { Card, Title, List, Divider, useTheme as usePaperTheme } from 'react-native-paper';
+import { Card, Title, List, Divider, useTheme as usePaperTheme, Button, HelperText, Paragraph } from 'react-native-paper';
 import { useTheme as useContextTheme } from '../context/ThemeContext';
 import { ThemeKey, themeOptions } from '../theme/colors';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useHaptics } from '../context/HapticsContext';
+import useTestPush from '../hooks/useTestPush';
+import { useAuthContext } from '../context/AuthContext';
 
 // Theme Picker component
 const ThemePicker = ({ selectedTheme, onThemeChange }: { 
@@ -52,6 +54,8 @@ const SettingsScreen = () => {
   const paperTheme = usePaperTheme();
   const { colorTheme, setColorTheme, darkMode, setDarkMode } = useContextTheme();
   const { hapticsEnabled, setHapticsEnabled } = useHaptics();
+  const { isAdmin } = useAuthContext();
+  const { sendTest, loading, error, success } = useTestPush();
 
   // Toggle handlers
   const toggleDarkMode = () => setDarkMode(!darkMode);
@@ -141,6 +145,36 @@ const SettingsScreen = () => {
               />
             </Card.Content>
           </Card>
+          
+          {/* Push Notification Test (Only visible in dev mode or for admins) */}
+          {(__DEV__ || isAdmin) && (
+            <Card style={styles.card}>
+              <Card.Content>
+                <Title style={styles.sectionTitle}>Developer Options</Title>
+                <Paragraph style={{ marginBottom: 16 }}>
+                  Test push notifications to verify they're working correctly.
+                </Paragraph>
+                
+                <Button
+                  mode="contained"
+                  loading={loading}
+                  onPress={() => sendTest(60)}
+                  style={styles.testButton}
+                  icon="bell"
+                >
+                  Send Test Push (1 min delay)
+                </Button>
+                
+                <HelperText 
+                  type={error ? 'error' : success ? 'info' : 'info'} 
+                  visible={!!error || success}
+                  style={{ marginTop: 8 }}
+                >
+                  {error || (success ? 'Test notification scheduled! It will arrive in ~1 minute.' : '')}
+                </HelperText>
+              </Card.Content>
+            </Card>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -234,6 +268,10 @@ const styles = StyleSheet.create({
   themeLabel: {
     fontSize: 12,
     color: '#666',
+  },
+  testButton: {
+    borderRadius: 8,
+    marginVertical: 8,
   },
 });
 

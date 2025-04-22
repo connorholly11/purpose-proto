@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, Text, TouchableOpacity, Platform } from 'react-native';
-import { Card, Title, Paragraph, Button, Divider, Chip, ProgressBar, List, useTheme as usePaperTheme } from 'react-native-paper';
+import { Card, Title, Paragraph, Button, Divider, Chip, ProgressBar, List, useTheme as usePaperTheme, HelperText } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { ThemeKey, themeOptions } from '../theme/colors';
 import ThemePicker from '../components/ThemePicker';
+import useTestPush from '../hooks/useTestPush';
+import { useAuthContext } from '../context/AuthContext';
 
 // Theme Picker component
 /*
@@ -57,6 +59,8 @@ const ProfileScreen = () => {
   const [activeSection, setActiveSection] = useState('profile');
   const paperTheme = usePaperTheme();
   const { colorTheme, setColorTheme } = useTheme();
+  const { isAdmin } = useAuthContext();
+  const { sendTest, loading, error, success } = useTestPush();
 
   const handleSectionChange = (section: string) => {
     setActiveSection(section);
@@ -233,6 +237,36 @@ const ProfileScreen = () => {
               />
             </Card.Content>
           </Card>
+          
+          {/* Push Notification Test (Only visible in dev mode or for admins) */}
+          {(__DEV__ || isAdmin) && (
+            <Card style={styles.card}>
+              <Card.Content>
+                <Title style={styles.sectionTitle}>Developer Options</Title>
+                <Paragraph style={{ marginBottom: 16 }}>
+                  These options are only visible in development mode or for admin users.
+                </Paragraph>
+                
+                <Button
+                  mode="contained"
+                  loading={loading}
+                  onPress={() => sendTest(60)}
+                  style={styles.testButton}
+                  icon="bell"
+                >
+                  Send Test Push (1 min delay)
+                </Button>
+                
+                <HelperText 
+                  type={error ? 'error' : success ? 'info' : 'info'} 
+                  visible={!!error || success}
+                  style={{ marginTop: 8 }}
+                >
+                  {error || (success ? 'Test notification scheduled! It will arrive in ~1 minute.' : '')}
+                </HelperText>
+              </Card.Content>
+            </Card>
+          )}
         </View>
       )}
 
@@ -510,6 +544,10 @@ const styles = StyleSheet.create({
   },
   addButton: {
     borderRadius: 8,
+  },
+  testButton: {
+    borderRadius: 8,
+    marginVertical: 8,
   },
   chartContainer: {
     height: 180,

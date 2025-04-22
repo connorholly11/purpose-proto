@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
-  FlatList, 
+  SectionList, 
   TouchableOpacity, 
   Modal, 
   TextInput, 
@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Platform
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { ToggleButton } from 'react-native-paper';
 import { useSystemPrompts, SystemPrompt } from '../context/SystemPromptContext';
 
@@ -23,6 +24,7 @@ const AdminPromptScreen = () => {
     activatePrompt,
     createPrompt,
     updatePrompt,
+    toggleFavorite,
     deletePrompt
   } = useSystemPrompts();
   
@@ -106,6 +108,13 @@ const AdminPromptScreen = () => {
       <View style={styles.promptHeader}>
         <Text style={styles.promptName} numberOfLines={1}>{item.name}</Text>
         {item.isActive && <Text style={styles.activeTag}>ACTIVE</Text>}
+        <TouchableOpacity onPress={() => toggleFavorite(item.id, item.isFavorite)}>
+          <MaterialIcons
+            name={item.isFavorite ? 'star' : 'star-border'}
+            size={22}
+            color={item.isFavorite ? '#ffc107' : '#666'}
+          />
+        </TouchableOpacity>
       </View>
       
       <Text style={styles.promptText} numberOfLines={2}>
@@ -155,15 +164,42 @@ const AdminPromptScreen = () => {
       
       {error && <Text style={styles.error}>{error}</Text>}
       
-      <FlatList
-        data={prompts}
-        keyExtractor={item => item.id}
-        renderItem={renderPromptItem}
-        contentContainerStyle={styles.list}
-        numColumns={Platform.OS === 'web' ? 3 : 2}
-        key={Platform.OS === 'web' ? 'grid-web' : 'grid-mobile'}
-        columnWrapperStyle={styles.gridRow}
-      />
+      {/* Create sections for Favorites and All Prompts */}
+      {(() => {
+        const favorites = prompts.filter(p => p.isFavorite);
+        const others = prompts.filter(p => !p.isFavorite);
+        const sections = [];
+        
+        // Only add the favorites section if there are favorites
+        if (favorites.length > 0) {
+          sections.push({ title: '⭐ Favorites', data: favorites });
+        }
+        
+        sections.push({ title: 'All Prompts', data: others });
+        
+        // Custom rendering for each section
+        const renderSection = (data: SystemPrompt[], title: string) => {
+          return (
+            <View key={title} style={{marginBottom: 24}}>
+              <Text style={styles.sectionTitle}>{title}</Text>
+              <View style={styles.gridRow}>
+                {data.map(item => (
+                  <View key={item.id} style={styles.gridItemContainer}>
+                    {renderPromptItem({item})}
+                  </View>
+                ))}
+              </View>
+            </View>
+          );
+        };
+        
+        // Manually render each section instead of using SectionList
+        return (
+          <View style={styles.list}>
+            {sections.map(section => renderSection(section.data, section.title))}
+          </View>
+        );
+      })()}
       
       <Modal
         visible={modalVisible}
@@ -261,10 +297,17 @@ const AdminPromptScreen = () => {
 export default AdminPromptScreen;
 
 const styles = StyleSheet.create({
+  sectionDivider: { height: 1, backgroundColor: '#ced4da', marginVertical: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, marginTop: 4 },
   container: {
     flex: 1,
     padding: 16,
     backgroundColor: '#f8f9fa',
+  },
+  gridItemContainer: {
+    width: Platform.OS === 'web' ? '31%' : '48%',
+    marginBottom: 16,
+    marginRight: Platform.OS === 'web' ? '2%' : '2%',
   },
   header: {
     flexDirection: 'row',
@@ -290,15 +333,17 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   gridRow: {
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     marginBottom: 16,
     flexWrap: 'wrap',
+    flexDirection: 'row',
   },
   promptItem: {
     backgroundColor: '#fff',
     padding: 16,
     borderRadius: 8,
     paddingBottom: 42,
+    width: '100%',
     ...(Platform.OS === 'ios'
       ? {
           shadowColor: '#000',
@@ -315,11 +360,8 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web'
       ? {
           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-          width: '31%',
         }
-      : {
-          width: '48%',
-        }),
+      : {}),
     maxHeight: 200,
     overflow: 'hidden',
     position: 'relative',

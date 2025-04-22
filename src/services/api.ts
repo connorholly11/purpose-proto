@@ -12,12 +12,20 @@ const api = axios.create({
   },
 });
 
-// Function to create a configured API instance with authentication
-export const createAuthenticatedApi = () => {
+// Function to create a configured API instance with authentication (hook version)
+export const useAuthenticatedApi = () => {
   const { getToken } = useAuth();
   
+  // Clone the api instance to avoid modifying the original
+  const authenticatedApi = axios.create({
+    baseURL: BASE_URL,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
   // Add an interceptor to add auth token to requests
-  api.interceptors.request.use(async (config) => {
+  authenticatedApi.interceptors.request.use(async (config) => {
     try {
       const token = await getToken();
       
@@ -32,7 +40,36 @@ export const createAuthenticatedApi = () => {
     }
   });
   
-  return api;
+  return authenticatedApi;
+};
+
+// Non-hook version that accepts a token getter function
+export const createAuthenticatedApi = (getTokenFn: () => Promise<string | null>) => {
+  // Clone the api instance to avoid modifying the original
+  const authenticatedApi = axios.create({
+    baseURL: BASE_URL,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  // Add an interceptor to add auth token to requests
+  authenticatedApi.interceptors.request.use(async (config) => {
+    try {
+      const token = await getTokenFn();
+      
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      
+      return config;
+    } catch (error) {
+      console.error('Error setting auth token:', error);
+      return config;
+    }
+  });
+  
+  return authenticatedApi;
 };
 
 // API endpoints factory
@@ -112,12 +149,13 @@ export const createApiService = (authenticatedApi: any) => ({
     },
     
     // Create a new system prompt
-    createSystemPrompt: async (name: string, promptText: string, modelName: string) => {
+    createSystemPrompt: async (name: string, promptText: string, modelName: string, isFavorite?: boolean) => {
       try {
         const response = await authenticatedApi.post('/api/admin/system-prompts', {
           name,
           promptText,
           modelName,
+          isFavorite,
         });
         return response.data;
       } catch (error) {
@@ -127,7 +165,7 @@ export const createApiService = (authenticatedApi: any) => ({
     },
     
     // Update an existing system prompt
-    updateSystemPrompt: async (id: string, data: { name?: string; promptText?: string; modelName?: string }) => {
+    updateSystemPrompt: async (id: string, data: { name?: string; promptText?: string; modelName?: string; isFavorite?: boolean }) => {
       try {
         const response = await authenticatedApi.put(`/api/admin/system-prompts/${id}`, data);
         return response.data;

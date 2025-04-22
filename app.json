@@ -18,7 +18,9 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone."
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone.",
+        "NVAppGroupIdentifier": "group.proto.purpose.vercel.app.notif",
+        "FirebaseAppDelegateProxyEnabled": false
       }
     },
     "android": {
@@ -41,7 +43,8 @@
       }
     },
     "plugins": [
-      "expo-speech-recognition"
+      "expo-speech-recognition",
+      "expo-notifications"
     ]
   }
 }
