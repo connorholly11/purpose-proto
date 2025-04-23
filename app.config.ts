@@ -6,6 +6,11 @@ import { ExpoConfig, ConfigContext } from '@expo/config';
 //   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
 // }
 
+// Check if we're building for web
+const isWeb = process.env.EXPO_PLATFORM === 'web'   // when you run `EXPO_PLATFORM=web expo …`
+  || process.env.WEB === 'true'                     // internal flag set by Expo CLI
+  || process.env.EAS_BUILD_PLATFORM === 'web';      // EAS convention
+
 export default ({ config }: ConfigContext): ExpoConfig => {
   // Basic app configuration from existing app.json or defaults
   const appConfig: ExpoConfig = {
@@ -15,9 +20,17 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     // Add other base configurations if they are not in app.json
     plugins: [
       // Merge existing plugins from config if any, or start fresh
-      ...(config.plugins || []),
+      ...(config.plugins ?? []),
       // Add the required plugin
-      "expo-secure-store"
+      "expo-secure-store",
+      // Instabug only on native – prevents web export crash
+      ...(isWeb ? [] : [
+        ["instabug-reactnative", {
+          iosAppToken: process.env.INSTABUG_IOS_TOKEN,
+          invocationEvents: ["shake", "screenshot"],
+          primaryColor: "#2196F3"
+        }]
+      ])
     ]
   };
 

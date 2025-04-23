@@ -11,6 +11,7 @@ export { default as TestingScreen } from './TestingScreen';
 export { default as FeedbackScreen } from './FeedbackScreen';
 export { default as EvalScreen } from './EvalScreen';
 export { default as SettingsScreen } from './SettingsScreen';
+export { default as NotFoundScreen } from './NotFoundScreen';
 
 // Export the active chat screen components
 import { AdminChat, UserChat } from '../components';

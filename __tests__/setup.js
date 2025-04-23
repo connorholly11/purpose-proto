@@ -22,19 +22,24 @@ jest.mock('@clerk/clerk-expo', () => ({
 }));
 
 // Mock Axios
-jest.mock('axios', () => ({
-  create: jest.fn(() => ({
-    interceptors: {
-      request: { use: jest.fn() },
-      response: { use: jest.fn() },
-    },
+jest.mock('axios', () => {
+  const mockAxios = {
+    create: jest.fn(() => ({
+      interceptors: {
+        request: { use: jest.fn() },
+        response: { use: jest.fn() },
+      },
+      get: jest.fn().mockResolvedValue({ data: {} }),
+      post: jest.fn().mockResolvedValue({ data: {} }),
+      put: jest.fn().mockResolvedValue({ data: {} }),
+      delete: jest.fn().mockResolvedValue({ data: {} }),
+    })),
+    isAxiosError: jest.fn().mockReturnValue(true),
     get: jest.fn().mockResolvedValue({ data: {} }),
-    post: jest.fn().mockResolvedValue({ data: {} }),
-    put: jest.fn().mockResolvedValue({ data: {} }),
-    delete: jest.fn().mockResolvedValue({ data: {} }),
-  })),
-  isAxiosError: jest.fn().mockReturnValue(true),
-}));
+    post: jest.fn().mockResolvedValue({ data: {} })
+  };
+  return mockAxios;
+});
 
 // Mock Expo components used in the app
 jest.mock('expo-status-bar', () => ({
@@ -77,5 +82,45 @@ jest.mock('react-native-paper', () => ({
   FAB: 'FAB',
 }));
 
+// Mock for expo-speech-recognition
+jest.mock('expo-speech-recognition', () => ({
+  startAsync: jest.fn().mockResolvedValue(undefined),
+  stopAsync: jest.fn().mockResolvedValue(undefined),
+  isAvailableAsync: jest.fn().mockResolvedValue(true),
+  addListener: jest.fn((listener) => {
+    // Store the listener so tests can trigger it manually
+    global.speechRecognitionListener = listener;
+    
+    return {
+      remove: jest.fn()
+    };
+  })
+}));
+
+// Helper to simulate speech recognition results
+global.simulateSpeechResult = (transcript) => {
+  if (global.speechRecognitionListener) {
+    global.speechRecognitionListener({
+      eventType: 'results',
+      results: [{ transcript }]
+    });
+  } else {
+    console.warn('Speech recognition listener not registered');
+  }
+};
+
+// Force Platform.OS to be 'ios' for iOS-specific tests
+jest.mock('react-native/Libraries/Utilities/Platform', () => ({
+  OS: 'ios',
+  select: (obj) => obj.ios || obj.default
+}));
+
+// Set up necessary mocks for React Native
+require('react-native-reanimated/mock');
+
 // Set up global objects that are expected in React Native
 global.__DEV__ = true;
+
+// Silence console.error and console.warn in tests
+console.error = jest.fn();
+console.warn = jest.fn();

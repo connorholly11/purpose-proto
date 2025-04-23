@@ -41,7 +41,16 @@
 		</dict>
 	</array>
 	<key>NSPrivacyCollectedDataTypes</key>
-	<array/>
+	<array>
+		<string>ContactInfoName</string>
+		<string>UserContentOther</string>
+		<string>IdentifiersDeviceID</string>
+	</array>
+	<key>NSPrivacyCollectedDataTypePurposes</key>
+	<array>
+		<string>AppFunctionality</string>
+		<string>Analytics</string>
+	</array>
 	<key>NSPrivacyTracking</key>
 	<false/>
 </dict>

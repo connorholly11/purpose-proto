@@ -1,20 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, Button, TextInput, Switch } from 'react-native-paper';
 import { useSignIn, useSignUp } from '@clerk/clerk-expo';
 import { useNavigation } from '@react-navigation/native';
+import LegalModal from './LegalModal';
 
 export const SignInScreen = () => {
   const navigation = useNavigation();
   const { signIn, setActive: setSignInActive, isLoaded: isSignInLoaded } = useSignIn();
   const { signUp, setActive: setSignUpActive, isLoaded: isSignUpLoaded } = useSignUp();
   
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState('');
-  const [isSignUp, setIsSignUp] = React.useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [legalModalVisible, setLegalModalVisible] = useState(false);
+  const [currentLegalDoc, setCurrentLegalDoc] = useState<'terms' | 'privacy'>('terms');
 
+  const openLegal = (docType: 'terms' | 'privacy') => {
+    setCurrentLegalDoc(docType);
+    setLegalModalVisible(true);
+  };
+  
   const handleAuth = React.useCallback(async () => {
     if (
       (!isSignInLoaded && !isSignUp) || 
@@ -104,6 +112,19 @@ export const SignInScreen = () => {
         
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         
+        {isSignUp && (
+          <Text style={styles.legalText}>
+            By creating an account you agree to our{' '}
+            <Text style={styles.link} onPress={() => openLegal('terms')}>
+              Terms of Service
+            </Text>
+            {' '}and{' '}
+            <Text style={styles.link} onPress={() => openLegal('privacy')}>
+              Privacy Policy
+            </Text>.
+          </Text>
+        )}
+        
         <Button
           mode="contained"
           loading={loading}
@@ -116,6 +137,13 @@ export const SignInScreen = () => {
           {isSignUp ? "Sign Up" : "Sign In"}
         </Button>
       </View>
+      
+      {/* Legal Document Modal */}
+      <LegalModal
+        visible={legalModalVisible}
+        onClose={() => setLegalModalVisible(false)}
+        docType={currentLegalDoc}
+      />
     </View>
   );
 };
@@ -161,6 +189,17 @@ const styles = StyleSheet.create({
     color: '#d32f2f',
     marginBottom: 16,
     textAlign: 'center',
+  },
+  legalText: {
+    fontSize: 14,
+    color: '#666666',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  link: {
+    color: '#2196F3',
+    textDecorationLine: 'underline',
   },
   authButton: {
     borderRadius: 8,

@@ -15,11 +15,18 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "proto.purpose.vercel.app",
+      "buildNumber": "2",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone.",
+        "NSSpeechRecognitionUsageDescription": "Speech is converted to text so you can chat hands-free.",
+        "NSMicrophoneUsageDescription": "Your microphone is needed for speech recognition.",
+        "NSCameraUsageDescription": "Camera access is used to capture screenshots for feedback.",
+        "NSPhotoLibraryAddUsageDescription": "Photo library access is used to save screenshots for feedback.",
+        "NSUserTrackingUsageDescription": "We do not track users for advertising purposes.",
+        "NSPrivacyPolicyURL": "https://api.purpose.ai/api/legal/privacy",
+        "NSTermsOfServiceURL": "https://api.purpose.ai/api/legal/terms",
         "NVAppGroupIdentifier": "group.proto.purpose.vercel.app.notif",
+        "UIBackgroundModes": ["remote-notification"],
         "FirebaseAppDelegateProxyEnabled": false
       }
     },

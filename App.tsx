@@ -4,13 +4,26 @@ import { Provider as PaperProvider } from 'react-native-paper';
 import { ClerkProvider } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache';
 import Constants from 'expo-constants';
-import { AuthProvider } from './src/context/AuthContext';
+import { AuthProvider, useAuthContext } from './src/context/AuthContext';
 import { ChatProvider } from './src/context/ChatContext';
 import { SystemPromptProvider } from './src/context/SystemPromptContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { HapticsProvider } from './src/context/HapticsContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { View, Text, StyleSheet, Platform, StatusBar } from 'react-native';
+
+// Only import Instabug on native platforms
+let Instabug: any = null;
+let InvocationEvent: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    const InstabugModule = require('instabug-reactnative');
+    Instabug = InstabugModule.default;
+    InvocationEvent = InstabugModule.InvocationEvent;
+  } catch (error) {
+    console.warn('Instabug import failed:', error);
+  }
+}
 
 // Get the Clerk key from the embedded Expo config
 const clerkPubKey = Constants.expoConfig?.extra?.clerkPublishableKey as string;
@@ -50,6 +63,61 @@ export default function App() {
 function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
   const { paperTheme, darkMode } = useTheme();
   
+  // Initialize Instabug only on native platforms
+  useEffect(() => {
+    // Only run on native platforms and when Instabug is available
+    if (Platform.OS === 'ios' && Instabug && InvocationEvent) {
+      try {
+        // Initialize Instabug with the provided token
+        Instabug.init({
+          token: '3e952ee49d8e4d6151bfa6a9207a4ff7',
+          invocationEvents: [
+            InvocationEvent.shake,
+            InvocationEvent.screenshot,
+            InvocationEvent.floatingButton
+          ],
+        });
+        
+        // Set color theme based on app theme
+        Instabug.setColorTheme(darkMode ? Instabug.colorTheme.dark : Instabug.colorTheme.light);
+        
+        // Override built-in feedback events so we can bridge to our backend
+        Instabug.onReportSubmitHandler(async (report: { reportType: string; message: string }) => {
+          try {
+            // Using require to avoid circular dependencies
+            const { createAuthenticatedApi } = require('./src/services/api');
+            const { useAuth } = require('@clerk/clerk-expo');
+            
+            // Create an authenticated API instance
+            const getToken = async () => {
+              try {
+                const token = await useAuth().getToken();
+                return token;
+              } catch (error) {
+                console.error('Error getting token for Instabug feedback:', error);
+                return null;
+              }
+            };
+            
+            const api = createAuthenticatedApi(getToken);
+            
+            // Submit to our backend
+            await api.post('/api/feedback', {
+              category: 'Bug Report',
+              content: `${report.reportType}: ${report.message}`,
+            });
+            
+            console.log('Successfully bridged Instabug report to backend');
+          } catch (error) {
+            console.error('Failed to send Instabug report to backend:', error);
+          }
+        });
+      } catch (error) {
+        console.warn('Error initializing Instabug:', error);
+      }
+    }
+  }, [darkMode]);
+  
   // Hook to register for notifications - will be called when user context changes
   const PushNotificationSetup = () => {
     // Using require to import to avoid circular dependencies
@@ -83,6 +151,25 @@ function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
     return null;
   };
   
+  // Component to set user attributes in Instabug when auth state changes
+  const InstabugUserSetup = () => {
+    const { isSignedIn, userId } = useAuthContext();
+    
+    useEffect(() => {
+      // Only run on native platforms when Instabug is available
+      if (Platform.OS === 'ios' && Instabug && isSignedIn && userId) {
+        try {
+          Instabug.setUserAttribute('clerkId', userId);
+          console.log('Set Instabug user attribute:', userId);
+        } catch (error) {
+          console.warn('Error setting Instabug user attribute:', error);
+        }
+      }
+    }, [isSignedIn, userId]);
+    
+    return null;
+  };
+  
   return (
     <PaperProvider theme={paperTheme}>
       <ClerkProvider publishableKey={clerkPubKey} tokenCache={tokenCache}>
@@ -91,6 +178,8 @@ function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
             <ChatProvider>
               {/* Register for push notifications */}
               <PushNotificationSetup />
+              {/* Set up Instabug user attributes */}
+              <InstabugUserSetup />
               <AppNavigator />
             </ChatProvider>
           </SystemPromptProvider>

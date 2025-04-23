@@ -1,11 +1,12 @@
-import React from 'react';
-import { View, TextInput, TouchableOpacity, Platform, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, TextInput, TouchableOpacity, Platform, StyleSheet, ActivityIndicator } from 'react-native';
 import { Surface, IconButton } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme as usePaperTheme } from 'react-native-paper';
 import { getThemeColors } from '../styles';
 import { createPlatformStyleSheet, spacing, createShadow, platformSelect } from '../../theme';
 import { useTheme } from '../../context/ThemeContext';
+import useSpeechRecognition from '../../hooks/useSpeechRecognition';
 
 type ComposerProps = {
   inputText: string;
@@ -28,6 +29,22 @@ export const Composer = ({
   const { keyboardAppearance, colorTheme, darkMode } = useTheme();
   const COLORS = getThemeColors(paperTheme);
   const isIOS = platform === 'ios';
+  
+  // Speech recognition integration
+  const { 
+    transcript, 
+    isRecording, 
+    startRecording, 
+    stopRecording, 
+    isSpeechAvailable 
+  } = useSpeechRecognition();
+  
+  // Update input text with speech recognition results
+  useEffect(() => {
+    if (transcript) {
+      onChangeText(transcript);
+    }
+  }, [transcript]);
 
   return (
     <View style={styles.inputContainer}>
@@ -46,8 +63,23 @@ export const Composer = ({
           />
           
           {!inputText.trim() ? (
-            <TouchableOpacity style={styles.mediaButton} onPress={() => console.log('Microphone tapped')}>
-              <MaterialIcons name="mic" size={24} color="#999" />
+            <TouchableOpacity 
+              style={[
+                styles.mediaButton, 
+                isRecording && { backgroundColor: COLORS.sendButton, borderRadius: 18 }
+              ]} 
+              onPress={isRecording ? stopRecording : startRecording}
+              disabled={!isSpeechAvailable}
+            >
+              {isRecording ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <MaterialIcons 
+                  name="mic" 
+                  size={24} 
+                  color={isSpeechAvailable ? (isRecording ? "white" : "#999") : "#CCC"} 
+                />
+              )}
             </TouchableOpacity>
           ) : (
             <TouchableOpacity 
@@ -77,16 +109,31 @@ export const Composer = ({
               selectionColor={paperTheme.colors.primary}
             />
           </Surface>
-          <IconButton
-            icon="arrow-up"
-            mode="contained"
-            containerColor={COLORS.sendButton}
-            iconColor="#FFFFFF"
-            size={22}
-            onPress={onSend}
-            disabled={!inputText.trim() || loading}
-            style={styles.sendButton}
-          />
+          
+          {!inputText.trim() ? (
+            <IconButton
+              icon={isRecording ? "stop" : "microphone"}
+              mode="contained"
+              containerColor={isRecording ? COLORS.sendButton : paperTheme.colors.surfaceVariant}
+              iconColor={isRecording ? "#FFFFFF" : paperTheme.colors.onSurfaceVariant}
+              size={22}
+              onPress={isRecording ? stopRecording : startRecording}
+              disabled={!isSpeechAvailable}
+              style={styles.sendButton}
+              loading={isRecording}
+            />
+          ) : (
+            <IconButton
+              icon="arrow-up"
+              mode="contained"
+              containerColor={COLORS.sendButton}
+              iconColor="#FFFFFF"
+              size={22}
+              onPress={onSend}
+              disabled={!inputText.trim() || loading}
+              style={styles.sendButton}
+            />
+          )}
         </>
       )}
     </View>

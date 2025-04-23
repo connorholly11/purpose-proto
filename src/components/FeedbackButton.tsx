@@ -31,6 +31,9 @@ const FeedbackButton = () => {
   const [feedback, setFeedback] = useState('');
   const [submitting, setSubmitting] = useState(false);
   
+  // Hide custom feedback button on iOS (we use Instabug instead)
+  const isIOS = Platform.OS === 'ios';
+  
   const api = useApi();
   
   const handleSubmit = async () => {
@@ -75,13 +78,15 @@ const FeedbackButton = () => {
   
   return (
     <>
-      {/* Floating button */}
-      <FAB
-        icon="comment-question-outline"
-        style={styles.fab}
-        onPress={() => setModalVisible(true)}
-        color="#ffffff"
-      />
+      {/* Floating button - hide on iOS */}
+      {!isIOS && (
+        <FAB
+          icon="comment-question-outline"
+          style={styles.fab}
+          onPress={() => setModalVisible(true)}
+          color="#ffffff"
+        />
+      )}
       
       {/* Feedback Modal */}
       <Modal

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
-import { NavigationContainer, InitialState } from '@react-navigation/native';
+import { NavigationContainer, InitialState, LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Linking from 'expo-linking';
 import { useAuthContext } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -18,7 +19,8 @@ import {
   QuestsScreen,
   ProfileScreen,
   SettingsScreen,
-  ProfileSheet
+  ProfileSheet,
+  NotFoundScreen
 } from '../screens';
 
 import { AdminChat, UserChat } from '../components';
@@ -33,6 +35,7 @@ export type AppStackParamList = {
   SignIn: undefined;
   UserRoot: undefined;
   AdminRoot: undefined;
+  NotFound: undefined;
 };
 
 // Define the user stack navigator parameter types
@@ -186,34 +189,41 @@ const AdminTabNavigator = () => {
   );
 };
 
-// Define the linking configuration for web
-const linking = {
-  prefixes: [Platform.OS === 'web' ? window.location.origin : 'myapp://'],
+// Define the linking configuration for web using Expo's helper
+const urlPrefix = Linking.createURL('/');
+
+const linking: LinkingOptions<AppStackParamList> = {
+  prefixes: [urlPrefix],  // No platform check needed
   config: {
     screens: {
-      AdminRoot: {
-        path: 'admin',
-        screens: { // <-- Define nested screens for AdminTabs
-          AICompanion: 'AICompanion',
-          Quests: 'Quests',
-          Profile: 'Profile',
-          Prompts: 'Prompts',
-          Admin: 'Admin',
-          Testing: 'Testing',
-          Eval: 'Eval',
+      UserRoot: {
+        path: '',  // "/" maps to user stack
+        screens: { 
+          Chat: '',  // Root path goes to Chat
+          Settings: 'settings' 
         }
       },
-      UserRoot: { 
-        path: '', 
-        screens: { 
-          Chat: 'chat',
-          Settings: 'settings',
-        },
+      AdminRoot: {
+        path: 'admin',  // "/admin" becomes tab root
+        screens: {
+          AICompanion: '',     // "/admin" (default tab)
+          Quests: 'quests',
+          Profile: 'profile',
+          Prompts: 'prompts',
+          Admin: 'tools',
+          Testing: 'testing',
+          Eval: 'eval'
+        }
       },
-      // Consider adding a NotFound screen for unhandled paths
-    },
-  },
+      NotFound: '*'  // Fallback screen for unmatched routes
+    }
+  }
 };
+
+// For web, we don't need special hash routing for now
+// The vercel.json config will handle SPA routing
+// If you want to use hash routing, you could add it manually
+// after the site is deployed
 
 const NAV_STATE_KEY = 'NAVIGATION_STATE';
 
@@ -223,16 +233,22 @@ const AppNavigator = () => {
   const { paperTheme } = useTheme();
   const [initialState, setInitialState] = useState<InitialState | undefined>();
   const [isStateLoaded, setIsStateLoaded] = useState(false);
+  const navigationRef = useRef<any>(null);
 
+  // Handle URL restoration on web
   useEffect(() => {
     const restoreState = async () => {
       try {
-        const savedStateString = Platform.OS === 'web'
-          ? localStorage.getItem(NAV_STATE_KEY)
-          : await AsyncStorage.getItem(NAV_STATE_KEY);
-
-        if (savedStateString) {
-          setInitialState(JSON.parse(savedStateString));
+        if (Platform.OS === 'web') {
+          // On web, we'll use the default navigation state restoration
+          // This is simpler and more compatible
+          setInitialState(undefined);
+        } else {
+          // On native, restore from AsyncStorage
+          const savedStateString = await AsyncStorage.getItem(NAV_STATE_KEY);
+          if (savedStateString) {
+            setInitialState(JSON.parse(savedStateString));
+          }
         }
       } catch (e) {
         console.error("Failed to load navigation state", e);
@@ -265,7 +281,8 @@ const AppNavigator = () => {
 
   return (
     <NavigationContainer
-      linking={Platform.OS !== 'ios' ? linking : undefined}
+      ref={navigationRef}
+      linking={linking}
       initialState={initialState}
       onStateChange={saveState}
     >
@@ -301,6 +318,10 @@ const AppNavigator = () => {
             <Stack.Screen
               name="AdminRoot"
               component={AdminTabNavigator}
+            />
+            <Stack.Screen
+              name="NotFound"
+              component={NotFoundScreen}
             />
           </>
         )}

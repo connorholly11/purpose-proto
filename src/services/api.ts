@@ -1,8 +1,11 @@
 import axios from 'axios';
 import { useAuth } from '@clerk/clerk-expo';
+import { Platform } from 'react-native';
 
-// API base URL from environment variable
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
+// API base URL with improved web support
+const BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ||
+  (Platform.OS === 'web' ? '/api' : 'http://localhost:3001');
 
 // Create an axios instance with default config
 const api = axios.create({
