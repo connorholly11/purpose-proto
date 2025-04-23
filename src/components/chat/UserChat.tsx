@@ -4,10 +4,7 @@ import { ChatPage } from '../../chat';
 
 export const UserChat = () => {
   return (
-    <ChatPage 
-      admin={false}
-      platform={Platform.OS as 'ios' | 'android' | 'web'}
-    />
+    <ChatPage />
   );
 };
 

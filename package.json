@@ -4,16 +4,15 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "cross-env EXPO_PLATFORM=web expo start --web",
-    "build:web": "cross-env EXPO_PLATFORM=web node web-build.js",
-    "deploy:web": "cross-env EXPO_PLATFORM=web node web-build.js && vercel deploy dist",
-    "vercel-build": "cross-env EXPO_PLATFORM=web expo export",
+    "dev:web": "INCLUDE_INSTABUG_PLUGIN=false expo start --web",
+    "dev:native": "INCLUDE_INSTABUG_PLUGIN=true expo start",
+    "android": "INCLUDE_INSTABUG_PLUGIN=true expo run:android",
+    "ios": "INCLUDE_INSTABUG_PLUGIN=true expo run:ios",
     "test": "jest",
     "test:snapshot": "jest src/tests/snapshot.test.tsx",
     "test:platform": "jest src/tests/platformConsistency.test.ts",
-    "lint:platform": "node scripts/find-platform-checks.js"
+    "lint:platform": "node scripts/find-platform-checks.js",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.9.6",
@@ -48,7 +47,6 @@
     "expo-status-bar": "~2.0.1",
     "expo-web-browser": "~14.0.2",
     "react": "18.3.1",
-    "react-dom": "18.3.1",
     "react-native": "0.76.9",
     "react-native-chart-kit": "^6.12.0",
     "react-native-paper": "^5.13.1",
@@ -57,8 +55,6 @@
     "react-native-screens": "~4.4.0",
     "react-native-svg": "15.8.0",
     "react-native-vector-icons": "^10.2.0",
-    "react-native-web": "~0.19.13",
-    "recharts": "^2.15.2",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
@@ -75,6 +71,7 @@
     "jest": "^29.7.0",
     "jest-expo": "^52.0.0",
     "msw": "^2.7.5",
+    "patch-package": "^8.1.0",
     "react-test-renderer": "18.3.1",
     "sharp": "^0.34.0",
     "tinycolor2": "^1.6.0",

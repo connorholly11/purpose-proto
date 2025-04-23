@@ -1,4 +1,4 @@
-export { default as useSpeechRecognition } from './useSpeechRecognition';
-export { default as useApi } from './useApi';
-export { default as useClerkAvatar } from './useClerkAvatar';
-export { default as useTestPush } from './useTestPush';
+export { useSpeechRecognition } from './useSpeechRecognition';
+export { useApi } from './useApi';
+export { useClerkAvatar } from './useClerkAvatar';
+export { useClerkTokenGetter } from './useClerkTokenGetter';

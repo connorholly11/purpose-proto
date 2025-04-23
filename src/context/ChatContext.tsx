@@ -75,6 +75,9 @@ const ChatContext = createContext<ChatContextType>({
   startNewConversation: () => {}, // Initialize startNewConversation
 });
 
+// Import SystemPrompt type
+import { SystemPrompt } from './SystemPromptContext';
+
 // Props for the ChatProvider component
 type ChatProviderProps = {
   children: ReactNode;
@@ -111,7 +114,7 @@ const estimateTokenCount = (text: string): number => {
   return Math.ceil(wordCount * 1.33);
 };
 
-export const ChatProvider = ({ children }: ChatProviderProps) => {
+export const ChatProvider = ({ children, activePrompt }: ChatProviderProps & { activePrompt?: SystemPrompt }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -185,7 +188,7 @@ export const ChatProvider = ({ children }: ChatProviderProps) => {
       
       const response = await api.chat.sendMessage(
         content,
-        overridePromptId,
+        /* overridePromptId */ activePrompt?.id ?? overridePromptId,
         enhancedDebugInfo, // Always request debug info for logging
         useContext, // <-- Pass context toggle to API service
         conversationId // <-- Pass the current conversation ID (null for new)

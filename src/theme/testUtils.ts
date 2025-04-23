@@ -54,7 +54,6 @@ export function containsDirectPlatformChecks(code: string): boolean {
 export type PlatformSnapshot = {
   ios: string;
   android: string;
-  web: string;
   current: string;
 };
 
@@ -67,7 +66,6 @@ export function createPlatformSnapshot(feature: string): PlatformSnapshot {
   return {
     ios: `${feature}-ios-snapshot`,
     android: `${feature}-android-snapshot`,
-    web: `${feature}-web-snapshot`,
     current: `${feature}-${Platform.OS}-snapshot`,
   };
 }

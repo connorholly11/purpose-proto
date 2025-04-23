@@ -28,7 +28,6 @@ type AuthContextType = {
   isSignedIn: boolean;
   isLoaded: boolean;
   userId: string | null;
-  isAdmin: boolean;
   hasAcceptedTerms: boolean;
   termsAcceptanceLoaded: boolean;
   signOut: () => Promise<void>;
@@ -39,7 +38,6 @@ const AuthContext = createContext<AuthContextType>({
   isSignedIn: false,
   isLoaded: false,
   userId: null,
-  isAdmin: false,
   hasAcceptedTerms: false,
   termsAcceptanceLoaded: false,
   signOut: async () => {},
@@ -50,35 +48,16 @@ type AuthProviderProps = {
   children: ReactNode;
 };
 
-// Define founder IDs (admin users)
-const FOUNDER_CLERK_IDS = process.env.EXPO_PUBLIC_FOUNDER_CLERK_IDS?.split(',') || [
-  'user_2v0kHfelRcU1cBqg5o47ZymuGvM',
-  'user_2v0kJwxV4JT2PaJKmaXZabSjFgM',
-  'user_2v0kIR1s6RI1tzMU0dF2HhH5LgG',
-  'user_2v0kMGsms1l0HxWxbtY3SRkSK9A',
-  'user_2v0kLICcJO5KHQhEOlFm9c3ojYn',
-  'user_2v0kKj7nLBrJBVE2vtLUburjVm6',
-];
 
 // AuthProvider component to wrap the app with auth functionality
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { isSignedIn, isLoaded, userId, signOut } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   const [termsAcceptanceLoaded, setTermsAcceptanceLoaded] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const api = useAuthenticatedApi();
 
-  // Check if the current user is an admin
-  useEffect(() => {
-    if (isSignedIn && userId) {
-      // Make all signed-in users admins
-      setIsAdmin(true);
-    } else {
-      setIsAdmin(false);
-    }
-  }, [isSignedIn, userId]);
-  
+    
   // Check if the user has accepted the current terms
   useEffect(() => {
     const checkTermsAcceptance = async () => {
@@ -134,7 +113,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isSignedIn: isSignedIn || false,
     isLoaded,
     userId: userId || null,
-    isAdmin,
     hasAcceptedTerms,
     termsAcceptanceLoaded,
     signOut,

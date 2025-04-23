@@ -1,7 +1,7 @@
 import { Platform, StyleSheet, PlatformOSType } from 'react-native';
 
 type PlatformStyle<T> = {
-  [K in PlatformOSType | 'default']?: T;
+  [K in 'ios' | 'android' | 'default']?: T;
 };
 
 /**
@@ -42,9 +42,6 @@ export function getShadow(elevation: number = 2) {
     android: {
       elevation,
     },
-    web: {
-      boxShadow: `0px ${elevation * 0.5}px ${elevation * 2}px rgba(0,0,0,0.1)`,
-    },
     default: {},
   });
 }
@@ -63,17 +60,16 @@ export function createPlatformStyleSheet<T extends StyleSheet.NamedStyles<T> | S
   Object.keys(styles).forEach((key) => {
     const style = styles[key];
     
-    // Handle iOS, android, and web specific properties
-    if (style.ios || style.android || style.web || style.default) {
+    // Handle iOS and android specific properties
+    if (style.ios || style.android || style.default) {
       platformStyles[key] = platformSelect({
         ios: style.ios,
         android: style.android,
-        web: style.web,
         default: style.default,
       });
       
       // Merge with the non-platform properties
-      const {ios, android, web, default: defaultStyle, ...rest} = style;
+      const {ios, android, default: defaultStyle, ...rest} = style;
       platformStyles[key] = {...rest, ...platformStyles[key]};
     } else {
       platformStyles[key] = style;

@@ -8,8 +8,8 @@ export const useSpeechRecognition = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeechAvailable, setIsSpeechAvailable] = useState(false);
   
-  // Check if we're on an unsupported platform
-  const isUnsupportedPlatform = Platform.OS === 'web';
+  // We only support iOS & Android; others are unsupported
+  const isUnsupportedPlatform = Platform.OS !== 'ios' && Platform.OS !== 'android';
   const isIOS = Platform.OS === 'ios';
   
   // Check for speech recognition availability

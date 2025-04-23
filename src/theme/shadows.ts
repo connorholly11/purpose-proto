@@ -18,10 +18,6 @@ export const createShadow = (level: number = 1) => {
     android: {
       elevation: level,
     },
-    web: {
-      // Web shadows use the CSS boxShadow property
-      boxShadow: `0px ${level * 0.5}px ${level * 2}px rgba(0,0,0,${opacity})`,
-    },
     default: {}, // Fallback for other platforms
   });
 };
@@ -59,10 +55,6 @@ export const createColoredShadow = (color: string, level: number = 1) => {
       // Android doesn't support colored shadows directly
       // So we use the standard elevation
       elevation: level,
-    },
-    web: {
-      // Web can use colored box shadows
-      boxShadow: `0px ${level * 0.5}px ${level * 2}px ${color}${Math.round(opacity * 255).toString(16)}`,
     },
     default: {},
   });

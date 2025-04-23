@@ -11,8 +11,7 @@ type MessageListProps = {
   loading: boolean;
   onScroll: (event: any) => void;
   scrollRef: React.RefObject<FlatList | ScrollView>;
-  admin?: boolean;
-  platform: 'ios' | 'android' | 'web';
+  platform: 'ios' | 'android';
 };
 
 export const MessageList = ({
@@ -20,11 +19,10 @@ export const MessageList = ({
   loading,
   onScroll,
   scrollRef,
-  admin = false,
   platform,
 }: MessageListProps) => {
   // Determine if using FlatList or ScrollView based on platform
-  const usesFlatList = platform === 'web' || platform !== 'ios';
+  const usesFlatList = platform !== 'ios';
   
   // Local message type guard functions (from original component)
   const isLocalMessage = (message: any): boolean => {
@@ -69,7 +67,7 @@ export const MessageList = ({
       renderItem={renderMessageItem}
       contentContainerStyle={[
         styles.messagesList,
-        !admin && styles.userModeMessagesList
+        styles.userModeMessagesList
       ]}
       style={styles.messagesContainer}
       initialNumToRender={100} 
@@ -91,7 +89,7 @@ export const MessageList = ({
       style={styles.messagesContainer}
       contentContainerStyle={[
         styles.messagesContent,
-        !admin && styles.userModeMessagesList
+        styles.userModeMessagesList
       ]}
       onScroll={onScroll}
       scrollEventThrottle={400}

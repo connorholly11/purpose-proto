@@ -8,7 +8,6 @@ import { useTheme } from '../context/ThemeContext'; // <-- Use ThemeContext
 import { useHaptics } from '../context/HapticsContext'; // <-- Use HapticsContext
 import ThemePicker from '../components/ThemePicker'; // <-- Import ThemePicker
 import { ThemeKey } from '../theme/colors'; // <-- Import ThemeKey
-import useTestPush from '../hooks/useTestPush'; // <-- Import test push hook
 
 const ProfileSheet = () => {
   const navigation = useNavigation();
@@ -26,7 +25,6 @@ const ProfileSheet = () => {
     setHapticsEnabled, 
     trigger: triggerHaptic // Alias to avoid name clash
   } = useHaptics(); // Get haptics state and setters
-  const { sendTest, loading, error, success, tokenInfo } = useTestPush(); // Get push test functions
 
   // On Android, this screen shouldn't be used directly
   if (Platform.OS !== 'ios') {
@@ -127,74 +125,6 @@ const ProfileSheet = () => {
           />
         </List.Section>
         
-        {/* Push Notification Test - Available for all users */}
-        <Divider style={[styles.divider, { backgroundColor: paperTheme.colors.outline }]} />
-        
-        <View style={styles.pushTestContainer}>
-          <Text variant="titleMedium" style={{ color: paperTheme.colors.onSurface, marginBottom: 8 }}>
-            Test Push Notifications
-          </Text>
-          
-          <Text style={{ color: paperTheme.colors.onSurfaceVariant, marginBottom: 16 }}>
-            Send a test notification to verify your push notifications are working correctly.
-          </Text>
-          
-          <Button
-            mode="contained"
-            loading={loading}
-            onPress={() => {
-              sendTest(60);
-              triggerHaptic();
-            }}
-            style={styles.testButton}
-            icon="bell"
-          >
-            Send Test Notification
-          </Button>
-          
-          {(success || error) && (
-            <HelperText
-              type={error ? "error" : "info"}
-              visible={true}
-              style={styles.helperText}
-            >
-              {error || "Test notification scheduled! It will arrive in ~1 minute."}
-            </HelperText>
-          )}
-          
-          {/* Debug information (only shown in dev mode) */}
-          {__DEV__ && (
-            <View style={styles.debugInfo}>
-              <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Debug Info:</Text>
-              {tokenInfo ? (
-                <>
-                  <Text>Permissions: {tokenInfo.permissionsGranted ? '✅' : '❌'}</Text>
-                  {tokenInfo.pushAvailable !== undefined && (
-                    <Text>Push available: {tokenInfo.pushAvailable ? '✅' : '❌'}</Text>
-                  )}
-                  <Text>Token: {tokenInfo.token ? '✅' : '❌'}</Text>
-                  {tokenInfo.token && (
-                    <Text numberOfLines={1} ellipsizeMode="middle" style={{ fontSize: 12 }}>
-                      {tokenInfo.token}
-                    </Text>
-                  )}
-                  {tokenInfo.serverResponse && (
-                    <Text>
-                      Registered tokens: {tokenInfo.serverResponse.tokens || 0}
-                    </Text>
-                  )}
-                  {tokenInfo.error && (
-                    <Text style={{ color: 'red' }}>
-                      Error: {tokenInfo.error.message || JSON.stringify(tokenInfo.error)}
-                    </Text>
-                  )}
-                </>
-              ) : (
-                <Text>No token info available yet. Try sending a test notification.</Text>
-              )}
-            </View>
-          )}
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

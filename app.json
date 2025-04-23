@@ -41,9 +41,6 @@
       ],
       "package": "proto.purpose.vercel.app"
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
     "extra": {
       "eas": {
         "projectId": "323c4da1-bb75-4970-83f2-142070b9535b"

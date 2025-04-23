@@ -14,7 +14,7 @@ type ComposerProps = {
   onSend: () => void;
   onKeyPress?: (e: any) => void;
   loading: boolean;
-  platform: 'ios' | 'android' | 'web';
+  platform?: 'ios' | 'android';
 };
 
 export const Composer = ({
@@ -23,7 +23,7 @@ export const Composer = ({
   onSend,
   onKeyPress,
   loading,
-  platform,
+  platform = Platform.OS as 'ios' | 'android',
 }: ComposerProps) => {
   const paperTheme = usePaperTheme();
   const { keyboardAppearance, colorTheme, darkMode } = useTheme();

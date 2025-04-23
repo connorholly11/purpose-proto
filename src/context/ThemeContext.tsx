@@ -73,10 +73,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setDarkModeState(currentIsDark);
         setPaperTheme(getThemeForColor(currentThemeKey, currentIsDark));
         
-        // Apply theme class for web on initial load
-        if (Platform.OS === 'web') {
-          applyWebTheme(currentThemeKey, currentIsDark);
-        }
       } catch (error) {
         console.error('Error loading theme settings:', error);
       }
@@ -92,9 +88,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const newPaperTheme = getThemeForColor(newTheme, darkMode);
       setPaperTheme(newPaperTheme);
       await AsyncStorage.setItem(THEME_KEY, newTheme);
-      if (Platform.OS === 'web') {
-        applyWebTheme(newTheme, darkMode);
-      }
     } catch (error) {
       console.error('Error saving color theme:', error);
     }
@@ -107,33 +100,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const newPaperTheme = getThemeForColor(colorTheme, newIsDark);
       setPaperTheme(newPaperTheme);
       await AsyncStorage.setItem(DARK_MODE_KEY, String(newIsDark));
-      if (Platform.OS === 'web') {
-        applyWebTheme(colorTheme, newIsDark);
-      }
     } catch (error) {
       console.error('Error saving dark mode setting:', error);
     }
   };
 
-  // Apply theme class and CSS variables to html element in web
-  const applyWebTheme = (themeKey: ThemeKey, isDark: boolean) => {
-    // Remove all theme classes
-    document.documentElement.classList.remove(
-      'theme-blue', 'theme-purple', 'theme-red', 
-      'theme-green', 'theme-yellow', 'theme-teal', 'theme-pink'
-    );
-    // Add new theme class
-    document.documentElement.classList.add(`theme-${themeKey}`);
-    // Toggle dark class
-    document.documentElement.classList.toggle('dark', isDark);
+  /* web-theme helper stripped – no-op on native */
 
-    // Update CSS variables for web - simplified
-    const root = document.documentElement;
-    root.style.setProperty('--primary-color', themeOptions[themeKey].color);
-    root.style.setProperty('--primary-gradient', themeOptions[themeKey].gradient);
-    // Add more variables if needed for dark mode specifics on web
-  };
-  
   return (
     <ThemeContext.Provider value={{
       colorTheme,

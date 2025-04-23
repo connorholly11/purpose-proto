@@ -2,194 +2,52 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { NavigationContainer, InitialState, LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { useAuthContext } from '../context/AuthContext';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { 
   SignInScreen, 
-  AdminPromptScreen, 
-  AdminUserScreen, 
-  AdminScreen,
-  SummarizationStatusScreen,
-  TestingScreen,
-  EvalScreen,
-  QuestsScreen,
-  ProfileScreen,
-  SettingsScreen,
-  ProfileSheet,
-  NotFoundScreen
+  ProfileSheet
 } from '../screens';
 
-import { AdminChat, UserChat } from '../components';
-import AppHeader from '../components/AppHeader';
-import { FeedbackButton } from '../components';
-
-// Import useAdminMode from AppHeader instead of declaring it here
-import { AdminContext } from '../components/AppHeader';
+import { UserChat } from '../components';
 
 // Define the stack navigator parameter types
 export type AppStackParamList = {
   SignIn: undefined;
   UserRoot: undefined;
-  AdminRoot: undefined;
-  NotFound: undefined;
 };
 
 // Define the user stack navigator parameter types
 export type UserStackParamList = {
   Chat: undefined;
-  Settings: undefined;
   ProfileSheet: undefined;
-};
-
-// Define the bottom tab navigator parameter types
-export type AdminTabParamList = {
-  AICompanion: undefined;
-  Quests: undefined;
-  Profile: undefined;
-  // Dashboard removed and deprecated
-  Prompts: undefined;
-  Admin: undefined;
-  Testing: undefined;
-  Eval: undefined;
 };
 
 // Create the stack navigators
 const Stack = createNativeStackNavigator<AppStackParamList>();
 const UserStackNav = createNativeStackNavigator<UserStackParamList>();
-const AdminTabs = createBottomTabNavigator<AdminTabParamList>();
 
-// User Stack Navigator - single screen with settings
+// User Stack Navigator - single screen with profile sheet
 const UserStack = () => (
-  <AdminContext.Provider value={{ isAdminMode: false, isAdminSection: false }}>
-    <UserStackNav.Navigator screenOptions={{ headerShown: false }}>
-      <UserStackNav.Group>
-        <UserStackNav.Screen name="Chat" component={UserChat} />
-        <UserStackNav.Screen name="Settings" component={SettingsScreen} />
+  <UserStackNav.Navigator screenOptions={{ headerShown: false }}>
+    <UserStackNav.Group>
+      <UserStackNav.Screen name="Chat" component={UserChat} />
+    </UserStackNav.Group>
+    {Platform.OS === 'ios' && (
+      <UserStackNav.Group screenOptions={{ presentation: 'modal' }}>
+        <UserStackNav.Screen 
+          name="ProfileSheet" 
+          component={ProfileSheet} 
+          options={{ headerShown: false }}
+        />
       </UserStackNav.Group>
-      {Platform.OS === 'ios' && (
-        <UserStackNav.Group screenOptions={{ presentation: 'modal' }}>
-          <UserStackNav.Screen 
-            name="ProfileSheet" 
-            component={ProfileSheet} 
-            options={{ headerShown: false }}
-          />
-        </UserStackNav.Group>
-      )}
-    </UserStackNav.Navigator>
-  </AdminContext.Provider>
+    )}
+  </UserStackNav.Navigator>
 );
 
-// Admin Tab Navigator component (only shown at /admin on web)
-const AdminTabNavigator = () => {
-  // Add state for toggling between admin and user views
-  const [isAdminMode, setIsAdminMode] = React.useState(true);
-  
-  return (
-    <AdminContext.Provider value={{ 
-      isAdminMode, 
-      setIsAdminMode, 
-      isAdminSection: true // This indicates we're in the admin section
-    }}>
-      {isAdminMode ? (
-        // Show admin view with all tabs
-        <>
-          <AdminTabs.Navigator
-            screenOptions={({ route }) => ({
-              tabBarIcon: ({ color, size }) => {
-                let iconName: keyof typeof MaterialIcons.glyphMap = 'chat-bubble';
-
-                if (route.name === 'AICompanion') {
-                  iconName = 'chat-bubble';
-                } else if (route.name === 'Quests') {
-                  iconName = 'emoji-events';
-                } else if (route.name === 'Profile') {
-                  iconName = 'person';
-                // Dashboard tab removed and deprecated
-                } else if (route.name === 'Prompts') {
-                  iconName = 'settings';
-                } else if (route.name === 'Admin') {
-                  iconName = 'admin-panel-settings';
-                } else if (route.name === 'Testing') {
-                  iconName = 'science';
-                } else if (route.name === 'Eval') {
-                  iconName = 'score';
-                }
-
-                return <MaterialIcons name={iconName} size={size} color={color} />;
-              },
-              tabBarActiveTintColor: '#007bff',
-              tabBarInactiveTintColor: 'gray',
-              header: () => <AppHeader />,
-            })}
-          >
-            {/* User tabs */}
-            <AdminTabs.Screen
-              name="AICompanion"
-              component={AdminChat}
-              options={{ title: 'AI Companion' }}
-            />
-            <AdminTabs.Screen
-              name="Quests"
-              component={QuestsScreen}
-              options={{ title: 'Quests' }}
-            />
-            <AdminTabs.Screen
-              name="Profile"
-              component={ProfileScreen}
-              options={{ title: 'Profile' }}
-            />
-            
-            {/* Admin tabs - Dashboard removed and deprecated */}
-            <AdminTabs.Screen
-              name="Prompts"
-              component={AdminPromptScreen}
-              options={{ title: 'System Prompts' }}
-            />
-            <AdminTabs.Screen
-              name="Admin"
-              component={AdminScreen}
-              options={{ title: 'Admin Tools' }}
-            />
-            <AdminTabs.Screen
-              name="Testing"
-              component={TestingScreen}
-              options={{ title: 'Testing' }}
-            />
-            <AdminTabs.Screen
-              name="Eval"
-              component={EvalScreen}
-              options={{ title: 'Evaluations' }}
-            />
-          </AdminTabs.Navigator>
-          
-          {/* Show feedback button in admin mode */}
-          <FeedbackButton />
-        </>
-      ) : (
-        // Show user view - no tabs, just the chat screen
-        <UserStackNav.Navigator screenOptions={{ 
-          headerShown: true, 
-          header: () => <AppHeader /> 
-        }}>
-          <UserStackNav.Screen 
-            name="Chat" 
-            component={UserChat} 
-          />
-          <UserStackNav.Screen 
-            name="Settings" 
-            component={SettingsScreen} 
-          />
-        </UserStackNav.Navigator>
-      )}
-    </AdminContext.Provider>
-  );
-};
-
-// Define the linking configuration for web using Expo's helper
+// Define the linking configuration using Expo's helper
 const urlPrefix = Linking.createURL('/');
 
 const linking: LinkingOptions<AppStackParamList> = {
@@ -199,31 +57,14 @@ const linking: LinkingOptions<AppStackParamList> = {
       UserRoot: {
         path: '',  // "/" maps to user stack
         screens: { 
-          Chat: '',  // Root path goes to Chat
-          Settings: 'settings' 
+          Chat: ''  // Root path goes to Chat
         }
-      },
-      AdminRoot: {
-        path: 'admin',  // "/admin" becomes tab root
-        screens: {
-          AICompanion: '',     // "/admin" (default tab)
-          Quests: 'quests',
-          Profile: 'profile',
-          Prompts: 'prompts',
-          Admin: 'tools',
-          Testing: 'testing',
-          Eval: 'eval'
-        }
-      },
-      NotFound: '*'  // Fallback screen for unmatched routes
+      }
     }
   }
 };
 
-// For web, we don't need special hash routing for now
-// The vercel.json config will handle SPA routing
-// If you want to use hash routing, you could add it manually
-// after the site is deployed
+// Deep linking configuration is handled by Expo
 
 const NAV_STATE_KEY = 'NAVIGATION_STATE';
 
@@ -235,44 +76,23 @@ const AppNavigator = () => {
   const [isStateLoaded, setIsStateLoaded] = useState(false);
   const navigationRef = useRef<any>(null);
 
-  // Handle URL restoration on web
+  // Native-only state restoration
   useEffect(() => {
     const restoreState = async () => {
       try {
-        if (Platform.OS === 'web') {
-          // On web, we'll use the default navigation state restoration
-          // This is simpler and more compatible
-          setInitialState(undefined);
-        } else {
-          // On native, restore from AsyncStorage
-          const savedStateString = await AsyncStorage.getItem(NAV_STATE_KEY);
-          if (savedStateString) {
-            setInitialState(JSON.parse(savedStateString));
-          }
-        }
-      } catch (e) {
-        console.error("Failed to load navigation state", e);
-      } finally {
-        setIsStateLoaded(true);
-      }
+        const savedStateString = await AsyncStorage.getItem(NAV_STATE_KEY);
+        if (savedStateString) { setInitialState(JSON.parse(savedStateString)); }
+      } catch (e) { console.error("Failed to load navigation state", e); }
+      setIsStateLoaded(true);
     };
-
-    if (!isStateLoaded) {
-      restoreState();
-    }
+    if (!isStateLoaded) { restoreState(); }
   }, [isStateLoaded]);
 
   const saveState = async (state: any) => {
     try {
       const jsonState = JSON.stringify(state);
-      if (Platform.OS === 'web') {
-        localStorage.setItem(NAV_STATE_KEY, jsonState);
-      } else {
-        await AsyncStorage.setItem(NAV_STATE_KEY, jsonState);
-      }
-    } catch (e) {
-      console.error("Failed to save navigation state", e);
-    }
+      await AsyncStorage.setItem(NAV_STATE_KEY, jsonState);
+    } catch (e) { console.error("Failed to save navigation state", e); }
   };
 
   if (!isLoaded || !isStateLoaded) {
@@ -302,28 +122,12 @@ const AppNavigator = () => {
             component={SignInScreen}
             options={{ headerShown: false }}
           />
-        ) : Platform.OS === 'ios' ? (
-          // iOS shows only the user stack
+        ) : (
+          // User stack for all platforms
           <Stack.Screen
             name="UserRoot"
             component={UserStack}
           />
-        ) : (
-          // Web has both user and admin routes
-          <>
-            <Stack.Screen
-              name="UserRoot"
-              component={UserStack}
-            />
-            <Stack.Screen
-              name="AdminRoot"
-              component={AdminTabNavigator}
-            />
-            <Stack.Screen
-              name="NotFound"
-              component={NotFoundScreen}
-            />
-          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

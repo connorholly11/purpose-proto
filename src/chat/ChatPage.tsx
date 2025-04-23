@@ -10,20 +10,17 @@ import * as Haptics from 'expo-haptics';
 
 // Import components from extracted files
 import { MessageList } from './list';
-import { ChatHeader, IosHeader } from './header';
+import { IosHeader } from './header';
 import { Composer } from './input';
 
 // Import hooks
-import { useAutoScroll, useComposer, useAdminToggle } from './hooks';
+import { useAutoScroll, useComposer } from './hooks';
 
 // Import styles
 import { getThemeColors } from './styles';
 import { createPlatformStyleSheet, keyboardBehavior, keyboardVerticalOffset } from '../theme';
 
-type ChatPageProps = {
-  admin?: boolean;
-  platform?: 'ios' | 'android' | 'web';
-};
+type ChatPageProps = {};
 
 // Helper hook to get the previous value
 function usePrevious<T>(value: T): T | undefined {
@@ -32,10 +29,7 @@ function usePrevious<T>(value: T): T | undefined {
   return ref.current;
 }
 
-export const ChatPage = ({ 
-  admin = false,
-  platform = Platform.OS as 'ios' | 'android' | 'web'
-}: ChatPageProps) => {
+export const ChatPage = ({}: ChatPageProps) => {
   const theme = useTheme();
   const COLORS = getThemeColors(theme);
   const navigation = useNavigation();
@@ -53,13 +47,12 @@ export const ChatPage = ({
   } = useChatContext();
   
   // Use our custom hooks
-  const { useUserContext, handleContextToggle } = useAdminToggle();
   const { 
     inputText, 
     setInputText, 
     handleSend, 
     handleKeyPress 
-  } = useComposer(useUserContext);
+  } = useComposer(true); // Always use user context by default
   const { 
     scrollRef, 
     handleScroll, 
@@ -108,23 +101,12 @@ export const ChatPage = ({
       <View style={[styles.backgroundPattern, { backgroundColor: COLORS.background }]}>
         
         {/* iOS-style header - only on iOS */}
-        {platform === 'ios' && !admin && (
+        {Platform.OS === 'ios' && (
           <IosHeader 
             onProfilePress={navigateToProfileSheet}
             onNewChatPress={handleNewChat}
           />
         )}
-        
-        {/* Admin mode header */}
-        <ChatHeader 
-          admin={admin}
-          conversationId={conversationId}
-          currentModel={currentModel}
-          conversationCost={conversationCost}
-          useUserContext={useUserContext}
-          onContextToggle={handleContextToggle}
-          onNewChat={handleNewChat}
-        />
         
         {/* Messages list */}
         <MessageList
@@ -132,8 +114,7 @@ export const ChatPage = ({
           loading={loading}
           onScroll={handleScroll}
           scrollRef={scrollRef}
-          admin={admin}
-          platform={platform}
+          platform={Platform.OS as 'ios' | 'android'}
         />
         
         {/* Error message display */}
@@ -161,7 +142,6 @@ export const ChatPage = ({
           onSend={handleSend}
           onKeyPress={handleKeyPress}
           loading={loading}
-          platform={platform}
         />
       </View>
     </KeyboardAvoidingView>

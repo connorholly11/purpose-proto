@@ -6,10 +6,8 @@ import { ExpoConfig, ConfigContext } from '@expo/config';
 //   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
 // }
 
-// Check if we're building for web
-const isWeb = process.env.EXPO_PLATFORM === 'web'   // when you run `EXPO_PLATFORM=web expo …`
-  || process.env.WEB === 'true'                     // internal flag set by Expo CLI
-  || process.env.EAS_BUILD_PLATFORM === 'web';      // EAS convention
+// Flag to control whether Instabug plugin is included
+const includeInstabug = process.env.INCLUDE_INSTABUG_PLUGIN === 'true';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   // Basic app configuration from existing app.json or defaults
@@ -21,17 +19,31 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     plugins: [
       // Merge existing plugins from config if any, or start fresh
       ...(config.plugins ?? []),
-      // Add the required plugin
+      // Add the required plugins
       "expo-secure-store",
-      // Instabug only on native – prevents web export crash
-      ...(isWeb ? [] : [
-        ["instabug-reactnative", {
-          iosAppToken: process.env.INSTABUG_IOS_TOKEN,
-          invocationEvents: ["shake", "screenshot"],
-          primaryColor: "#2196F3"
-        }]
-      ])
-    ]
+      "expo-notifications",
+      // Conditionally include Instabug configuration
+      ...(includeInstabug
+        ? [["instabug-reactnative", {
+            iosAppToken: process.env.INSTABUG_IOS_TOKEN,
+            invocationEvents: ["shake", "screenshot"],
+            primaryColor: "#2196F3"
+          }]]
+        : [])
+    ],
+    ios: {
+      ...(config.ios || {}),
+      usesNotifications: true,
+      infoPlist: {
+        ...(config.ios?.infoPlist || {}),
+        NSPushNotificationUsageDescription: "We use notifications to let you know when you receive new messages.",
+      }
+    },
+    android: {
+      ...(config.android || {}),
+      // Uncomment the line below when you have a google-services.json file
+      // googleServicesFile: './google-services.json'
+    }
   };
 
   // Get the Clerk key from environment variables
