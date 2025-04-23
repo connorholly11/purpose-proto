@@ -31,16 +31,32 @@ const UserStackNav = createNativeStackNavigator<UserStackParamList>();
 
 // User Stack Navigator - single screen with profile sheet
 const UserStack = () => (
-  <UserStackNav.Navigator screenOptions={{ headerShown: false }}>
+  <UserStackNav.Navigator 
+    screenOptions={{ 
+      headerShown: false,
+      // This is critical - it prevents view unmounting when modal is opened
+      detachInactiveScreens: false
+    }}
+  >
     <UserStackNav.Group>
-      <UserStackNav.Screen name="Chat" component={UserChat} />
+      <UserStackNav.Screen 
+        name="Chat" 
+        component={UserChat} 
+      />
     </UserStackNav.Group>
     {Platform.OS === 'ios' && (
-      <UserStackNav.Group screenOptions={{ presentation: 'modal' }}>
+      <UserStackNav.Group screenOptions={{ 
+        presentation: 'modal',
+        animationEnabled: true,
+        // Prevent recreation when themes change
+        freezeOnBlur: true
+      }}>
         <UserStackNav.Screen 
           name="ProfileSheet" 
           component={ProfileSheet} 
-          options={{ headerShown: false }}
+          options={{ 
+            headerShown: false,
+          }}
         />
       </UserStackNav.Group>
     )}
@@ -76,7 +92,7 @@ const AppNavigator = () => {
   const [isStateLoaded, setIsStateLoaded] = useState(false);
   const navigationRef = useRef<any>(null);
 
-  // Native-only state restoration
+  // Native-only state restoration - explicitly separate from theme
   useEffect(() => {
     const restoreState = async () => {
       try {
@@ -85,6 +101,7 @@ const AppNavigator = () => {
       } catch (e) { console.error("Failed to load navigation state", e); }
       setIsStateLoaded(true);
     };
+    // Only run once and NOT dependent on paperTheme
     if (!isStateLoaded) { restoreState(); }
   }, [isStateLoaded]);
 
@@ -105,6 +122,7 @@ const AppNavigator = () => {
       linking={linking}
       initialState={initialState}
       onStateChange={saveState}
+      theme={paperTheme as any}
     >
       <Stack.Navigator 
         screenOptions={{ 

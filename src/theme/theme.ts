@@ -59,7 +59,7 @@ export const getThemeForColor = (themeKey: ThemeKey, isDark: boolean): MD3Theme 
         background: '#121212',
         surface: '#1e1e1e',
         surfaceVariant: '#2c2c2c',
-        surfaceHeader: '#1e1e1e',
+        surfaceHeader: '#181818',
         surfaceInput: '#2c2c2c',
         onSurface: '#e0e0e0',
         onSurfaceVariant: '#bdbdbd',

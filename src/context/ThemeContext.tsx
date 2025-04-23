@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { Platform, Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MD3LightTheme, MD3DarkTheme, MD3Theme } from 'react-native-paper';
@@ -55,8 +55,11 @@ const ThemeContext = createContext<ThemeContextType>({
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [colorTheme, setColorThemeState] = useState<ThemeKey>(defaultThemeKey);
   const [darkMode, setDarkModeState] = useState<boolean>(defaultIsDark);
-  const [paperTheme, setPaperTheme] = useState<MD3Theme>(
-    getThemeForColor(defaultThemeKey, defaultIsDark)
+  
+  // Memoize the computed Paper theme so it stays strictly referentially stable
+  const paperTheme = useMemo(
+    () => getThemeForColor(colorTheme, darkMode),
+    [colorTheme, darkMode]
   );
   
   // Load saved theme and dark mode on mount
@@ -71,7 +74,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         
         setColorThemeState(currentThemeKey);
         setDarkModeState(currentIsDark);
-        setPaperTheme(getThemeForColor(currentThemeKey, currentIsDark));
         
       } catch (error) {
         console.error('Error loading theme settings:', error);
@@ -85,8 +87,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const handleSetColorTheme = async (newTheme: ThemeKey) => {
     try {
       setColorThemeState(newTheme);
-      const newPaperTheme = getThemeForColor(newTheme, darkMode);
-      setPaperTheme(newPaperTheme);
       await AsyncStorage.setItem(THEME_KEY, newTheme);
     } catch (error) {
       console.error('Error saving color theme:', error);
@@ -97,8 +97,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const handleSetDarkMode = async (newIsDark: boolean) => {
     try {
       setDarkModeState(newIsDark);
-      const newPaperTheme = getThemeForColor(colorTheme, newIsDark);
-      setPaperTheme(newPaperTheme);
       await AsyncStorage.setItem(DARK_MODE_KEY, String(newIsDark));
     } catch (error) {
       console.error('Error saving dark mode setting:', error);
@@ -129,3 +127,9 @@ function isValidThemeKey(key: string): key is ThemeKey {
 
 // Hook for using theme
 export const useTheme = () => useContext(ThemeContext);
+
+// Apply UI status bar theme updates for iOS
+export function applySystemUITheme(isDark: boolean) {
+  // iOS-specific system UI changes could be added here
+  // Currently handled by StatusBar components in the app
+}

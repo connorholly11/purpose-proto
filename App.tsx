@@ -38,12 +38,28 @@ export default function App() {
 
   // Key is present, proceed with the app structure
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <HapticsProvider>
-          <ThemedApp clerkPubKey={clerkPubKey} />
-        </HapticsProvider>
-      </ThemeProvider>
+    <ThemeProvider>
+      <HapticsProvider>
+        <ThemedSafeAreaProvider clerkPubKey={clerkPubKey} />
+      </HapticsProvider>
+    </ThemeProvider>
+  );
+}
+
+// Themed SafeAreaProvider component
+function ThemedSafeAreaProvider({ clerkPubKey }: { clerkPubKey: string }) {
+  const { paperTheme, darkMode } = useTheme();
+  
+  // Apply theme to safe area edges for iOS
+  return (
+    <SafeAreaProvider 
+      style={{ 
+        backgroundColor: darkMode ? 
+          (paperTheme.colors as any).surfaceHeader : 
+          (paperTheme.colors as any).surfaceHeader
+      }}
+    >
+      <ThemedApp clerkPubKey={clerkPubKey} />
     </SafeAreaProvider>
   );
 }
@@ -105,8 +121,8 @@ function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
   
   // Hook to register for notifications - will be called when user context changes
   const PushNotificationSetup = () => {
-    // Guard for web environment
-    if (Platform.OS !== 'ios' && Platform.OS !== 'android') return null;
+    // This is an iOS-only app
+    if (Platform.OS !== 'ios') return null;
     
     // Using require to import to avoid circular dependencies
     const { useRegisterForPush, setupNotifications } = require('./src/services/push');
@@ -202,10 +218,18 @@ function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
       </ClerkProvider>
       
       {/* status‑bar font/icon colour + background */}
-      <StatusBar
-        barStyle={darkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={(paperTheme.colors as any).surfaceHeader}
-      />
+      {Platform.OS === 'ios' ? (
+        <StatusBar
+          animated={true}
+          barStyle={darkMode ? 'light-content' : 'dark-content'}
+        />
+      ) : (
+        <StatusBar
+          animated={true}
+          barStyle={darkMode ? 'light-content' : 'dark-content'}
+          backgroundColor={(paperTheme.colors as any).surfaceHeader}
+        />
+      )}
     </PaperProvider>
   );
 }

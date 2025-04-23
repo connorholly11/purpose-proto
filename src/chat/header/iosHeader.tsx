@@ -15,7 +15,10 @@ export const IosHeader = ({ onProfilePress, onNewChatPress, onFeedbackPress }: I
   const { imageUrl, initials } = useClerkAvatar();
   
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { 
+      backgroundColor: theme.colors.surfaceHeader,
+      borderBottomColor: theme.colors.outline
+    }]}>
       <TouchableOpacity onPress={onProfilePress} style={styles.avatarContainer}>
         {imageUrl ? (
           <Avatar.Image size={28} source={{ uri: imageUrl }} />
@@ -49,9 +52,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 10,
-    backgroundColor: '#f5f5f5',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e0e0e0',
   },
   avatarContainer: {
     width: 28,

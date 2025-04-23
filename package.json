@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "start": "cross-env INCLUDE_INSTABUG_PLUGIN=false expo start --web",
-    "start:native": "cross-env INCLUDE_INSTABUG_PLUGIN=true expo start",
-    "android": "cross-env INCLUDE_INSTABUG_PLUGIN=true expo run:android",
+    "start": "cross-env INCLUDE_INSTABUG_PLUGIN=true expo start",
     "ios": "cross-env INCLUDE_INSTABUG_PLUGIN=true expo run:ios",
     "prebuild:ios": "expo prebuild -p ios --clean",
     "test": "jest",
@@ -19,7 +17,6 @@
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.9.6",
-    "@expo/metro-runtime": "~4.0.1",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-navigation/bottom-tabs": "^7.3.3",
     "@react-navigation/native": "^7.0.19",

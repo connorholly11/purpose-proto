@@ -113,7 +113,7 @@ export const ChatPage = ({}: ChatPageProps) => {
       behavior={keyboardBehavior}
       keyboardVerticalOffset={keyboardVerticalOffset}
     >
-      <StatusBar style="dark" />
+      {/* Managed by the App.tsx StatusBar, which is rendered after navigation */}
       
       <View style={[styles.backgroundPattern, { backgroundColor: COLORS.background }]}>
         
