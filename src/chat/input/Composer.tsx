@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, TextInput, TouchableOpacity, Platform, StyleSheet, ActivityIndicator } from 'react-native';
 import { Surface, IconButton } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -7,7 +7,7 @@ import { getThemeColors } from '../styles';
 import { createPlatformStyleSheet, spacing, platformSelect } from '../../theme';
 import { getShadow as createShadow } from '../../theme/platformUtils';
 import { useTheme } from '../../context/ThemeContext';
-// import useSpeechRecognition from '../../hooks/useSpeechRecognition';
+import { useVoiceRecording } from '../../hooks';
 
 type ComposerProps = {
   inputText: string;
@@ -31,29 +31,31 @@ export const Composer = ({
   const COLORS = getThemeColors(paperTheme);
   const isIOS = platform === 'ios';
   
-  // Speech recognition integration - COMMENTED OUT DUE TO MISSING HOOK
-  /*
+  // Voice recording integration with Whisper transcription
   const { 
-    transcript, 
     isRecording, 
-    startRecording, 
-    stopRecording, 
-    isSpeechAvailable 
-  } = useSpeechRecognition();
-  */
-  const transcript = ''; // Dummy values
-  const isRecording = false;
-  const startRecording = () => {};
-  const stopRecording = () => {};
-  const isSpeechAvailable = false;
+    recordingStatus,
+    permissionGranted,
+    start: startRecording, 
+    stop: stopRecording
+  } = useVoiceRecording();
   
-  // Update input text with speech recognition results
-  useEffect(() => {
-    if (transcript) {
-      // onChangeText(transcript); // Commented out usage
+  // Handle voice recording and transcription
+  const handleVoiceButton = async () => {
+    if (isRecording) {
+      // Stop recording and get transcription
+      const transcription = await stopRecording();
+      if (transcription) {
+        onChangeText(transcription);
+      }
+    } else {
+      // Start new recording
+      await startRecording();
     }
-  // }, [transcript]); // Commented out dependency
-  }, []); // Use empty dependency array now
+  };
+  
+  // Determine if voice recording is available
+  const isVoiceAvailable = permissionGranted;
 
   return (
     <View style={styles.inputContainer}>
@@ -80,20 +82,22 @@ export const Composer = ({
               
               {!inputText.trim() ? (
                 <TouchableOpacity 
-                  style={styles.mediaButton} 
-                  // onPress={isRecording ? stopRecording : startRecording} // Commented out usage
-                  // disabled={!isSpeechAvailable} // Commented out usage
+                  style={[
+                    styles.mediaButton,
+                    isRecording && { backgroundColor: COLORS.sendButton, borderRadius: 15 }
+                  ]} 
+                  onPress={handleVoiceButton}
+                  disabled={!isVoiceAvailable}
                 >
-                  {/* {isRecording ? ( // Commented out usage
+                  {isRecording ? (
                     <ActivityIndicator size="small" color="white" />
-                  ) : ( */}
+                  ) : (
                     <MaterialIcons 
                       name="mic" 
                       size={22} 
-                      // color={isSpeechAvailable ? (isRecording ? "white" : "#999") : "#CCC"} // Commented out usage
-                      color={darkMode ? "#777" : "#999"} // Adjusted for dark mode
+                      color={isVoiceAvailable ? (darkMode ? "#777" : "#999") : "#CCC"}
                     />
-                  {/* )} */}
+                  )}
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity 
@@ -128,19 +132,15 @@ export const Composer = ({
           
           {!inputText.trim() ? (
             <IconButton
-              // icon={isRecording ? "stop" : "microphone"} // Commented out usage
-              icon={"microphone"} // Default icon
+              icon={isRecording ? "stop" : "microphone"}
               mode="contained"
-              // containerColor={isRecording ? COLORS.sendButton : paperTheme.colors.surfaceVariant} // Commented out usage
-              containerColor={paperTheme.colors.surfaceVariant} // Default color
-              // iconColor={isRecording ? "#FFFFFF" : paperTheme.colors.onSurfaceVariant} // Commented out usage
-              iconColor={paperTheme.colors.onSurfaceVariant} // Default color
+              containerColor={isRecording ? COLORS.sendButton : paperTheme.colors.surfaceVariant}
+              iconColor={isRecording ? "#FFFFFF" : paperTheme.colors.onSurfaceVariant}
               size={22}
-              // onPress={isRecording ? stopRecording : startRecording} // Commented out usage
-              // disabled={!isSpeechAvailable} // Commented out usage
-              disabled={true} // Disabled
+              onPress={handleVoiceButton}
+              disabled={!isVoiceAvailable}
               style={styles.sendButton}
-              // loading={isRecording} // Commented out usage
+              loading={recordingStatus === 'transcribing'}
             />
           ) : (
             <IconButton

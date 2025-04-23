@@ -173,6 +173,39 @@ export const createApiService = (authenticatedApi: any) => ({
     },
   },
   
+  // Voice-related API endpoints
+  voice: {
+    // Transcribe audio recording to text
+    transcribe: async (fileUri: string) => {
+      try {
+        console.log('Preparing audio file for transcription:', fileUri);
+        
+        // Create form data with the audio file
+        const formData = new FormData();
+        formData.append('file', {
+          uri: fileUri,
+          name: 'audio.m4a',
+          type: 'audio/m4a',
+        } as any);
+        
+        console.log('Sending audio file for transcription...');
+        const response = await authenticatedApi.post('/api/voice/transcribe', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 30000, // Longer timeout for audio processing
+        });
+        
+        console.log('Transcription received:', response.data);
+        return response.data.transcription;
+      } catch (error) {
+        console.error('Error transcribing audio:', error);
+        if (axios.isAxiosError(error)) {
+          console.error(`Status: ${error.response?.status}`);
+          console.error(`Response data:`, error.response?.data);
+        }
+        throw error;
+      }
+    },
+  },
 
   // Email-related API endpoints
   email: {
