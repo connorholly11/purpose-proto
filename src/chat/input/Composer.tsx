@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, TextInput, TouchableOpacity, Platform, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, TextInput, TouchableOpacity, Platform, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { Surface, IconButton } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme as usePaperTheme } from 'react-native-paper';
@@ -8,6 +8,17 @@ import { createPlatformStyleSheet, spacing, platformSelect } from '../../theme';
 import { getShadow as createShadow } from '../../theme/platformUtils';
 import { useTheme } from '../../context/ThemeContext';
 import { useVoiceRecording } from '../../hooks';
+
+/**
+ * Formats recording time in MM:SS format
+ * @param seconds Recording time in seconds
+ * @returns Formatted time string
+ */
+const formatRecordingTime = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
 
 type ComposerProps = {
   inputText: string;
@@ -31,14 +42,41 @@ export const Composer = ({
   const COLORS = getThemeColors(paperTheme);
   const isIOS = platform === 'ios';
   
+  // Animation reference for recording pulse effect
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  
   // Voice recording integration with Whisper transcription
   const { 
     isRecording, 
     recordingStatus,
+    recordingTime,
     permissionGranted,
     start: startRecording, 
     stop: stopRecording
   } = useVoiceRecording();
+  
+  // Create a pulsing animation when recording
+  useEffect(() => {
+    if (isRecording) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.25,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          })
+        ])
+      ).start();
+    } else {
+      // Reset animation when not recording
+      pulseAnim.setValue(1);
+    }
+  }, [isRecording, pulseAnim]);
   
   // Handle voice recording and transcription
   const handleVoiceButton = async () => {
@@ -70,35 +108,50 @@ export const Composer = ({
             >
               <TextInput 
                 style={[styles.input, { color: paperTheme.colors.onSurface }]}
-                placeholder="Message"
-                placeholderTextColor={paperTheme.colors.onSurfaceVariant + '99'}
+                placeholder={
+                  recordingStatus === 'recording' 
+                    ? `Recording... ${formatRecordingTime(recordingTime)}` 
+                    : recordingStatus === 'transcribing' 
+                      ? "Transcribing..." 
+                      : "Message"
+                }
+                placeholderTextColor={
+                  recordingStatus === 'recording' 
+                    ? "#FF4136" // Red color for recording
+                    : recordingStatus === 'transcribing'
+                      ? "#0074D9" // Blue color for transcribing
+                      : paperTheme.colors.onSurfaceVariant + '99'
+                }
                 value={inputText}
                 onChangeText={onChangeText}
                 onSubmitEditing={onSend}
                 multiline
+                editable={recordingStatus === 'idle'}
                 keyboardAppearance={keyboardAppearance}
                 selectionColor={paperTheme.colors.primary}
               />
               
               {!inputText.trim() ? (
-                <TouchableOpacity 
-                  style={[
-                    styles.mediaButton,
-                    isRecording && { backgroundColor: COLORS.sendButton, borderRadius: 15 }
-                  ]} 
-                  onPress={handleVoiceButton}
-                  disabled={!isVoiceAvailable}
-                >
-                  {isRecording ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <MaterialIcons 
-                      name="mic" 
-                      size={22} 
-                      color={isVoiceAvailable ? (darkMode ? "#777" : "#999") : "#CCC"}
-                    />
-                  )}
-                </TouchableOpacity>
+                <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                  <TouchableOpacity 
+                    style={[
+                      styles.mediaButton,
+                      isRecording && { backgroundColor: '#FF4136', borderRadius: 15 }
+                    ]} 
+                    onPress={handleVoiceButton}
+                    disabled={!isVoiceAvailable}
+                  >
+                    {isRecording ? (
+                      <MaterialIcons name="mic" size={22} color="white" />
+                    ) : (
+                      <MaterialIcons 
+                        name="mic" 
+                        size={22} 
+                        color={isVoiceAvailable ? (darkMode ? "#777" : "#999") : "#CCC"}
+                      />
+                    )}
+                  </TouchableOpacity>
+                </Animated.View>
               ) : (
                 <TouchableOpacity 
                   style={[styles.sendButton, { backgroundColor: COLORS.sendButton }]}
@@ -116,12 +169,24 @@ export const Composer = ({
           <Surface style={[styles.inputSurface, { backgroundColor: paperTheme.colors.surface }]} elevation={1}>
             <TextInput
               style={[styles.input, { backgroundColor: COLORS.inputBackground, color: paperTheme.colors.onSurface }]}
-              placeholder="Message"
-              placeholderTextColor={paperTheme.colors.onSurfaceVariant + '99'}
+              placeholder={
+                recordingStatus === 'recording' 
+                  ? `Recording... ${formatRecordingTime(recordingTime)}` 
+                  : recordingStatus === 'transcribing' 
+                    ? "Transcribing..." 
+                    : "Message"
+              }
+              placeholderTextColor={
+                recordingStatus === 'recording' 
+                  ? "#FF4136" // Red color for recording
+                  : recordingStatus === 'transcribing'
+                    ? "#0074D9" // Blue color for transcribing
+                    : paperTheme.colors.onSurfaceVariant + '99'
+              }
               value={inputText}
               onChangeText={onChangeText}
               multiline
-              editable={!loading}
+              editable={!loading && recordingStatus === 'idle'}
               onKeyPress={onKeyPress}
               onSubmitEditing={onSend}
               blurOnSubmit={false}
@@ -131,17 +196,19 @@ export const Composer = ({
           </Surface>
           
           {!inputText.trim() ? (
-            <IconButton
-              icon={isRecording ? "stop" : "microphone"}
-              mode="contained"
-              containerColor={isRecording ? COLORS.sendButton : paperTheme.colors.surfaceVariant}
-              iconColor={isRecording ? "#FFFFFF" : paperTheme.colors.onSurfaceVariant}
-              size={22}
-              onPress={handleVoiceButton}
-              disabled={!isVoiceAvailable}
-              style={styles.sendButton}
-              loading={recordingStatus === 'transcribing'}
-            />
+            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+              <IconButton
+                icon={isRecording ? "microphone" : "microphone"}
+                mode="contained"
+                containerColor={isRecording ? '#FF4136' : paperTheme.colors.surfaceVariant}
+                iconColor={isRecording ? "#FFFFFF" : paperTheme.colors.onSurfaceVariant}
+                size={22}
+                onPress={handleVoiceButton}
+                disabled={!isVoiceAvailable}
+                style={styles.sendButton}
+                loading={recordingStatus === 'transcribing'}
+              />
+            </Animated.View>
           ) : (
             <IconButton
               icon="arrow-up"
