@@ -2,7 +2,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { createAuthenticatedApi } from './api';
 import { useClerkTokenGetter } from '../hooks/useClerkTokenGetter';
 
@@ -48,11 +48,22 @@ export function setupNotifications() {
 /**
  * Custom hook to register for push notifications.
  * Handles permission requests and token registration with the backend.
+ * Only runs once per app session.
  */
 export function useRegisterForPush() {
   const getToken = useClerkTokenGetter();
+  const didInit = useRef(false);
   
   return useCallback(async () => {
+    // Return early if we've already initialized in this session
+    if (didInit.current) {
+      console.log('[Push Service] Already initialized in this session');
+      return;
+    }
+    
+    // Set initialization flag to prevent duplicate setups
+    didInit.current = true;
+    
     // Skip if not running on a physical device (e.g., simulator)
     const isDevice = await Device.isDevice;
     if (!isDevice) {
@@ -110,15 +121,27 @@ async function registerPushTokenWithBackend(
     console.log('[Push Service] Registering push token with backend');
     const api = createAuthenticatedApi(getTokenFn);
     
-    const response = await api.post('/api/push/register', {
-      token,
-      deviceOS,
-    });
+    // Check if baseURL is set correctly to prevent undefined network errors
+    if (!api.defaults.baseURL) {
+      console.error('[Push Service] API baseURL is missing or undefined');
+      return null;
+    }
     
-    console.log('[Push Service] Push token registered successfully:', response.data);
-    return response.data;
+    try {
+      const response = await api.post('/api/push/register', {
+        token,
+        deviceOS,
+      });
+      
+      console.log('[Push Service] Push token registered successfully:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('[Push Service] Register failed:', 
+        error?.response?.data ?? error?.message ?? 'Unknown error');
+      return null;
+    }
   } catch (error) {
     console.error('[Push Service] Failed to register push token with backend:', error);
-    throw error;
+    return null; // Don't throw, just return null to prevent unhandled promise rejections
   }
 }

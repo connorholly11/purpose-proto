@@ -3,16 +3,19 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "start": "expo start",
-    "dev:web": "INCLUDE_INSTABUG_PLUGIN=false expo start --web",
-    "dev:native": "INCLUDE_INSTABUG_PLUGIN=true expo start",
-    "android": "INCLUDE_INSTABUG_PLUGIN=true expo run:android",
-    "ios": "INCLUDE_INSTABUG_PLUGIN=true expo run:ios",
+    "start": "cross-env INCLUDE_INSTABUG_PLUGIN=false expo start --web",
+    "start:native": "cross-env INCLUDE_INSTABUG_PLUGIN=true expo start",
+    "android": "cross-env INCLUDE_INSTABUG_PLUGIN=true expo run:android",
+    "ios": "cross-env INCLUDE_INSTABUG_PLUGIN=true expo run:ios",
+    "prebuild:ios": "expo prebuild -p ios --clean",
     "test": "jest",
     "test:snapshot": "jest src/tests/snapshot.test.tsx",
     "test:platform": "jest src/tests/platformConsistency.test.ts",
     "lint:platform": "node scripts/find-platform-checks.js",
     "postinstall": "patch-package"
+  },
+  "resolutions": {
+    "instabug-reactnative": "11.12.1"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.9.6",
@@ -43,7 +46,7 @@
     "expo-secure-store": "~14.0.1",
     "expo-sharing": "~13.0.1",
     "expo-speech-recognition": "^1.1.1",
-    "instabug-reactnative": "^12.4.0",
+    "instabug-reactnative": "11.12.1",
     "expo-status-bar": "~2.0.1",
     "expo-web-browser": "~14.0.2",
     "react": "18.3.1",
@@ -55,6 +58,7 @@
     "react-native-screens": "~4.4.0",
     "react-native-svg": "15.8.0",
     "react-native-vector-icons": "^10.2.0",
+    "react-native-voice": "^3.2.4",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {

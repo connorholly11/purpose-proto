@@ -6,7 +6,7 @@ import { useTheme as usePaperTheme } from 'react-native-paper';
 import { getThemeColors } from '../styles';
 import { createPlatformStyleSheet, spacing, createShadow, platformSelect } from '../../theme';
 import { useTheme } from '../../context/ThemeContext';
-import useSpeechRecognition from '../../hooks/useSpeechRecognition';
+// import useSpeechRecognition from '../../hooks/useSpeechRecognition';
 
 type ComposerProps = {
   inputText: string;
@@ -30,7 +30,8 @@ export const Composer = ({
   const COLORS = getThemeColors(paperTheme);
   const isIOS = platform === 'ios';
   
-  // Speech recognition integration
+  // Speech recognition integration - COMMENTED OUT DUE TO MISSING HOOK
+  /*
   const { 
     transcript, 
     isRecording, 
@@ -38,13 +39,20 @@ export const Composer = ({
     stopRecording, 
     isSpeechAvailable 
   } = useSpeechRecognition();
+  */
+  const transcript = ''; // Dummy values
+  const isRecording = false;
+  const startRecording = () => {};
+  const stopRecording = () => {};
+  const isSpeechAvailable = false;
   
   // Update input text with speech recognition results
   useEffect(() => {
     if (transcript) {
-      onChangeText(transcript);
+      // onChangeText(transcript); // Commented out usage
     }
-  }, [transcript]);
+  // }, [transcript]); // Commented out dependency
+  }, []); // Use empty dependency array now
 
   return (
     <View style={styles.inputContainer}>
@@ -66,20 +74,21 @@ export const Composer = ({
             <TouchableOpacity 
               style={[
                 styles.mediaButton, 
-                isRecording && { backgroundColor: COLORS.sendButton, borderRadius: 18 }
+                // isRecording && { backgroundColor: COLORS.sendButton, borderRadius: 18 } // Commented out usage
               ]} 
-              onPress={isRecording ? stopRecording : startRecording}
-              disabled={!isSpeechAvailable}
+              // onPress={isRecording ? stopRecording : startRecording} // Commented out usage
+              // disabled={!isSpeechAvailable} // Commented out usage
             >
-              {isRecording ? (
+              {/* {isRecording ? ( // Commented out usage
                 <ActivityIndicator size="small" color="white" />
-              ) : (
+              ) : ( */}
                 <MaterialIcons 
                   name="mic" 
                   size={24} 
-                  color={isSpeechAvailable ? (isRecording ? "white" : "#999") : "#CCC"} 
+                  // color={isSpeechAvailable ? (isRecording ? "white" : "#999") : "#CCC"} // Commented out usage
+                  color={"#CCC"} // Disabled color
                 />
-              )}
+              {/* )} */}
             </TouchableOpacity>
           ) : (
             <TouchableOpacity 
@@ -101,7 +110,7 @@ export const Composer = ({
               value={inputText}
               onChangeText={onChangeText}
               multiline
-              disabled={loading}
+              editable={!loading}
               onKeyPress={onKeyPress}
               onSubmitEditing={onSend}
               blurOnSubmit={false}
@@ -112,15 +121,19 @@ export const Composer = ({
           
           {!inputText.trim() ? (
             <IconButton
-              icon={isRecording ? "stop" : "microphone"}
+              // icon={isRecording ? "stop" : "microphone"} // Commented out usage
+              icon={"microphone"} // Default icon
               mode="contained"
-              containerColor={isRecording ? COLORS.sendButton : paperTheme.colors.surfaceVariant}
-              iconColor={isRecording ? "#FFFFFF" : paperTheme.colors.onSurfaceVariant}
+              // containerColor={isRecording ? COLORS.sendButton : paperTheme.colors.surfaceVariant} // Commented out usage
+              containerColor={paperTheme.colors.surfaceVariant} // Default color
+              // iconColor={isRecording ? "#FFFFFF" : paperTheme.colors.onSurfaceVariant} // Commented out usage
+              iconColor={paperTheme.colors.onSurfaceVariant} // Default color
               size={22}
-              onPress={isRecording ? stopRecording : startRecording}
-              disabled={!isSpeechAvailable}
+              // onPress={isRecording ? stopRecording : startRecording} // Commented out usage
+              // disabled={!isSpeechAvailable} // Commented out usage
+              disabled={true} // Disabled
               style={styles.sendButton}
-              loading={isRecording}
+              // loading={isRecording} // Commented out usage
             />
           ) : (
             <IconButton

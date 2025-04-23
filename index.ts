@@ -3,10 +3,12 @@ import { LogBox } from 'react-native';
 
 /**  Catch anything thrown before React renders  */
 // Use type assertion to access the RN-specific ErrorUtils
-(global as any).ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
-  console.error('[GLOBAL]', error.message, error.stack, isFatal);
-  // Optionally, send to error reporting service here
-});
+if (global?.ErrorUtils?.setGlobalHandler) {
+  (global as any).ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+    console.error('[GLOBAL]', error.message, error.stack, isFatal);
+    // Optionally, send to error reporting service here
+  });
+}
 
 /**  Optional: silence unrelated new-arch warnings  */
 LogBox.ignoreLogs([

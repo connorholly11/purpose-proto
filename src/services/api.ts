@@ -1,15 +1,26 @@
 import axios from 'axios';
 import { useAuth } from '@clerk/clerk-expo';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+
+// Helper function to get and log the base URL
+export const getBaseUrl = () => {
+  const url = Constants.expoConfig?.extra?.apiUrl ?? 
+    process.env.EXPO_PUBLIC_API_URL ?? 
+    'http://10.0.2.2:3001'; // Android emulator localhost
+  return url;
+};
+
+// Log the API URL for troubleshooting
+console.log('[API] Using baseURL →', getBaseUrl());
 
 // API base URL
-const BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ||
-  'http://localhost:3001';
+const BASE_URL = getBaseUrl();
 
 // Create an axios instance with default config
 const api = axios.create({
   baseURL: BASE_URL,
+  timeout: 15000, // 15 seconds instead of default 30s
   headers: {
     'Content-Type': 'application/json',
   },
@@ -51,6 +62,7 @@ export const createAuthenticatedApi = (getTokenFn: () => Promise<string | null>)
   // Clone the api instance to avoid modifying the original
   const authenticatedApi = axios.create({
     baseURL: BASE_URL,
+    timeout: 15000, // 15 seconds timeout for better UX
     headers: {
       'Content-Type': 'application/json',
     },
@@ -71,6 +83,28 @@ export const createAuthenticatedApi = (getTokenFn: () => Promise<string | null>)
       return config;
     }
   });
+  
+  // Add response interceptor to handle common errors
+  authenticatedApi.interceptors.response.use(
+    response => response,
+    error => {
+      // Handle connection timeout more gracefully
+      if (error.code === 'ECONNABORTED') {
+        console.warn('[API] Connection timed out - server may be starting up');
+        return Promise.reject({
+          ...error,
+          response: {
+            status: 408,
+            data: { 
+              error: 'Server is starting up or temporarily unavailable', 
+              friendlyMessage: 'The server is starting up. Please try again in a moment.'
+            }
+          }
+        });
+      }
+      return Promise.reject(error);
+    }
+  );
   
   return authenticatedApi;
 };

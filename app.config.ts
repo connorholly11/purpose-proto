@@ -6,8 +6,13 @@ import { ExpoConfig, ConfigContext } from '@expo/config';
 //   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
 // }
 
-// Flag to control whether Instabug plugin is included
+// Flag to control whether Instabug plugin is included - using explicit boolean coercion
 const includeInstabug = process.env.INCLUDE_INSTABUG_PLUGIN === 'true';
+
+// Hard bail-out for web builds
+if (!includeInstabug && process.env.EAS_BUILD_PROFILE?.includes('web')) {
+  console.log('Instabug plugin skipped for web build');
+}
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   // Basic app configuration from existing app.json or defaults
@@ -22,8 +27,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       // Add the required plugins
       "expo-secure-store",
       "expo-notifications",
-      // Conditionally include Instabug configuration
-      ...(includeInstabug
+      // Conditionally include Instabug configuration with additional production guard
+      ...(includeInstabug && (process.env.NODE_ENV === 'production' || process.env.FORCE_INSTABUG === 'true')
         ? [["instabug-reactnative", {
             iosAppToken: process.env.INSTABUG_IOS_TOKEN,
             invocationEvents: ["shake", "screenshot"],
@@ -34,6 +39,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       ...(config.ios || {}),
       usesNotifications: true,
+      scheme: "purpose",
       infoPlist: {
         ...(config.ios?.infoPlist || {}),
         NSPushNotificationUsageDescription: "We use notifications to let you know when you receive new messages.",
@@ -56,10 +62,20 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     // throw new Error('Missing Clerk Publishable Key in environment variables during build.');
   }
 
-  // Embed the key into the build-time config under 'extra'
+  // Get the API URL from environment
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  
+  // STRICT validation - refuse to build if API URL is invalid
+  if (!apiUrl || /(localhost|^172\.)/.test(apiUrl)) {
+    throw new Error('EXPO_PUBLIC_API_URL must be a LAN-reachable address (e.g. 192.168.x.x)');
+  }
+
+  // Embed the key and API URL into the build-time config under 'extra'
   appConfig.extra = {
     ...config.extra, // Preserve existing extra config (like EAS projectId)
     clerkPublishableKey: clerkPublishableKey,
+    apiUrl: apiUrl,
+    instabugEnabled: includeInstabug,
   };
 
   return appConfig;

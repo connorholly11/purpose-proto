@@ -52,64 +52,55 @@ export default function App() {
 function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
   const { paperTheme, darkMode } = useTheme();
   
-  // Initialize Instabug only on native platforms
+  // Initialize Instabug only on native platforms using our adapter
   useEffect(() => {
-    // Only run on native platforms
-    if (Platform.OS === 'ios') {
-      (async () => {
+    const initInstabugWithTheme = async () => {
+      // Import the adapter functions
+      const { initInstabug, setInstabugTheme, setupInstabugReportHandler } = await import('./src/utils/instabug');
+      
+      // Initialize Instabug
+      await initInstabug();
+      
+      // Set theme based on app theme
+      await setInstabugTheme(darkMode);
+      
+      // Set up report handler
+      await setupInstabugReportHandler(async (report: { reportType: string; message: string }) => {
         try {
-          // Dynamically import Instabug at runtime
-          const { default: Instabug, InvocationEvent } = await import('instabug-reactnative');
+          // Using require to avoid circular dependencies
+          const { createAuthenticatedApi } = require('./src/services/api');
+          const { useAuth } = require('@clerk/clerk-expo');
           
-          // Initialize Instabug with the provided token
-          Instabug.init({
-            token: '3e952ee49d8e4d6151bfa6a9207a4ff7',
-            invocationEvents: [
-              InvocationEvent.shake,
-              InvocationEvent.screenshot,
-              InvocationEvent.floatingButton
-            ],
-          });
-          
-          // Set color theme based on app theme
-          Instabug.setColorTheme(darkMode ? Instabug.colorTheme.dark : Instabug.colorTheme.light);
-          
-          // Override built-in feedback events so we can bridge to our backend
-          Instabug.onReportSubmitHandler(async (report: { reportType: string; message: string }) => {
+          // Create an authenticated API instance
+          const getToken = async () => {
             try {
-              // Using require to avoid circular dependencies
-              const { createAuthenticatedApi } = require('./src/services/api');
-              const { useAuth } = require('@clerk/clerk-expo');
-              
-              // Create an authenticated API instance
-              const getToken = async () => {
-                try {
-                  const token = await useAuth().getToken();
-                  return token;
-                } catch (error) {
-                  console.error('Error getting token for Instabug feedback:', error);
-                  return null;
-                }
-              };
-              
-              const api = createAuthenticatedApi(getToken);
-              
-              // Submit to our backend
-              await api.post('/api/feedback', {
-                category: 'Bug Report',
-                content: `${report.reportType}: ${report.message}`,
-              });
-              
-              console.log('Successfully bridged Instabug report to backend');
+              const token = await useAuth().getToken();
+              return token;
             } catch (error) {
-              console.error('Failed to send Instabug report to backend:', error);
+              console.error('Error getting token for Instabug feedback:', error);
+              return null;
             }
+          };
+          
+          const api = createAuthenticatedApi(getToken);
+          
+          // Submit to our backend
+          await api.post('/api/feedback', {
+            category: 'Bug Report',
+            content: `${report.reportType}: ${report.message}`,
           });
+          
+          console.log('Successfully bridged Instabug report to backend');
         } catch (error) {
-          console.warn('Error initializing Instabug:', error);
+          console.error('Failed to send Instabug report to backend:', error);
         }
-      })();
-    }
+      });
+    };
+    
+    // Run the async initialization
+    initInstabugWithTheme().catch(error => {
+      console.warn('Error in Instabug initialization:', error);
+    });
   }, [darkMode]);
   
   // Hook to register for notifications - will be called when user context changes
@@ -119,11 +110,19 @@ function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
     
     // Using require to import to avoid circular dependencies
     const { useRegisterForPush, setupNotifications } = require('./src/services/push');
+    // Store this in a variable that won't change between renders to prevent effect re-runs
     const registerForPush = useRegisterForPush();
     const [isRegistered, setIsRegistered] = useState(false);
+    // Reference to track if we've already set up - prevents duplicate execution
+    const setupRef = useRef(false);
     
-    // Use React's useEffect for the setup
+    // Use React's useEffect for the setup - with empty array to only run once
     useEffect(() => {
+      // Guard against duplicate setups
+      if (setupRef.current) return;
+      setupRef.current = true;
+      
+      console.log('[PUSH DEBUG] Setting up notification handlers (once per app session)');
       // Set up notification handlers immediately (doesn't require auth)
       const { cleanup } = setupNotifications();
       
@@ -142,7 +141,7 @@ function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
       })();
       
       return cleanup;
-    }, [registerForPush]);
+    }, []); // Empty dependency array - only run once
     
     // This is a "headless" component that just registers effects
     return null;
@@ -153,18 +152,22 @@ function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
     const { isSignedIn, userId } = useAuthContext();
     
     useEffect(() => {
-      // Only run on native platforms
-      if (Platform.OS === 'ios' && isSignedIn && userId) {
-        (async () => {
+      // Only run when signed in and user ID is available
+      if (isSignedIn && userId) {
+        const setupUserAttribute = async () => {
           try {
-            // Dynamically import Instabug
-            const { default: Instabug } = await import('instabug-reactnative');
-            Instabug.setUserAttribute('clerkId', userId);
+            // Import the adapter function
+            const { setInstabugUserAttribute } = await import('./src/utils/instabug');
+            
+            // Set the user attribute
+            await setInstabugUserAttribute('clerkId', userId);
             console.log('Set Instabug user attribute:', userId);
           } catch (error) {
             console.warn('Error setting Instabug user attribute:', error);
           }
-        })();
+        };
+        
+        setupUserAttribute();
       }
     }, [isSignedIn, userId]);
     
