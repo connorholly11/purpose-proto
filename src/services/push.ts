@@ -93,10 +93,16 @@ export function useRegisterForPush() {
     try {
       console.log('[Push Service] Getting Expo push token');
       const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: Constants.expoConfig?.extra?.projectId,
+        projectId: Constants.expoConfig?.extra?.projectId || undefined,
       });
       const pushToken = tokenData.data;
       console.log('[Push Service] Expo push token:', pushToken);
+      
+      // Early return if this is a simulator token
+      if (pushToken.includes('<SIMULATOR>')) {
+        console.log('[Push Service] Simulator token detected - push notifications are not supported');
+        return pushToken;
+      }
       
       // Register the token with our backend
       await registerPushTokenWithBackend(pushToken, Platform.OS, getToken);

@@ -65,9 +65,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   // Get the API URL from environment
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   
-  // STRICT validation - refuse to build if API URL is invalid
-  if (!apiUrl || /(localhost|^172\.)/.test(apiUrl)) {
-    throw new Error('EXPO_PUBLIC_API_URL must be a LAN-reachable address (e.g. 192.168.x.x)');
+  // STRICT validation - only enforce in development mode
+  if (process.env.EAS_BUILD_PROFILE === 'development' && (!apiUrl || /(localhost|^172\.)/.test(apiUrl))) {
+    throw new Error('EXPO_PUBLIC_API_URL must be a LAN-reachable address (e.g. 192.168.x.x) for development');
   }
 
   // Embed the key and API URL into the build-time config under 'extra'
