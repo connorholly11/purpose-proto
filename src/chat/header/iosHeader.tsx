@@ -7,9 +7,10 @@ import { useClerkAvatar } from '../../hooks/useClerkAvatar';
 type IosHeaderProps = {
   onProfilePress: () => void;
   onNewChatPress: () => void;
+  onFeedbackPress?: () => void;
 };
 
-export const IosHeader = ({ onProfilePress, onNewChatPress }: IosHeaderProps) => {
+export const IosHeader = ({ onProfilePress, onNewChatPress, onFeedbackPress }: IosHeaderProps) => {
   const theme = useTheme();
   const { imageUrl, initials } = useClerkAvatar();
   
@@ -28,7 +29,12 @@ export const IosHeader = ({ onProfilePress, onNewChatPress }: IosHeaderProps) =>
         )}
       </TouchableOpacity>
       <View style={{flex: 1}}/>
-      <TouchableOpacity onPress={onNewChatPress}>
+      {onFeedbackPress && (
+        <TouchableOpacity onPress={onFeedbackPress} style={styles.iconButton}>
+          <MaterialIcons name="construction" size={24} color={theme.colors.primary} />
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity onPress={onNewChatPress} style={styles.iconButton}>
         <MaterialIcons name="add" size={24} color={theme.colors.primary} />
       </TouchableOpacity>
     </View>
@@ -53,6 +59,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  iconButton: {
+    marginLeft: 12,
   },
 });
 

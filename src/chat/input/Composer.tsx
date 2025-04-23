@@ -4,7 +4,8 @@ import { Surface, IconButton } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme as usePaperTheme } from 'react-native-paper';
 import { getThemeColors } from '../styles';
-import { createPlatformStyleSheet, spacing, createShadow, platformSelect } from '../../theme';
+import { createPlatformStyleSheet, spacing, platformSelect } from '../../theme';
+import { getShadow as createShadow } from '../../theme/platformUtils';
 import { useTheme } from '../../context/ThemeContext';
 // import useSpeechRecognition from '../../hooks/useSpeechRecognition';
 
@@ -58,47 +59,53 @@ export const Composer = ({
     <View style={styles.inputContainer}>
       {isIOS ? (
         <>
-          <TextInput 
-            style={[styles.input, { color: paperTheme.colors.onSurface }]}
-            placeholder="Message"
-            placeholderTextColor={paperTheme.colors.onSurfaceVariant + '99'}
-            value={inputText}
-            onChangeText={onChangeText}
-            onSubmitEditing={onSend}
-            multiline
-            keyboardAppearance={keyboardAppearance}
-            selectionColor={paperTheme.colors.primary}
-          />
-          
-          {!inputText.trim() ? (
-            <TouchableOpacity 
+          <View style={styles.iosInputWrapper}>
+            <Surface 
               style={[
-                styles.mediaButton, 
-                // isRecording && { backgroundColor: COLORS.sendButton, borderRadius: 18 } // Commented out usage
-              ]} 
-              // onPress={isRecording ? stopRecording : startRecording} // Commented out usage
-              // disabled={!isSpeechAvailable} // Commented out usage
+                styles.iosInputSurface, 
+                { backgroundColor: darkMode ? '#1C1C1E' : '#F2F2F7' } // iMessage-like colors with dark mode support
+              ]}
             >
-              {/* {isRecording ? ( // Commented out usage
-                <ActivityIndicator size="small" color="white" />
-              ) : ( */}
-                <MaterialIcons 
-                  name="mic" 
-                  size={24} 
-                  // color={isSpeechAvailable ? (isRecording ? "white" : "#999") : "#CCC"} // Commented out usage
-                  color={"#CCC"} // Disabled color
-                />
-              {/* )} */}
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity 
-              style={[styles.sendButton, { backgroundColor: COLORS.sendButton }]}
-              onPress={onSend}
-              disabled={loading}
-            >
-              <MaterialIcons name="send" size={20} color="white" />
-            </TouchableOpacity>
-          )}
+              <TextInput 
+                style={[styles.input, { color: paperTheme.colors.onSurface }]}
+                placeholder="Message"
+                placeholderTextColor={paperTheme.colors.onSurfaceVariant + '99'}
+                value={inputText}
+                onChangeText={onChangeText}
+                onSubmitEditing={onSend}
+                multiline
+                keyboardAppearance={keyboardAppearance}
+                selectionColor={paperTheme.colors.primary}
+              />
+              
+              {!inputText.trim() ? (
+                <TouchableOpacity 
+                  style={styles.mediaButton} 
+                  // onPress={isRecording ? stopRecording : startRecording} // Commented out usage
+                  // disabled={!isSpeechAvailable} // Commented out usage
+                >
+                  {/* {isRecording ? ( // Commented out usage
+                    <ActivityIndicator size="small" color="white" />
+                  ) : ( */}
+                    <MaterialIcons 
+                      name="mic" 
+                      size={22} 
+                      // color={isSpeechAvailable ? (isRecording ? "white" : "#999") : "#CCC"} // Commented out usage
+                      color={darkMode ? "#777" : "#999"} // Adjusted for dark mode
+                    />
+                  {/* )} */}
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity 
+                  style={[styles.sendButton, { backgroundColor: COLORS.sendButton }]}
+                  onPress={onSend}
+                  disabled={loading}
+                >
+                  <MaterialIcons name="send" size={18} color="white" />
+                </TouchableOpacity>
+              )}
+            </Surface>
+          </View>
         </>
       ) : (
         <>
@@ -157,19 +164,39 @@ const styles = createPlatformStyleSheet({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Platform.OS === 'ios' ? 12 : spacing.md,
+    padding: Platform.OS === 'ios' ? 8 : spacing.md,
     paddingBottom: platformSelect({
-      ios: 12,
+      ios: 24, // Increased bottom padding to move input up from bottom of screen
       android: spacing.lg,
       default: spacing.md
     }),
     backgroundColor: 'transparent', // Will use parent background color
-    borderTopWidth: Platform.OS === 'ios' ? 1 : 0,
+    borderTopWidth: Platform.OS === 'ios' ? 0.5 : 0, // Thinner border
     borderTopColor: '#e0e0e0',
+  },
+  iosInputWrapper: {
+    flex: 1,
+    paddingHorizontal: 12, // Add horizontal spacing as requested
+    paddingVertical: 6,
+    paddingBottom: 8, // Additional bottom padding
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iosInputSurface: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 22, // More rounded for iMessage look
+    backgroundColor: '#F2F2F7', // Light gray background like iMessage
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    minHeight: 38,
+    maxHeight: 120,
+    ...createShadow(1),
   },
   inputSurface: {
     flex: 1,
-    borderRadius: 20, // More rounded corners like iMessage
+    borderRadius: 20, 
     marginRight: spacing.sm,
     overflow: 'hidden',
     ...createShadow(1),
@@ -177,26 +204,29 @@ const styles = createPlatformStyleSheet({
   input: {
     flex: 1,
     borderRadius: 20,
-    paddingHorizontal: Platform.OS === 'ios' ? 16 : undefined,
-    paddingVertical: Platform.OS === 'ios' ? 10 : undefined,
-    marginHorizontal: Platform.OS === 'ios' ? 8 : 0,
+    paddingHorizontal: Platform.OS === 'ios' ? 8 : undefined,
+    paddingVertical: Platform.OS === 'ios' ? 8 : undefined,
+    marginLeft: Platform.OS === 'ios' ? 4 : 0,
+    marginRight: Platform.OS === 'ios' ? 2 : 0,
     fontSize: 16,
-    maxHeight: 120,
+    maxHeight: 100, // Don't let text input get too tall
   },
   mediaButton: {
-    width: 36,
-    height: 36,
+    width: 30,
+    height: 30,
+    marginRight: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendButton: {
-    borderRadius: 20, // Perfect circle
-    width: 36, // iMessage has a smaller send button
-    height: 36, // iMessage has a smaller send button
+    borderRadius: 15, // Perfect circle
+    width: 30, // iMessage has a smaller send button
+    height: 30, // iMessage has a smaller send button
     margin: 2,
+    marginHorizontal: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    ...createShadow(2),
+    ...createShadow(1),
   },
 });
 

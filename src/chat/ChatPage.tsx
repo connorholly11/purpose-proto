@@ -13,6 +13,9 @@ import { MessageList } from './list';
 import { IosHeader } from './header';
 import { Composer } from './input';
 
+// Import FeedbackModal
+import FeedbackModal from '../screens/FeedbackModal';
+
 // Import hooks
 import { useAutoScroll, useComposer } from './hooks';
 
@@ -89,10 +92,24 @@ export const ChatPage = ({}: ChatPageProps) => {
   const handleNewChat = () => {
     startNewConversation();
   };
+  
+  // Feedback modal state
+  const [feedbackVisible, setFeedbackVisible] = useState(false);
+  
+  // Handle feedback button press
+  const handleFeedbackPress = () => {
+    setFeedbackVisible(true);
+  };
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingBottom: insets.bottom, backgroundColor: COLORS.background }]}
+      style={[
+        styles.container, 
+        { 
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 8 : insets.bottom, // Add extra padding on iOS
+          backgroundColor: COLORS.background 
+        }
+      ]}
       behavior={keyboardBehavior}
       keyboardVerticalOffset={keyboardVerticalOffset}
     >
@@ -105,6 +122,7 @@ export const ChatPage = ({}: ChatPageProps) => {
           <IosHeader 
             onProfilePress={navigateToProfileSheet}
             onNewChatPress={handleNewChat}
+            onFeedbackPress={handleFeedbackPress}
           />
         )}
         
@@ -142,6 +160,12 @@ export const ChatPage = ({}: ChatPageProps) => {
           onSend={handleSend}
           onKeyPress={handleKeyPress}
           loading={loading}
+        />
+        
+        {/* Feedback Modal */}
+        <FeedbackModal
+          visible={feedbackVisible}
+          onClose={() => setFeedbackVisible(false)}
         />
       </View>
     </KeyboardAvoidingView>
