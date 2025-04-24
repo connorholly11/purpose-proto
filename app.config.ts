@@ -76,6 +76,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     clerkPublishableKey: clerkPublishableKey,
     apiUrl: apiUrl,
     instabugEnabled: includeInstabug,
+    adminPassword: process.env.EXPO_PUBLIC_ADMIN_PASSWORD || '123', // Simple default password
   };
 
   return appConfig;

@@ -1,12 +1,15 @@
 import { useMemo } from 'react';
 import { useAuth } from '@clerk/clerk-expo';
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { createApiService } from '../services/api';
+
+// Define the return type of the API service
+type Api = ReturnType<typeof createApiService> & { raw: AxiosInstance };
 
 // API base URL from environment variable
 // const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
 
-export const useApi = () => {
+export const useApi = (): Api => {
   const { getToken } = useAuth();
   
   const api = useMemo(() => {

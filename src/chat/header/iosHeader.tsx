@@ -1,7 +1,9 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useContext } from 'react';
+import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Avatar, useTheme } from 'react-native-paper';
+import { useAdmin } from '../../context/AdminContext';
+import { AdminContext } from '../../navigation/AppNavigator';
 import { useClerkAvatar } from '../../hooks/useClerkAvatar';
 
 type IosHeaderProps = {
@@ -13,6 +15,8 @@ type IosHeaderProps = {
 export const IosHeader = ({ onProfilePress, onNewChatPress, onFeedbackPress }: IosHeaderProps) => {
   const theme = useTheme();
   const { imageUrl, initials } = useClerkAvatar();
+  const { unlocked } = useAdmin();
+  const { isAdmin, toggleAdmin } = useContext(AdminContext);
   
   return (
     <View style={[styles.header, { 
@@ -32,6 +36,31 @@ export const IosHeader = ({ onProfilePress, onNewChatPress, onFeedbackPress }: I
         )}
       </TouchableOpacity>
       <View style={{flex: 1}}/>
+      {unlocked && (
+        <TouchableOpacity 
+          onPress={() => {
+            console.log('Admin toggle pressed, current state:', isAdmin);
+            toggleAdmin();
+          }} 
+          style={[
+            styles.adminButton, 
+            { 
+              backgroundColor: isAdmin ? theme.colors.primary : 'transparent',
+              borderColor: theme.colors.primary
+            }
+          ]}
+        >
+          <Text 
+            style={{ 
+              fontSize: 14, 
+              fontWeight: 'bold',
+              color: isAdmin ? 'white' : theme.colors.primary 
+            }}
+          >
+            A
+          </Text>
+        </TouchableOpacity>
+      )}
       {onFeedbackPress && (
         <TouchableOpacity onPress={onFeedbackPress} style={styles.iconButton}>
           <MaterialIcons name="construction" size={24} color={theme.colors.primary} />
@@ -62,6 +91,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconButton: {
+    marginLeft: 12,
+  },
+  adminButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginLeft: 12,
   },
 });

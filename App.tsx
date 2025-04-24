@@ -9,6 +9,7 @@ import { ChatProvider } from './src/context/ChatContext';
 import { SystemPromptProvider, useSystemPrompts } from './src/context/SystemPromptContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { HapticsProvider } from './src/context/HapticsContext';
+import { AdminProvider } from './src/context/AdminContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { View, Text, StyleSheet, Platform, StatusBar } from 'react-native';
 
@@ -40,7 +41,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <HapticsProvider>
-        <ThemedSafeAreaProvider clerkPubKey={clerkPubKey} />
+        <AdminProvider>
+          <ThemedSafeAreaProvider clerkPubKey={clerkPubKey} />
+        </AdminProvider>
       </HapticsProvider>
     </ThemeProvider>
   );

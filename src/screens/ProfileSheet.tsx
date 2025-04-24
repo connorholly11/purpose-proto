@@ -1,7 +1,9 @@
-import React, { useRef, useEffect } from 'react';
-import { StyleSheet, View, ScrollView, SafeAreaView, Platform, InteractionManager } from 'react-native';
+import React, { useRef, useEffect, useState } from 'react';
+import { StyleSheet, View, ScrollView, SafeAreaView, Platform, InteractionManager, TextInput } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Appbar, Avatar, Chip, Divider, List, Switch, Text, useTheme as usePaperTheme, Button, HelperText } from 'react-native-paper';
+import * as SecureStore from 'expo-secure-store';
+import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import { useUser } from '@clerk/clerk-expo'; // <-- Use Clerk hook
 import { useClerkAvatar } from '../hooks/useClerkAvatar'; // <-- Use avatar hook
@@ -9,6 +11,7 @@ import { useTheme } from '../context/ThemeContext'; // <-- Use ThemeContext
 import { useHaptics } from '../context/HapticsContext'; // <-- Use HapticsContext
 import ThemePicker from '../components/ThemePicker'; // <-- Import ThemePicker
 import { ThemeKey } from '../theme/colors'; // <-- Import ThemeKey
+import { useAdmin } from '../context/AdminContext'; // <-- Import useAdmin
 
 const ProfileSheet = () => {
   const navigation = useNavigation();
@@ -26,6 +29,8 @@ const ProfileSheet = () => {
     setHapticsEnabled, 
     trigger: triggerHaptic // Alias to avoid name clash
   } = useHaptics(); // Get haptics state and setters
+  const { unlocked, toggle } = useAdmin(); // Get admin state
+  const [adminPassword, setAdminPassword] = useState('');  
   
   // Create a reference to track the current theme state
   // This ensures we don't lose state when component unmounts/remounts
@@ -141,7 +146,44 @@ const ProfileSheet = () => {
             style={styles.listItem}
           />
         </List.Section>
-        
+
+        <Divider style={[styles.divider, { backgroundColor: paperTheme.colors.outline }]} />
+
+        {/* Admin section - hidden at the bottom */}
+        <View style={styles.adminSection}>
+          {!unlocked ? (
+            <View style={styles.adminUnlockContainer}>
+              <TextInput
+                style={[styles.adminInput, { borderColor: paperTheme.colors.outline }]}
+                secureTextEntry
+                placeholder="Admin Password"
+                placeholderTextColor={paperTheme.colors.onSurfaceVariant}
+                value={adminPassword}
+                onChangeText={setAdminPassword}
+              />
+              <Button
+                mode="outlined"
+                onPress={() => {
+                  // Simple static password for now - '123'
+                  const adminPwd = Constants.expoConfig?.extra?.adminPassword || '123';
+                  if (adminPassword === adminPwd || adminPassword === '123') {
+                    toggle();
+                    SecureStore.setItemAsync('adminUnlocked', '1');
+                    triggerHaptic();
+                    setAdminPassword('');
+                  }
+                }}
+                style={styles.adminButton}
+              >
+                Unlock
+              </Button>
+            </View>
+          ) : (
+            <Text style={{ color: paperTheme.colors.primary, textAlign: 'center' }}>
+              Admin mode unlocked
+            </Text>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -201,6 +243,28 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#e0e0e0',
+  },
+  adminSection: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 40,
+    alignItems: 'center',
+  },
+  adminUnlockContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  adminInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 10,
+    marginRight: 8,
+  },
+  adminButton: {
+    marginLeft: 8,
   },
 });
 

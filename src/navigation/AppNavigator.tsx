@@ -6,10 +6,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { useAuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAdmin } from '../context/AdminContext';
 import { 
   SignInScreen, 
   ProfileSheet
 } from '../screens';
+import AdminRootDebug from '../screens/AdminRootDebug';
 
 import { UserChat } from '../components';
 
@@ -17,6 +19,8 @@ import { UserChat } from '../components';
 export type AppStackParamList = {
   SignIn: undefined;
   UserRoot: undefined;
+  AdminRoot: undefined;
+  ProfileSheet: undefined; // Add ProfileSheet to app stack for admin mode
 };
 
 // Define the user stack navigator parameter types
@@ -25,43 +29,53 @@ export type UserStackParamList = {
   ProfileSheet: undefined;
 };
 
+// Context to share admin toggle information
+export const AdminContext = React.createContext({
+  isAdmin: false,
+  toggleAdmin: () => {}
+});
+
 // Create the stack navigators
 const Stack = createNativeStackNavigator<AppStackParamList>();
 const UserStackNav = createNativeStackNavigator<UserStackParamList>();
 
 // User Stack Navigator - single screen with profile sheet
-const UserStack = () => (
-  <UserStackNav.Navigator 
-    screenOptions={{ 
-      headerShown: false,
-      // This is critical - it prevents view unmounting when modal is opened
-      detachInactiveScreens: false
-    }}
-  >
-    <UserStackNav.Group>
-      <UserStackNav.Screen 
-        name="Chat" 
-        component={UserChat} 
-      />
-    </UserStackNav.Group>
-    {Platform.OS === 'ios' && (
-      <UserStackNav.Group screenOptions={{ 
-        presentation: 'modal',
-        animationEnabled: true,
-        // Prevent recreation when themes change
-        freezeOnBlur: true
-      }}>
+const UserStack = () => {
+  const { isAdmin, toggleAdmin } = React.useContext(AdminContext);
+  
+  return (
+    <UserStackNav.Navigator 
+      screenOptions={{ 
+        headerShown: false,
+        // This is critical - it prevents view unmounting when modal is opened
+        detachInactiveScreens: false
+      }}
+    >
+      <UserStackNav.Group>
         <UserStackNav.Screen 
-          name="ProfileSheet" 
-          component={ProfileSheet} 
-          options={{ 
-            headerShown: false,
-          }}
+          name="Chat" 
+          component={UserChat} 
         />
       </UserStackNav.Group>
-    )}
-  </UserStackNav.Navigator>
-);
+      {Platform.OS === 'ios' && (
+        <UserStackNav.Group screenOptions={{ 
+          presentation: 'modal',
+          animationEnabled: true,
+          // Prevent recreation when themes change
+          freezeOnBlur: true
+        }}>
+          <UserStackNav.Screen 
+            name="ProfileSheet" 
+            component={ProfileSheet} 
+            options={{ 
+              headerShown: false,
+            }}
+          />
+        </UserStackNav.Group>
+      )}
+    </UserStackNav.Navigator>
+  );
+};
 
 // Define the linking configuration using Expo's helper
 const urlPrefix = Linking.createURL('/');
@@ -88,6 +102,8 @@ const NAV_STATE_KEY = 'NAVIGATION_STATE';
 const AppNavigator = () => {
   const { isSignedIn, isLoaded } = useAuthContext();
   const { paperTheme } = useTheme();
+  const { unlocked } = useAdmin();
+  const [adminView, setAdminView] = useState(false);
   const [initialState, setInitialState] = useState<InitialState | undefined>();
   const [isStateLoaded, setIsStateLoaded] = useState(false);
   const navigationRef = useRef<any>(null);
@@ -112,43 +128,74 @@ const AppNavigator = () => {
     } catch (e) { console.error("Failed to save navigation state", e); }
   };
 
+  // Function to toggle admin view
+  const toggleAdmin = () => {
+    console.log("Toggle admin from", adminView, "to", !adminView);
+    setAdminView(!adminView);
+  };
+
   if (!isLoaded || !isStateLoaded) {
     return null;
   }
 
   return (
-    <NavigationContainer
-      ref={navigationRef}
-      linking={linking}
-      initialState={initialState}
-      onStateChange={saveState}
-      theme={paperTheme as any}
-    >
-      <Stack.Navigator 
-        screenOptions={{ 
-          headerShown: false,
-          /* 🔑 dark‑aware colours */
-          headerStyle: { backgroundColor: (paperTheme.colors as any).surfaceHeader },
-          headerTitleStyle: { color: paperTheme.colors.onSurface },
-          headerTintColor: paperTheme.colors.onSurface,  // back chevron & icons
-        }}
+    <AdminContext.Provider value={{ isAdmin: adminView, toggleAdmin }}>
+      <NavigationContainer
+        ref={navigationRef}
+        linking={linking}
+        initialState={initialState}
+        onStateChange={saveState}
+        theme={paperTheme as any}
       >
-        {!isSignedIn ? (
-          // Authentication screens
-          <Stack.Screen
-            name="SignIn"
-            component={SignInScreen}
-            options={{ headerShown: false }}
-          />
-        ) : (
-          // User stack for all platforms
-          <Stack.Screen
-            name="UserRoot"
-            component={UserStack}
-          />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+        <Stack.Navigator 
+          screenOptions={{ 
+            headerShown: false,
+            /* 🔑 dark‑aware colours */
+            headerStyle: { backgroundColor: (paperTheme.colors as any).surfaceHeader },
+            headerTitleStyle: { color: paperTheme.colors.onSurface },
+            headerTintColor: paperTheme.colors.onSurface,  // back chevron & icons
+          }}
+        >
+          {!isSignedIn ? (
+            // Authentication screens
+            <Stack.Screen
+              name="SignIn"
+              component={SignInScreen}
+              options={{ headerShown: false }}
+            />
+          ) : adminView && unlocked ? (
+            // Admin stack when admin mode is toggled on
+            <>
+              <Stack.Screen
+                name="AdminRoot"
+                component={AdminRootDebug}
+              />
+              {Platform.OS === 'ios' && (
+                <Stack.Group screenOptions={{ 
+                  presentation: 'modal',
+                  animationEnabled: true,
+                  freezeOnBlur: true
+                }}>
+                  <Stack.Screen 
+                    name="ProfileSheet" 
+                    component={ProfileSheet} 
+                    options={{ 
+                      headerShown: false,
+                    }}
+                  />
+                </Stack.Group>
+              )}
+            </>
+          ) : (
+            // User stack for all platforms
+            <Stack.Screen
+              name="UserRoot"
+              component={UserStack}
+            />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </AdminContext.Provider>
   );
 };
 

@@ -111,6 +111,18 @@ export const createAuthenticatedApi = (getTokenFn: () => Promise<string | null>)
 
 // API endpoints factory
 export const createApiService = (authenticatedApi: any) => ({
+  // Expose the raw axios instance for direct API calls
+  raw: authenticatedApi,
+  
+  // Add a dedicated prompts service
+  prompts: {
+    getAll: async () => authenticatedApi.get('/api/admin/system-prompts'),
+    getUserPrompts: async () => authenticatedApi.get('/api/prompts?scope=user'),
+    getUserActive: async (userId: string) => 
+      authenticatedApi.get(`/api/admin/system-prompts/user/${userId}/active`),
+    setActive: async (id: string, userId?: string) => 
+      authenticatedApi.put(`/api/admin/system-prompts/${id}/activate`, { userId }),
+  },
   chat: {
     // Send a message to the AI and get a response
     sendMessage: async (message: string, overridePromptId?: string, requestDebugInfo = false, useContext = true, conversationId?: string | null) => {
