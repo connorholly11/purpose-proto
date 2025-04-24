@@ -13,8 +13,6 @@ import { AdminProvider } from './src/context/AdminContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { View, Text, StyleSheet, Platform, StatusBar } from 'react-native';
 
-// Instabug will be dynamically imported at runtime
-
 // Get the Clerk key from the embedded Expo config
 const clerkPubKey = Constants.expoConfig?.extra?.clerkPublishableKey as string;
 
@@ -71,57 +69,6 @@ function ThemedSafeAreaProvider({ clerkPubKey }: { clerkPubKey: string }) {
 function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
   const { paperTheme, darkMode } = useTheme();
   
-  // Initialize Instabug only on native platforms using our adapter
-  useEffect(() => {
-    const initInstabugWithTheme = async () => {
-      // Import the adapter functions
-      const { initInstabug, setInstabugTheme, setupInstabugReportHandler } = await import('./src/utils/instabug');
-      
-      // Initialize Instabug
-      await initInstabug();
-      
-      // Set theme based on app theme
-      await setInstabugTheme(darkMode);
-      
-      // Set up report handler
-      await setupInstabugReportHandler(async (report: { reportType: string; message: string }) => {
-        try {
-          // Using require to avoid circular dependencies
-          const { createAuthenticatedApi } = require('./src/services/api');
-          const { useAuth } = require('@clerk/clerk-expo');
-          
-          // Create an authenticated API instance
-          const getToken = async () => {
-            try {
-              const token = await useAuth().getToken();
-              return token;
-            } catch (error) {
-              console.error('Error getting token for Instabug feedback:', error);
-              return null;
-            }
-          };
-          
-          const api = createAuthenticatedApi(getToken);
-          
-          // Submit to our backend
-          await api.post('/api/feedback', {
-            category: 'Bug Report',
-            content: `${report.reportType}: ${report.message}`,
-          });
-          
-          console.log('Successfully bridged Instabug report to backend');
-        } catch (error) {
-          console.error('Failed to send Instabug report to backend:', error);
-        }
-      });
-    };
-    
-    // Run the async initialization
-    initInstabugWithTheme().catch(error => {
-      console.warn('Error in Instabug initialization:', error);
-    });
-  }, [darkMode]);
-  
   // Hook to register for notifications - will be called when user context changes
   const PushNotificationSetup = () => {
     // This is an iOS-only app
@@ -166,33 +113,6 @@ function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
     return null;
   };
   
-  // Component to set user attributes in Instabug when auth state changes
-  const InstabugUserSetup = () => {
-    const { isSignedIn, userId } = useAuthContext();
-    
-    useEffect(() => {
-      // Only run when signed in and user ID is available
-      if (isSignedIn && userId) {
-        const setupUserAttribute = async () => {
-          try {
-            // Import the adapter function
-            const { setInstabugUserAttribute } = await import('./src/utils/instabug');
-            
-            // Set the user attribute
-            await setInstabugUserAttribute('clerkId', userId);
-            console.log('Set Instabug user attribute:', userId);
-          } catch (error) {
-            console.warn('Error setting Instabug user attribute:', error);
-          }
-        };
-        
-        setupUserAttribute();
-      }
-    }, [isSignedIn, userId]);
-    
-    return null;
-  };
-  
   // Import hook to access active system prompt
   const SystemPromptAccessor = ({ children }: { children: React.ReactNode }) => {
     const { activePrompt } = useSystemPrompts();
@@ -212,8 +132,6 @@ function ThemedApp({ clerkPubKey }: { clerkPubKey: string }) {
             <SystemPromptAccessor>
               {/* Register for push notifications */}
               <PushNotificationSetup />
-              {/* Set up Instabug user attributes */}
-              <InstabugUserSetup />
               <AppNavigator />
             </SystemPromptAccessor>
           </SystemPromptProvider>
@@ -252,15 +170,14 @@ const styles = StyleSheet.create({
     color: '#dc3545',
   },
   errorMessage: {
-    fontSize: 16,
+    fontSize: 18,
     marginBottom: 12,
     textAlign: 'center',
-    color: '#212529',
+    color: '#343a40',
   },
   errorDetails: {
     fontSize: 14,
     textAlign: 'center',
     color: '#6c757d',
-    maxWidth: 600,
   },
 });

@@ -6,14 +6,6 @@ import { ExpoConfig, ConfigContext } from '@expo/config';
 //   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?: string;
 // }
 
-// Flag to control whether Instabug plugin is included - using explicit boolean coercion
-const includeInstabug = process.env.INCLUDE_INSTABUG_PLUGIN === 'true';
-
-// Hard bail-out for web builds
-if (!includeInstabug && process.env.EAS_BUILD_PROFILE?.includes('web')) {
-  console.log('Instabug plugin skipped for web build');
-}
-
 export default ({ config }: ConfigContext): ExpoConfig => {
   // Basic app configuration from existing app.json or defaults
   const appConfig: ExpoConfig = {
@@ -27,14 +19,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       // Add the required plugins
       "expo-secure-store",
       "expo-notifications",
-      // Conditionally include Instabug configuration with additional production guard
-      ...(includeInstabug && (process.env.NODE_ENV === 'production' || process.env.FORCE_INSTABUG === 'true')
-        ? [["instabug-reactnative", {
-            iosAppToken: process.env.INSTABUG_IOS_TOKEN,
-            invocationEvents: ["shake", "screenshot"],
-            primaryColor: "#2196F3"
-          }]]
-        : [])
     ],
     ios: {
       ...(config.ios || {}),
@@ -49,6 +33,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ...(config.android || {}),
       // Uncomment the line below when you have a google-services.json file
       // googleServicesFile: './google-services.json'
+      package: "com.purpose.app"
     }
   };
 
@@ -75,7 +60,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config.extra, // Preserve existing extra config (like EAS projectId)
     clerkPublishableKey: clerkPublishableKey,
     apiUrl: apiUrl,
-    instabugEnabled: includeInstabug,
     adminPassword: process.env.EXPO_PUBLIC_ADMIN_PASSWORD || '123', // Simple default password
   };
 
