@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AdminContext } from '@components/AppHeader';
 import AppHeader from '@components/AppHeader';
 import { NavBar } from '@components/NavBar';
 import FeedbackButton from '@components/FeedbackButton';
+import { ChatProvider } from '../context/ChatContext';
 
 // Define NavItem interface
 interface NavItem {
@@ -21,6 +22,21 @@ export default function ClientLayout({
 }) {
   const [isAdminMode, setIsAdminMode] = useState(false);
 
+  // Effect to load admin mode from localStorage on mount
+  useEffect(() => {
+    // On mount, check local storage
+    const storedMode = localStorage.getItem('adminMode');
+    if (storedMode) {
+      setIsAdminMode(storedMode === 'true');
+    }
+  }, []);
+
+  // Handler function to update both state and localStorage
+  const handleSetAdminMode = (value: boolean) => {
+    setIsAdminMode(value);
+    localStorage.setItem('adminMode', String(value));
+  };
+
   // Navigation items
   const navItems: NavItem[] = [
     { name: 'AI Companion', path: '/ai-companion', icon: 'chat-bubble' },
@@ -34,13 +50,15 @@ export default function ClientLayout({
   ];
 
   return (
-    <AdminContext.Provider value={{ isAdminMode, setIsAdminMode }}>
-      <AppHeader />
-      <main className="main-content">
-        {children}
-      </main>
-      <NavBar items={navItems} isAdminMode={isAdminMode} />
-      {isAdminMode && <FeedbackButton />}
-    </AdminContext.Provider>
+    <ChatProvider>
+      <AdminContext.Provider value={{ isAdminMode, setIsAdminMode: handleSetAdminMode }}>
+        <AppHeader />
+        <main className="main-content">
+          {children}
+        </main>
+        <NavBar items={navItems} isAdminMode={isAdminMode} />
+        {isAdminMode && <FeedbackButton />}
+      </AdminContext.Provider>
+    </ChatProvider>
   );
 }

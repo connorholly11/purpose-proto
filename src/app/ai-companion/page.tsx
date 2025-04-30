@@ -1,46 +1,46 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Text, Card, TextInput, Button, Surface, IconButton, Column, Row } from '../../components';
+import React, { useState, useEffect } from 'react';
+import { Text, Card, TextInput, Surface, IconButton } from '../../components';
 import { useAdminMode } from '../../components/AppHeader';
+import { useChatContext } from '../../context/ChatContext';
 import styles from './page.module.css';
 
 export default function AICompanionPage() {
   const [inputText, setInputText] = useState('');
-  const [messages, setMessages] = useState<Array<{id: string, role: string, content: string, timestamp: string}>>([
-    {id: '1', role: 'assistant', content: 'Hello! I\'m your AI companion. How can I help you today?', timestamp: new Date().toISOString()}
-  ]);
-  const [loading, setLoading] = useState(false);
-  
   const { isAdminMode } = useAdminMode();
+  
+  // Use the ChatContext instead of local state
+  const {
+    messages,
+    loading,
+    error,
+    sendMessage,
+  } = useChatContext();
+
+  // Load initial greeting if no messages exist
+  useEffect(() => {
+    if (messages.length === 0) {
+      // Check if there are no messages and add a welcome message
+      const welcomeMessage = {
+        id: 'welcome-1',
+        content: 'Hello! I\'m your AI companion. How can I help you today?',
+        role: 'assistant',
+        createdAt: new Date().toISOString()
+      };
+      
+      // This is a hack to add the first message - in a real implementation, 
+      // we might want to refactor the ChatContext to handle this case
+      sendMessage('', undefined, false, false)
+        .catch(err => console.error('Error initializing chat:', err));
+    }
+  }, [messages, sendMessage]);
 
   const handleSend = () => {
     if (inputText.trim() && !loading) {
-      // Add user message
-      const userMessage = {
-        id: Date.now().toString(),
-        role: 'user',
-        content: inputText,
-        timestamp: new Date().toISOString()
-      };
-      
-      setMessages(prev => [...prev, userMessage]);
+      // Use the ChatContext's sendMessage function
+      sendMessage(inputText);
       setInputText('');
-      
-      // Simulate AI response
-      setLoading(true);
-      
-      setTimeout(() => {
-        const aiMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: `This is a simulated response to "${inputText}". In a real implementation, this would call the API and get a proper AI response.`,
-          timestamp: new Date().toISOString()
-        };
-        
-        setMessages(prev => [...prev, aiMessage]);
-        setLoading(false);
-      }, 1500);
     }
   };
 
@@ -59,7 +59,7 @@ export default function AICompanionPage() {
               <Text>{message.content}</Text>
             </Surface>
             <Text className={styles.timestamp}>
-              {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </div>
         ))}
@@ -73,6 +73,12 @@ export default function AICompanionPage() {
                 <div className={styles.loadingDot}></div>
               </div>
             </Surface>
+          </div>
+        )}
+
+        {error && (
+          <div className={styles.errorContainer}>
+            <Text color="error">Error: {error}</Text>
           </div>
         )}
       </div>
@@ -104,6 +110,7 @@ export default function AICompanionPage() {
       {isAdminMode && (
         <Card className={styles.adminPanel} title="Admin Controls">
           <Text>Additional controls would appear here for admins.</Text>
+          {error && <Text color="error">Last Error: {error}</Text>}
         </Card>
       )}
     </div>

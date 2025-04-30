@@ -1,6 +1,11 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/admin/page": "app/admin/page.js",
+  "/page": "app/page.js",
   "/ai-companion/page": "app/ai-companion/page.js",
-  "/page": "app/page.js"
+  "/admin/page": "app/admin/page.js",
+  "/profile/page": "app/profile/page.js",
+  "/quests/page": "app/quests/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/testing/page": "app/testing/page.js",
+  "/eval/page": "app/eval/page.js"
 }
