@@ -2,19 +2,18 @@ import '@testing-library/jest-native/extend-expect';
 import { NativeModules } from 'react-native';
 
 // Mock Platform to simulate different platforms during tests
-const mockPlatform = (platform: 'ios' | 'android' | 'web') => {
+// For web-only app, we only need to test web platform
+const mockPlatform = () => {
   jest.resetModules();
   jest.doMock('react-native/Libraries/Utilities/Platform', () => ({
-    OS: platform,
-    select: (obj: any) => obj[platform] || obj.default || {},
+    OS: 'web',
+    select: (obj: any) => obj.web || obj.default || {},
   }));
 };
 
-// Export helpers for testing
+// Export helpers for testing - keep only web for simplicity
 export const setPlatform = {
-  toIOS: () => mockPlatform('ios'),
-  toAndroid: () => mockPlatform('android'),
-  toWeb: () => mockPlatform('web'),
+  toWeb: () => mockPlatform(),
   // Reset to the actual platform
   reset: () => {
     jest.dontMock('react-native/Libraries/Utilities/Platform');
@@ -26,18 +25,6 @@ NativeModules.StatusBarManager = { getHeight: jest.fn(() => ({ then: jest.fn() }
 
 // Mock Animated
 jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
-
-// Mock LinearGradient from Expo
-jest.mock('expo-linear-gradient', () => {
-  const React = require('react');
-  return {
-    LinearGradient: ({ children, style }: any) => (
-      <div className="mock-linear-gradient" style={style}>
-        {children}
-      </div>
-    ),
-  };
-});
 
 // Mock Reanimated
 jest.mock('react-native-reanimated', () => {

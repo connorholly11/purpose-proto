@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@clerk/nextjs';
 
 // Define the progress callback type
 type ProgressCallback = (completedCalls: number) => void;
@@ -7,12 +7,15 @@ type ProgressCallback = (completedCalls: number) => void;
 // Hook for eval API functionality
 export function useEvalApi() {
   const { getToken } = useAuth();
+  
+  // Check environment for development mode
+  const isDev = process.env.NODE_ENV === 'development';
 
   // Create an axios instance for /api/eval
   const evalApi = axios.create({
-    baseURL: __DEV__
+    baseURL: isDev
       ? 'http://localhost:3001/api/eval'
-      : (normalizeUrl(process.env.EXPO_PUBLIC_API_URL || '') + '/api/eval'),
+      : (normalizeUrl(process.env.NEXT_PUBLIC_API_URL || '') + '/api/eval'),
   });
 
   // Attach auth token if available
@@ -27,9 +30,10 @@ export function useEvalApi() {
   return {
     // Reuse the existing admin route to fetch system prompts
     async getAllSystemPrompts() {
-      const baseUrl = __DEV__
+      const isDev = process.env.NODE_ENV === 'development';
+      const baseUrl = isDev
         ? 'http://localhost:3001'
-        : normalizeUrl(process.env.EXPO_PUBLIC_API_URL || '');
+        : normalizeUrl(process.env.NEXT_PUBLIC_API_URL || '');
       const adminEndpoint = `${baseUrl}/api/admin/system-prompts`;
       const resp = await axios.get(adminEndpoint, {
         headers: { Authorization: `Bearer ${await getToken()}` },

@@ -1,57 +1,35 @@
 import React from 'react';
-import { View, ViewProps, StyleSheet } from 'react-native';
-import { spacing } from '../../theme/platformUtils';
+import { Row as WebRow } from '../components';
 
-interface RowProps extends ViewProps {
-  spacing?: keyof typeof spacing | number;
-  justifyContent?: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly';
-  alignItems?: 'flex-start' | 'flex-end' | 'center' | 'stretch' | 'baseline';
+type JustifyContent = 
+  | 'flex-start'
+  | 'flex-end'
+  | 'center'
+  | 'space-between'
+  | 'space-around'
+  | 'space-evenly';
+
+type AlignItems = 
+  | 'flex-start'
+  | 'flex-end'
+  | 'center'
+  | 'stretch'
+  | 'baseline';
+
+interface RowProps extends React.HTMLAttributes<HTMLDivElement> {
+  spacing?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | number;
+  justifyContent?: JustifyContent;
+  alignItems?: AlignItems;
   wrap?: boolean;
-  fullWidth?: boolean;
+  className?: string;
+  children: React.ReactNode;
 }
 
 /**
- * A consistent row layout component that handles spacing between children
+ * A flex row component for web
  */
-export const Row: React.FC<RowProps> = ({
-  spacing: spacingKey = 'md',
-  justifyContent = 'flex-start',
-  alignItems = 'center',
-  wrap = false,
-  fullWidth = true,
-  style,
-  children,
-  ...rest
-}) => {
-  // Determine the spacing value - either a predefined value or a custom number
-  const spacingValue = typeof spacingKey === 'number' 
-    ? spacingKey 
-    : spacing[spacingKey];
-
-  return (
-    <View
-      style={[
-        styles.row,
-        {
-          justifyContent,
-          alignItems,
-          flexWrap: wrap ? 'wrap' : 'nowrap',
-          width: fullWidth ? '100%' : 'auto',
-          gap: spacingValue,
-        },
-        style,
-      ]}
-      {...rest}
-    >
-      {children}
-    </View>
-  );
+export const Row: React.FC<RowProps> = (props) => {
+  return <WebRow {...props} />;
 };
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-  },
-});
 
 export default Row;

@@ -1,0 +1,58 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  min-height: 100vh;
+  background-color: #ffffff;
+}
+
+.logoContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 48px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #666666;
+  text-align: center;
+}
+
+.signInContainer {
+  width: 100%;
+  max-width: 400px;
+}
+
+.switchContainer {
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.input {
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.errorText {
+  color: #d32f2f;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.authButton {
+  border-radius: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  height: 48px;
+  width: 100%;
+}

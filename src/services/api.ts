@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@clerk/nextjs';
 
 // API base URL from environment variable
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Create an axios instance with default config
 const api = axios.create({

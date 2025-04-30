@@ -1,5 +1,5 @@
 // Mock Clerk authentication
-jest.mock('@clerk/clerk-expo', () => ({
+jest.mock('@clerk/nextjs', () => ({
   useAuth: jest.fn().mockReturnValue({
     isLoaded: true,
     isSignedIn: true,
@@ -36,14 +36,17 @@ jest.mock('axios', () => ({
   isAxiosError: jest.fn().mockReturnValue(true),
 }));
 
-// Mock Expo components used in the app
-jest.mock('expo-status-bar', () => ({
-  StatusBar: () => 'StatusBar',
-}));
-
-jest.mock('expo-linear-gradient', () => ({
-  LinearGradient: () => 'LinearGradient',
-}));
+// Mock CSS background for LinearGradient replacement
+jest.mock('react-native-web', () => {
+  const originalModule = jest.requireActual('react-native-web');
+  return {
+    ...originalModule,
+    StyleSheet: {
+      ...originalModule.StyleSheet,
+      create: jest.fn(styles => styles),
+    },
+  };
+});
 
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaProvider: ({ children }) => children,

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{subject}}</title>
+  <style>
+    body { 
+      font-family: 'Arial', sans-serif; 
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header { 
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+    .logo {
+      max-width: 150px;
+      margin-bottom: 10px;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      font-size: 0.8em;
+      color: #777;
+      text-align: center;
+    }
+    .btn {
+      display: inline-block;
+      background-color: #4a7dff;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Purpose</h1>
+  </div>
+  
+  <div class="content">
+    {{{bodyContent}}}
+  </div>
+  
+  <div class="footer">
+    <p>© Purpose AI, Inc.</p>
+    <p>This email was generated based on insights from your conversations.</p>
+    <p>
+      <small>If you'd like to stop receiving these emails, please update your preferences in your account settings.</small>
+    </p>
+  </div>
+</body>
+</html>

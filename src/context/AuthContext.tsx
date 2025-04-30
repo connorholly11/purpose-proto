@@ -1,19 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useAuth, useUser } from '@clerk/nextjs';
 
-// SecureStore token cache
+// localStorage token cache
 const tokenCache = {
   async getToken(key: string) {
     try {
-      return SecureStore.getItemAsync(key);
+      return Promise.resolve(localStorage.getItem(key));
     } catch (err) {
       return null;
     }
   },
   async saveToken(key: string, value: string) {
     try {
-      return SecureStore.setItemAsync(key, value);
+      return Promise.resolve(localStorage.setItem(key, value));
     } catch (err) {
       return;
     }
@@ -44,7 +43,7 @@ type AuthProviderProps = {
 };
 
 // Define founder IDs (admin users)
-const FOUNDER_CLERK_IDS = process.env.EXPO_PUBLIC_FOUNDER_CLERK_IDS?.split(',') || [
+const FOUNDER_CLERK_IDS = process.env.NEXT_PUBLIC_FOUNDER_CLERK_IDS?.split(',') || [
   'user_2v0kHfelRcU1cBqg5o47ZymuGvM',
   'user_2v0kJwxV4JT2PaJKmaXZabSjFgM',
   'user_2v0kIR1s6RI1tzMU0dF2HhH5LgG',

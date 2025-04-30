@@ -1,0 +1,195 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String             @id @default(cuid())
+  clerkId           String             @unique
+  username          String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  messages          Message[]
+  structuredSummary StructuredSummary?
+  summarizationLogs SummarizationLog[]
+  gameState         UserGameState?
+  feedback          Feedback[]
+  activePrompt      UserActivePrompt?
+  emailLogs         EmailLog[]
+  pushTokens        PushToken[]
+  termsAcceptances  TermsAcceptance[]
+
+  @@index([clerkId])
+}
+
+model TermsAcceptance {
+  id         String   @id @default(uuid())
+  userId     String   @map("clerkId")
+  version    String
+  acceptedAt DateTime @default(now())
+  user       User     @relation(fields:[userId], references:[clerkId])
+  
+  @@index([userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  role      String
+  user      User     @relation(fields: [userId], references: [clerkId])
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model StructuredSummary {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [clerkId])
+  userId      String   @unique
+  summaryData Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model SystemPrompt {
+  id                String             @id @default(cuid())
+  name              String             @unique
+  promptText        String             @db.Text
+  isActive          Boolean            @default(false)
+  isFavorite        Boolean            @default(false)
+  modelName         String             @default("chatgpt-4o-latest")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  userActivePrompts UserActivePrompt[]
+
+  @@index([isActive])
+}
+
+model UserActivePrompt {
+  id          String       @id @default(cuid())
+  user        User         @relation(fields: [userId], references: [clerkId])
+  userId      String       @unique
+  prompt      SystemPrompt @relation(fields: [promptId], references: [id])
+  promptId    String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([promptId])
+}
+
+model SummarizationLog {
+  id        String   @id @default(cuid())
+  userId    String
+  status    String
+  trigger   String
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [clerkId])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model UserGameState {
+  id                    String   @id @default(cuid())
+  user                  User     @relation(fields: [userId], references: [clerkId])
+  userId                String   @unique
+  clarityScore          Float    @default(50)
+  driveScore            Float    @default(50)
+  relationshipScore     Float    @default(50)
+  emotionalBalanceScore Float    @default(50)
+  resilienceScore       Float    @default(50)
+  selfAwarenessScore    Float    @default(50)
+  connectionScore       Float    @default(50)
+  scoreReasoning        Json?    @db.JsonB
+  lastCalculated        DateTime @updatedAt
+  createdAt             DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [clerkId])
+  userId    String
+  category  String
+  content   String   @db.Text
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PersonaScenario {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String       @db.Text
+  messages    Json         @db.JsonB // Array of user messages in the scenario
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  evaluations Evaluation[]
+}
+
+model Evaluation {
+  id             String          @id @default(cuid())
+  promptId       String
+  personaId      String
+  persona        PersonaScenario @relation(fields: [personaId], references: [id])
+  conversation   Json            @db.JsonB // The conversation transcript
+  scores         Json            @db.JsonB // A structured JSON from the grading LLM
+  evaluationMode String          @default("optimize_good") // "optimize_good" or "avoid_bad"
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([promptId])
+  @@index([personaId])
+  @@index([createdAt])
+  @@index([evaluationMode])
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  userId    String
+  subject   String
+  htmlBody  String   @db.Text
+  status    String   @default("sent") // sent, failed, etc.
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [clerkId])
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [clerkId])
+  userId    String
+  token     String   @unique
+  deviceOS  String?
+  lastSeen  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+}

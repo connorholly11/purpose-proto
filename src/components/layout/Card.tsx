@@ -1,19 +1,18 @@
 import React from 'react';
-import { ViewProps, StyleSheet } from 'react-native';
-import { Card as PaperCard, Text } from 'react-native-paper';
-import { spacing } from '../../theme/platformUtils';
+import { Card as WebCard } from '../components';
+import { spacing } from '../../theme/utils';
 
-interface CardProps extends ViewProps {
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
   subtitle?: string;
   elevation?: number;
   onPress?: () => void;
-  contentStyle?: any;
+  contentStyle?: React.CSSProperties;
+  children: React.ReactNode;
 }
 
 /**
- * A consistent card component that wraps React Native Paper's Card
- * and handles platform-specific styling
+ * A consistent card component for the web environment
  */
 export const Card: React.FC<CardProps> = ({
   title,
@@ -26,42 +25,22 @@ export const Card: React.FC<CardProps> = ({
   ...rest
 }) => {
   return (
-    <PaperCard 
-      style={[styles.card, style]} 
+    <WebCard 
+      title={title}
+      subtitle={subtitle}
       elevation={elevation}
       onPress={onPress}
+      style={{
+        marginVertical: spacing.sm,
+        borderRadius: 8,
+        ...style as React.CSSProperties
+      }} 
+      contentStyle={contentStyle}
       {...rest}
     >
-      {(title || subtitle) && (
-        <PaperCard.Title 
-          title={title} 
-          subtitle={subtitle}
-          titleStyle={styles.title}
-          subtitleStyle={styles.subtitle}
-        />
-      )}
-      <PaperCard.Content style={[styles.content, contentStyle]}>
-        {children}
-      </PaperCard.Content>
-    </PaperCard>
+      {children}
+    </WebCard>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    marginVertical: spacing.sm,
-    borderRadius: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  subtitle: {
-    fontSize: 14,
-  },
-  content: {
-    paddingTop: spacing.xs,
-  },
-});
 
 export default Card;

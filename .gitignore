@@ -39,3 +39,5 @@ yarn-error.*
 # IDE
 .idea
 .vscode
+
+**/.claude/settings.local.json

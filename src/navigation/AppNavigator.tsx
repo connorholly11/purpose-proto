@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuthContext } from '../context/AuthContext';
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { 
   SignInScreen, 
   ChatScreen, 
@@ -56,7 +55,7 @@ const MainTabNavigator = () => {
       <Tab.Navigator
         screenOptions={({ route }) => ({
           tabBarIcon: ({ color, size }) => {
-            let iconName: keyof typeof MaterialIcons.glyphMap = 'chat-bubble';
+            let iconName = 'chat-bubble';
 
             if (route.name === 'AICompanion') {
               iconName = 'chat-bubble';
@@ -111,8 +110,8 @@ const MainTabNavigator = () => {
           }}
         />
         
-        {/* Admin tabs - show only in admin mode and not on iOS */}
-        {(Platform.OS !== 'ios' && isAdminMode) && (
+        {/* Admin tabs - show only in admin mode */}
+        {isAdminMode && (
           <>
             <Tab.Screen
               name="Dashboard"
@@ -153,8 +152,8 @@ const MainTabNavigator = () => {
         )}
       </Tab.Navigator>
       
-      {/* Only show feedback button in admin mode and not on iOS */}
-      {(Platform.OS !== 'ios' && isAdminMode) && <FeedbackButton />}
+      {/* Show feedback button in admin mode */}
+      {isAdminMode && <FeedbackButton />}
     </>
   );
 };
@@ -162,7 +161,6 @@ const MainTabNavigator = () => {
 // Main App Navigator
 export const AppNavigator = () => {
   const { isSignedIn, isLoaded } = useAuthContext();
-  // Force isAdminMode to always be false on iOS
   const [isAdminMode, setIsAdminMode] = useState(false);
 
   // Show nothing while auth is loading
