@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AdminContext } from '../components/AppHeader';
-import AppHeader from '../components/AppHeader';
-import { NavBar } from '../components/components/NavBar';
-import FeedbackButton from '../components/FeedbackButton';
+import { AdminContext } from '@components/AppHeader';
+import AppHeader from '@components/AppHeader';
+import { NavBar } from '@components/NavBar';
+import FeedbackButton from '@components/FeedbackButton';
 
 // Define NavItem interface
 interface NavItem {

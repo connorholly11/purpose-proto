@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { useApi } from '../hooks/useApi';
-import { FAB, Surface, Text, Button, TextInput, IconButton } from './web';
 import styles from './FeedbackButton.module.css';
+import FAB from './ui/FAB';
+import Surface from './ui/Surface';
+import Text from './ui/Text';
+import Button from './ui/Button';
+import TextInput from './ui/TextInput';
+import IconButton from './ui/IconButton';
 
 const CATEGORIES = ['AI Companion', 'Memory', 'Other'];
 

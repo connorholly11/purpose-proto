@@ -1,0 +1,696 @@
+/*!*******************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/AppHeader.module.css ***!
+  \*******************************************************************************************************************************************************************************************************************************************************************************/
+.AppHeader_header__yRvRG {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  height: 50px;
+  padding: 0 16px;
+  background-color: #F2F2F7;
+  border-bottom: 1px solid #CCCCCC;
+  box-shadow: 0px 1px 3px rgba(0,0,0,0.1);
+}
+
+.AppHeader_toggleLabel__UYdeH {
+  font-size: 14px;
+  margin-right: 8px;
+  color: #666;
+}
+/*!*******************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/ui/styles.module.css ***!
+  \*******************************************************************************************************************************************************************************************************************************************************************************/
+/* Base layout components */
+.styles_row__8TpPB {
+  display: flex;
+  flex-direction: row;
+}
+
+.styles_column__nEQYw {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Card component */
+.styles_card__ZrpL0 {
+  border-radius: 8px;
+  background-color: #fff;
+  border: 1px solid #eee;
+  overflow: hidden;
+  margin: 8px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.styles_card__ZrpL0:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.styles_cardHeader__mSfdF {
+  padding: 16px 16px 0 16px;
+}
+
+.styles_cardTitle__J9VCV {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  padding: 0;
+}
+
+.styles_cardSubtitle__WA352 {
+  font-size: 14px;
+  color: #666;
+  margin: 4px 0 0 0;
+  padding: 0;
+}
+
+.styles_cardContent__QDuJn {
+  padding: 16px;
+}
+
+/* Surface component */
+.styles_surface__QCHED {
+  background-color: #fff;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Text component */
+.styles_text__ZV8so {
+  margin: 0;
+}
+
+.styles_body__uC1jt {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.styles_title__pekWc {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.styles_subtitle__MQcwQ {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 500;
+}
+
+.styles_caption__2B1Xd {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.styles_label__FkTc8 {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.styles_paragraph__ljPTs {
+  font-size: 16px;
+  line-height: 24px;
+  margin-bottom: 16px;
+}
+
+.styles_medium__v7eYw {
+  font-weight: 500;
+}
+
+.styles_bold__MqYXI {
+  font-weight: 700;
+}
+
+/* Button component */
+.styles_button__QEPdA {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+  border: none;
+  outline: none;
+}
+
+.styles_button__QEPdA:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.styles_buttonContained__8rhrx {
+  background-color: #007AFF;
+  color: white;
+}
+
+.styles_buttonOutlined__Q7rUW {
+  background-color: transparent;
+  border: 1px solid #007AFF;
+  color: #007AFF;
+}
+
+.styles_buttonText__Thl1L {
+  background-color: transparent;
+  color: #007AFF;
+  padding: 8px;
+}
+
+.styles_buttonCompact__1qrjA {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.styles_buttonIcon__pspU4 {
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.styles_buttonSpinner__0Pmgn {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: styles_spin__wYp4y 0.8s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes styles_spin__wYp4y {
+  to { transform: rotate(360deg); }
+}
+
+/* TextInput component */
+.styles_textInputContainer__o8GQW {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.styles_textInputLabel__vocSn {
+  font-size: 14px;
+  margin-bottom: 4px;
+  display: block;
+  color: #666;
+}
+
+.styles_textInputLabelError__91W_Z {
+  color: #FF3B30;
+}
+
+.styles_textInputWrapper__k_VB8 {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.styles_textInput__riZpj {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.styles_textInput__riZpj:focus {
+  border-color: var(--primary-color, #007AFF);
+}
+
+.styles_textInputFlat__Zg14m {
+  border-radius: 4px;
+  background-color: #f5f5f5;
+  border: none;
+  border-bottom: 1px solid #ccc;
+}
+
+.styles_textInputOutlined__UAFbm {
+  background-color: transparent;
+}
+
+.styles_textInputError__OjFU0 {
+  border-color: #FF3B30;
+}
+
+.styles_textInputDisabled__ILxtO {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f9f9f9;
+}
+
+.styles_textInputLeft__WS_wR {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+}
+
+.styles_textInputRight__Fb_k_ {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+}
+
+.styles_textInputIcon__Zh_LK {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.styles_textInputIconLoading__uISHt {
+  animation: styles_spin__wYp4y 1s linear infinite;
+}
+
+/* Switch component */
+.styles_switch__ydTyg {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.styles_switchInput__G55NS {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.styles_switchTrack__sMUVE {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--track-color-off, #767577);
+  border-radius: 34px;
+  transition: background-color 0.2s;
+}
+
+.styles_switchInput__G55NS:checked + .styles_switchTrack__sMUVE {
+  background-color: var(--track-color-on, #007AFF);
+}
+
+.styles_switchThumb__AZvoa {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: var(--thumb-color, #FFFFFF);
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.styles_switchInput__G55NS:checked + .styles_switchTrack__sMUVE .styles_switchThumb__AZvoa {
+  transform: translateX(22px);
+}
+
+.styles_switchInput__G55NS:disabled + .styles_switchTrack__sMUVE {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* IconButton component */
+.styles_iconButton__iVN_Z {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  padding: 8px;
+  border: none;
+  outline: none;
+}
+
+.styles_iconButton__iVN_Z:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.styles_iconButton__iVN_Z:active {
+  transform: scale(0.95);
+}
+
+.styles_iconButtonContained__j26b5 {
+  color: white;
+}
+
+.styles_iconButtonOutlined__s07pS {
+  background-color: transparent;
+  border: 1px solid;
+}
+
+.styles_iconButtonDisabled__m0QaF {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.styles_iconButtonIcon__I_uLC {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* FAB component */
+.styles_fab___P_FX {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  color: white;
+  transition: box-shadow 0.2s, transform 0.1s;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.styles_fab___P_FX:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.styles_fab___P_FX:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.styles_fabSmall__Vdai_ {
+  width: 40px;
+  height: 40px;
+}
+
+.styles_fabMedium__3xXqq {
+  width: 56px;
+  height: 56px;
+}
+
+.styles_fabLarge__9afIO {
+  width: 72px;
+  height: 72px;
+}
+
+.styles_fabIcon__zLCwy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/*!************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/FeedbackButton.module.css ***!
+  \************************************************************************************************************************************************************************************************************************************************************************************/
+.FeedbackButton_fab__vUJ_6 {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 100;
+}
+
+.FeedbackButton_modalContainer__zGHw4 {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.FeedbackButton_modalOverlay__Z_ONE {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.FeedbackButton_modalContent__4g8nS {
+  width: 90%;
+  max-width: 500px;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 1001;
+}
+
+.FeedbackButton_modalHeader__yT_T3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+}
+
+.FeedbackButton_modalTitle__3i8D7 {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.FeedbackButton_divider__fAo7d {
+  border: none;
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 0;
+}
+
+.FeedbackButton_modalBody__mVGBO {
+  padding: 16px;
+}
+
+.FeedbackButton_modalFooter__fT71T {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px;
+}
+
+.FeedbackButton_label__PvlDi {
+  display: block;
+  margin-bottom: 8px;
+  margin-top: 8px;
+}
+
+.FeedbackButton_textInput__thjHF {
+  background-color: #fff;
+  margin-bottom: 8px;
+  min-height: 120px;
+  width: 100%;
+}
+
+.FeedbackButton_categoryButtons__TDQEA {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.FeedbackButton_categoryButton__Ga9Md {
+  flex: 1 1;
+  min-width: 100px;
+}
+
+.FeedbackButton_button__06jWt {
+  margin-left: 8px;
+}
+/*!****************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/components/NavBar.module.css ***!
+  \****************************************************************************************************************************************************************************************************************************************************************************/
+.NavBar_navbar__rnjKG {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border-top: 1px solid #e0e0e0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  padding: 8px 0;
+}
+
+.NavBar_navContainer__70Wrl {
+  display: flex;
+  justify-content: space-around;
+  max-width: 768px;
+  margin: 0 auto;
+}
+
+.NavBar_navLink__d3nOU {
+  text-decoration: none;
+  color: #666;
+  flex: 1 1;
+  text-align: center;
+  transition: color 0.2s;
+}
+
+.NavBar_navLinkActive__QzXmC {
+  color: #007AFF;
+}
+
+.NavBar_navItem__gCx4S {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 16px;
+}
+
+.NavBar_navIcon__sq5kk {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.NavBar_navLabel__8CRcm {
+  font-size: 12px;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .NavBar_navbar__rnjKG {
+    bottom: auto;
+    top: 50px;
+    border-top: none;
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .NavBar_navContainer__70Wrl {
+    justify-content: flex-start;
+  }
+  
+  .NavBar_navItem__gCx4S {
+    flex-direction: row;
+  }
+  
+  .NavBar_navIcon__sq5kk {
+    margin-bottom: 0;
+    margin-right: 8px;
+  }
+  
+  .NavBar_navLabel__8CRcm {
+    font-size: 14px;
+  }
+}
+/*!********************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./src/app/ai-companion/page.module.css ***!
+  \********************************************************************************************************************************************************************************************************************************************************************************/
+.page_container__ePbA_ {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 110px); /* Account for header and navbar */
+  padding: 16px;
+  position: relative;
+}
+
+.page_messagesContainer__vioS4 {
+  flex: 1 1;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.page_messageBubble__7m39H {
+  margin-bottom: 12px;
+  max-width: 70%;
+  display: flex;
+  flex-direction: column;
+}
+
+.page_userMessage__cOo_5 {
+  align-self: flex-end;
+}
+
+.page_assistantMessage__CkuIz {
+  align-self: flex-start;
+}
+
+.page_messageContent__HM9Dy {
+  padding: 12px;
+  border-radius: 20px;
+  position: relative;
+}
+
+.page_userContent__RVfKq {
+  background-color: #007AFF;
+  color: white;
+  border-bottom-right-radius: 5px;
+}
+
+.page_assistantContent___VhaT {
+  background-color: #F2F2F7;
+  color: #000;
+  border-bottom-left-radius: 5px;
+}
+
+.page_timestamp__Y_WIX {
+  font-size: 10px;
+  margin-top: 4px;
+  opacity: 0.7;
+  align-self: flex-end;
+}
+
+.page_inputContainer__tDWDR {
+  display: flex;
+  align-items: flex-end;
+  padding: 8px;
+  background-color: white;
+  border-radius: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.page_input__yr5q9 {
+  flex: 1 1;
+  margin-right: 8px;
+  max-height: 120px;
+}
+
+.page_sendButton__sYou6 {
+  margin-bottom: 4px;
+}
+
+.page_adminPanel__bPkTq {
+  margin-top: 16px;
+}
+
+.page_loadingIndicator__YDHpC {
+  display: flex;
+  padding: 8px;
+}
+
+.page_loadingDot__embuU {
+  width: 8px;
+  height: 8px;
+  background-color: #999;
+  border-radius: 50%;
+  margin: 0 4px;
+  opacity: 0.4;
+  animation: page_pulse__VYtuS 1.5s infinite ease-in-out;
+}
+
+.page_loadingDot__embuU:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.page_loadingDot__embuU:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes page_pulse__VYtuS {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}

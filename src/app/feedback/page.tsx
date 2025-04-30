@@ -1,14 +1,14 @@
 'use client';
 
 import React from 'react';
-import { Text, Card, Column } from '../../components/web';
-import styles from './feedback.module.css';
+import { Text, Card, Column } from '../../components';
+import styles from './page.module.css';
 
 export default function FeedbackPage() {
   // This is a placeholder - you would implement the actual functionality here
   return (
     <div className={styles.container}>
-      <Column spacing="md">
+      <Column gap={16}>
         <Text variant="title">User Feedback</Text>
         
         <Card title="Feedback Management">

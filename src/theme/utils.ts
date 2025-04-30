@@ -1,8 +1,8 @@
 /**
- * Utility functions for web-specific styles and theming
+ * Utility functions for styles and theming
  */
 
-// Define spacing values for web
+// Define spacing values
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -13,9 +13,9 @@ export const spacing = {
 };
 
 /**
- * Creates a shadow style for web elements
+ * Creates a shadow style for elements
  * @param elevation - The elevation level (1-24)
- * @returns Shadow style object for web
+ * @returns Shadow style object
  */
 export function createShadow(elevation: number = 2) {
   return {
@@ -41,10 +41,10 @@ export const shadows = {
 };
 
 /**
- * Creates a colored shadow for web elements
+ * Creates a colored shadow for elements
  * @param color - The shadow color (CSS color value)
  * @param elevation - The elevation level (1-24)
- * @returns Colored shadow style object for web
+ * @returns Colored shadow style object
  */
 export function createColoredShadow(color: string, elevation: number = 1) {
   const opacity = Math.min(0.6, 0.15 + (elevation * 0.05));

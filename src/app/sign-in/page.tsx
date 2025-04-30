@@ -2,9 +2,8 @@
 
 import React from 'react';
 import { useSignIn, useSignUp } from '@clerk/nextjs';
-import { Text, Button, TextInput, Switch } from '../../components/web';
-import { Row, Column } from '../../components/web';
-import styles from './sign-in.module.css';
+import { Text, Button, TextInput, Switch, Row, Column } from '../../components';
+import styles from './page.module.css';
 
 export default function SignInPage() {
   const { signIn, setActive: setSignInActive, isLoaded: isSignInLoaded } = useSignIn();

@@ -1,10 +1,9 @@
 import React from 'react';
 import { useAuthContext } from '../context/AuthContext';
-import { spacing } from '../theme/utils';
-import { Row } from './components';
-import { Text } from './components';
-import { Switch } from './components';
 import styles from './AppHeader.module.css';
+import Row from './ui/Row';
+import Text from './ui/Text';
+import Switch from './ui/Switch';
 
 // Create a simple AdminContext to avoid circular dependencies
 export type AdminContextType = {
@@ -20,7 +19,7 @@ const defaultAdminContext: AdminContextType = {
 // Create a context to be used in this component
 export const AdminContext = React.createContext<AdminContextType>(defaultAdminContext);
 
-// Hook to use the admin context - simplified for web-only
+// Hook to use the admin context
 export const useAdminMode = () => {
   return React.useContext(AdminContext);
 };
@@ -29,7 +28,6 @@ const AppHeader = () => {
   // Get admin context
   const { isAdminMode, setIsAdminMode } = useAdminMode();
   
-  // Always show header on web
   return (
     <header className={styles.header}>
       <Row justifyContent="space-between" alignItems="center">
@@ -40,7 +38,7 @@ const AppHeader = () => {
           {isAdminMode ? 'Purpose Admin' : 'Purpose'}
         </Text>
         
-        {/* Admin toggle for web */}
+        {/* Admin toggle */}
         {setIsAdminMode && (
           <Row alignItems="center">
             <Text 

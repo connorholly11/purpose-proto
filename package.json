@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest",
-    "test:snapshot": "jest src/tests/snapshot.test.tsx"
+    "test": "jest"
   },
   "dependencies": {
     "@clerk/nextjs": "^5.7.5",

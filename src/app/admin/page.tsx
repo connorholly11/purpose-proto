@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button, Column } from '../../components/web';
-import styles from './admin.module.css';
-import { theme } from '../../theme/webTheme';
+import { Button, Column } from '../../components';
+import styles from './page.module.css';
 
 // These will be imported from their page component versions
 import AdminUserScreen from '../admin-user/page';
@@ -14,8 +13,8 @@ export default function AdminPage() {
   const [activeView, setActiveView] = useState<'users' | 'status' | 'feedback'>('users');
 
   return (
-    <div className={styles.container} style={{ backgroundColor: theme.colors.background }}>
-      <Column spacing="md" style={{ height: '100%' }}>
+    <div className={styles.container} style={{ backgroundColor: '#FFFFFF' }}>
+      <Column gap={16} style={{ height: '100%' }}>
         <div className={styles.header}>
           <div className={styles.segmentedButtons}>
             <Button

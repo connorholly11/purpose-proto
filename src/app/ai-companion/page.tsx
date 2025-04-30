@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Text, Card, TextInput, Button, Surface, IconButton, Column, Row } from '../../components/components';
+import { Text, Card, TextInput, Button, Surface, IconButton, Column, Row } from '../../components';
 import { useAdminMode } from '../../components/AppHeader';
-import styles from './ai-companion.module.css';
+import styles from './page.module.css';
 
 export default function AICompanionPage() {
   const [inputText, setInputText] = useState('');
@@ -93,9 +93,7 @@ export default function AICompanionPage() {
         />
         <IconButton
           icon="arrow-up"
-          mode="contained"
-          containerColor="#007AFF"
-          iconColor="#FFFFFF"
+          color="#007AFF"
           size={24}
           onClick={handleSend}
           disabled={!inputText.trim() || loading}
